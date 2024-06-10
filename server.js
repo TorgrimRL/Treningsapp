@@ -1,11 +1,12 @@
-const express = require('express'); 
-const bodyParser =  require('body-parser');
-const db = require('./database');
-const Joi = require('joi');
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
-const cookieParser = require('cookie-parser');
-const csurf = require('csurf');
+import express from 'express'; 
+import bodyParser from 'body-parser';
+import db from './database.js'; 
+import Joi from 'joi';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import cookieParser from 'cookie-parser';
+import csurf from 'csurf';
+
 const app = express();
 const port = 3000;
 
@@ -90,6 +91,23 @@ app.post('/login', async (req, res) => {
     });
 });
 
+//Endepunkt for å slette en bruker
+app.delete('/users/:username', authenticateToken, csrfProtection, (req, res) => {
+    const { username } = req.params;
+    db.run('DELETE FROM users WHERE username = ?', [username], function(err) {
+        if (err) {
+            return res.status(500).send(err.message);
+        }
+        if (this.changes === 0) {
+            return res.status(404). send('User not found')
+        }
+        res.status(200).send('User deleted');
+    });
+});
+
+
+
+// Type håndtering av treningsskjema
 const workoutSchema = Joi.object({
     type: Joi.string().required(),
     duration: Joi.number().integer().required()
@@ -102,21 +120,22 @@ app.get('/', (req, res) => {
 
 // Endepunkt for å lage en ny treningsøkt
 app.post('/workouts', authenticateToken, csrfProtection, (req, res) => {
-    console.log('CSRF Token from Header:', req.headers['x-csrf-token']);
     const { error } = workoutSchema.validate(req.body);
     if (error) {
         console.log('Validation Error:', error.details[0].message);
-        return res.status(400).send(error.details[0].message);
+        return res.status(400).json({ error: error.details[0].message }); 
     }
+
     const { type, duration } = req.body;
     db.run('INSERT INTO workouts (type, duration) VALUES (?, ?)', [type, duration], function(err) {
         if (err) {
             console.log('Database Error:', err.message);
-            return res.status(500).send(err.message);
+            return res.status(500).json({ error: err.message }); 
         }
-        res.status(201).json({ id: this.lastID });
+        res.status(201).json({ id: this.lastID }); 
     });
 });
+
 
 // Endepunkt for å hente alle treningsøkter
 app.get('/workouts', authenticateToken, csrfProtection, (req, res) => {
@@ -129,11 +148,14 @@ app.get('/workouts', authenticateToken, csrfProtection, (req, res) => {
 });
 
 // Endepunkt for å hente en spesifikk treningsøkt
-app.get('/workouts/:id', authenticateToken, csrfProtection,(req, res) => {
+app.get('/workouts/:id', authenticateToken, csrfProtection, (req, res) => {
     const { id } = req.params;
     db.get('SELECT * FROM workouts WHERE id= ?', [id], (err, row) => {
         if (err) {
             return res.status(500).send(err.message);
+        }
+        if (!row) {
+            return res.status(404).json({ message: 'Workout not found' });
         }
         res.json(row);
     });
@@ -162,6 +184,11 @@ app.delete('/workouts/:id', authenticateToken, csrfProtection,(req, res) => {
     });
 });
 
-app.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}`);
-});
+
+if (process.env.NODE_ENV !== 'test') {
+    app.listen(port, () => {
+        console.log(`Server running on http://localhost:${port}`);
+    });
+}
+
+export default app;
