@@ -42,6 +42,15 @@ build/Release
 node_modules/
 jspm_packages/
 
+# Backend specific ignores
+backend/node_modules/
+backend/database.sqlite
+
+# Frontend specific ignores
+frontend/node_modules/
+frontend/build/
+frontend/dist/
+
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/
 
