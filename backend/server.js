@@ -6,12 +6,21 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import cookieParser from 'cookie-parser';
 import csurf from 'csurf';
+import cors from 'cors'
 
 const app = express();
 const port = 3000;
 
 app.use(bodyParser.json());
 app.use(cookieParser());
+
+
+// Cross Origin Resource Sharing
+app.use(cors({
+    origin: 'http://localhost:5173',
+    credentials: true
+}));
+
 
 app.use((req, res, next) => {
     console.log('Request Headers:', req.headers);
@@ -50,21 +59,23 @@ app.get('/csrf-token', authenticateToken, csrfProtection, (req, res) => {
 });
 
 // Rute for brukerregistrering (uten CSRF-beskyttelse)
-app.post('/register', async(req, res) => {
+app.post('/register', async (req, res) => {
+    console.log('Received body:', req.body); 
     const { username, password } = req.body;
 
     db.get('SELECT * FROM users WHERE username = ?', [username], async (err, user) => {
-        if (err) return res.status(500).send(err.message);
-        if (user) return res.status(400).send('Username already exists');
+        if (err) return res.status(500).json({ message: err.message});
+        if (user) return res.status(400).json({ message:'Username already exists'});
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
         db.run('INSERT INTO users (username, password) VALUES (?, ?)', [username, hashedPassword], function(err) {
-            if (err) return res.status(500).send(err.message);
-            res.status(201).send('User registered');
+            if (err) return res.status(500).json({ message: err.message});
+            res.status(201).json({ message: 'User registered'})
         });
     });
 });
+
 
 // Rute for brukerpålogging (uten CSRF-beskyttelse)
 app.post('/login', async (req, res) => {

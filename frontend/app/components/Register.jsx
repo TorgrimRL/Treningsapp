@@ -6,7 +6,7 @@ export default function Register() {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [message, setMessage] = useState('');
 
-    const handleSubmit = (event) =>{
+    const handleSubmit = async (event) =>{
         event.preventDefault();
 
         if (password !== confirmPassword) {
@@ -14,12 +14,40 @@ export default function Register() {
             return;
         }
 
-        <TODO>backendimplemetation</TODO>
-        
-        setMessage("Registration successfull, you can now login.");
-        setUsername('');
-        setPassword('');
-        setConfirmPassword('');
+        try {
+            const response = await fetch('http://localhost:3000/register',{
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({ username, password }),
+            });
+
+            console.log('Response:', response);
+
+            if (!response.ok) {
+                const text = await response.text();
+                console.log('Response text: ', text);
+                try {
+                    const data = JSON.parse(text);
+                    setMessage(`Registration failed: ${data.message}`);
+                } catch (error) {
+                    setMessage(`Registration failed: ${text}`);
+                }
+                return;
+            }
+            const data = await response.json();
+            setMessage("Registration successfull, you can now login.");
+                
+        }catch (error){
+            console.error('Error during registration', error);
+            setMessage('An error occured during registration');
+        }
+        // setMessage("Registration successfull, you can now login.");
+        // setUsername('');
+        // setPassword('');
+        // setConfirmPassword('');
 
 
     };
