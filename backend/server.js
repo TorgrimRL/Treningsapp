@@ -77,7 +77,7 @@ app.post('/register', async (req, res) => {
 });
 
 
-// Rute for brukerpålogging (uten CSRF-beskyttelse)
+// Rute for brukerpålogging 
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
     
@@ -98,9 +98,18 @@ app.post('/login', async (req, res) => {
 
         const token = jwt.sign({ id: user.id }, secretKey, { expiresIn: '1h' });
         console.log('Generated Token:', token);
+        
+        res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production'});
+        
         res.json({ token });
     });
 });
+
+//Endepunkt for å logge ut en bruker
+app.post('/logout', async(req,res) => {
+    res.clearCookie('token');
+    res.status(200).send('Logged out successfully');
+})
 
 //Endepunkt for å slette en bruker
 app.delete('/users/:username', authenticateToken, csrfProtection, (req, res) => {
