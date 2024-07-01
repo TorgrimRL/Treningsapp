@@ -4,10 +4,20 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  LiveReload,
+  useLoaderData,
 } from "@remix-run/react";
+import { json } from "@remix-run/node";
+import Navbar from "./components/Navbar";
 import "./tailwind.css";
 
-export function Layout({ children }) {
+export const loader = async ({ request }) => {
+  const isLoggedIn = Boolean(request.headers.get("Cookie")?.includes("token"));
+  return json({ isLoggedIn });
+};
+
+export default function Root() {
+  const { isLoggedIn } = useLoaderData();
   return (
     <html lang="en">
       <head>
@@ -17,14 +27,17 @@ export function Layout({ children }) {
         <Links />
       </head>
       <body>
-        {children}
+        <Navbar isLoggedIn={isLoggedIn} />
+        <main>
+          <Outlet />
+        </main>
+        <footer>
+          <p>&copy; 2024 My App</p>
+        </footer>
         <ScrollRestoration />
         <Scripts />
+        {process.env.NODE_ENV === "development" && <LiveReload />}
       </body>
     </html>
   );
-}
-
-export default function App() {
-  return <Outlet />;
 }
