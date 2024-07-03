@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function Register() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [message, setMessage] = useState('');
+    const navigate = useNavigate();
 
     const handleSubmit = async (event) =>{
         event.preventDefault();
@@ -39,6 +41,7 @@ export default function Register() {
             }
             const data = await response.json();
             setMessage("Registration successfull, you can now login.");
+            navigate('/login');
                 
         }catch (error){
             console.error('Error during registration', error);
