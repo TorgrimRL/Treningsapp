@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-
+import { Form } from "@remix-run/react";
 
 export default function Navbar({ isLoggedIn }) {
     const [isOpen, setIsOpen] = useState(false);
@@ -25,9 +25,9 @@ export default function Navbar({ isLoggedIn }) {
             {isLoggedIn && (
               <>
                 <li className="text-white">
-                  <form method="post" action="/logout">
+                  <Form method="post" action="/logout">
                     <button type="submit" className="block">Logout</button>
-                  </form>
+                  </Form>
                 </li>
                 <li className="text-white"><a href="/app" className="block">Dashboard</a></li>
               </>
