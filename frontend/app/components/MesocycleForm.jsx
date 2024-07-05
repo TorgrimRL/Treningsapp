@@ -48,12 +48,10 @@ const handleChange = (dayIndex, exerciseIndex, field, value) => {
                                     onChange={(e) => handleChange(dayIndex,exerciseIndex,'exercise', e.target.value)}
                                     required
                                 >
-                                    {exercises
-                                        .filter(ex => ex.muscleGroup === exercise.muscleGroup)
-                                        .map(ex => (
-                                            <option key={ex.name} value={ex.name}>{ex.name}</option>
-                                        ))
-                                    }
+                                    {exercises[exercise.muscleGroup]?.map(ex => (
+                                        <option key={ex} value={ex}>{ex}</option>
+                                    ))}
+                                    
                                 </select>
                             </label>
                         </div>
