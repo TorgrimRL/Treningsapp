@@ -1,7 +1,7 @@
 import React, {useState} from "react";
 import { muscleGroups } from "../constants/constants";
 
-const ExerciseForm = ({ onSubmit }) => {
+export default function ExerciseForm ({ onSubmit })  {
     const [name,setName] = useState('');
     const [type,setType] = useState('Barbell');
     const [videoLink, setVideoLink] = useState('');
@@ -22,7 +22,7 @@ const ExerciseForm = ({ onSubmit }) => {
     return(
         <form onSubmit={handleSubmit}>
             <div>
-                <label>Exercise Name</label>
+                <label>Name</label>
                 <input
                     type="text"
                     value={name}
@@ -31,7 +31,7 @@ const ExerciseForm = ({ onSubmit }) => {
                 />
             </div>
             <div>
-                <label>Exercise Type</label>
+                <label>Exercise type</label>
                    <select value={type} onChange={(e) => setType(e.target.value)} required>
                         <option value="barbell">Barbell</option>
                         <option value="machine">Machine</option>
@@ -40,6 +40,23 @@ const ExerciseForm = ({ onSubmit }) => {
                         <option value="loaded bodyweight">Loaded Bodyweight</option>
                     </select> 
             </div>
+            <div>
+                <label>Video link</label>
+                <input
+                    type="url"
+                    value={videoLink}
+                    onChange={(e) => setVideoLink(e.target.value)}
+                />
+            </div>
+            <div>
+                <label>Muscle group</label>
+                    <select value={muscleGroup} onChange={(e) => setMuscleGroup(e.target.value)} required>
+                        {muscleGroup.map(group => (
+                            <option key={group} value={group}></option>
+                        ))}
+                    </select>
+            </div>
+            <button type="submit">Add Exercise</button>
         </form>
     )
 

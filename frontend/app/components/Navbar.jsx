@@ -23,6 +23,7 @@ export default function Navbar({ isLoggedIn }) {
         {!isLoggedIn && <a href="/register" className="text-white">Register</a>}
         {isLoggedIn && (
             <>
+                <a href="/mesocycles/new" className="text-white">Plan a new mesocycle</a>
                 <Form method="post" action="/logout">
                     <button type="submit" className="text-white">Logout</button>
                 </Form>
@@ -37,6 +38,7 @@ export default function Navbar({ isLoggedIn }) {
                 {!isLoggedIn && <li><a href="/register" className="block px-4 py-2 text-gray-800 hover:bg-gray-200">Register</a></li>}
                 {isLoggedIn && (
                     <>
+                        <li><a href="/mesocycles/new" className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-200">Plan a new mesocycle</a></li>
                         <li>
                             <Form method="post" action="/logout">
                                 <button type="submit" className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-200">Logout</button>
