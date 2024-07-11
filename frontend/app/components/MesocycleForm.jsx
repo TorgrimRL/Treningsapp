@@ -60,6 +60,8 @@ const MesocycleForm = ({ onSubmit }) => {
 
   const handleSubmit = (event) => {
     event.preventDefault();
+    console.log("Mesocycle Name: ", mesocycleName);
+    console.log("Weeks:", numberOfWeeks);
     setIsModalOpen(true);
   };
 
@@ -76,9 +78,9 @@ const MesocycleForm = ({ onSubmit }) => {
       })),
     }));
     const mesocycleData = {
-      mesocycleName,
-      numberOfWeeks,
-      plan,
+      name: mesocycleName,
+      weeks: numberOfWeeks,
+      plan: updatedPlan,
     };
     onSubmit(mesocycleData);
     setIsModalOpen(false);
