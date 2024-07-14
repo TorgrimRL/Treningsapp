@@ -28,7 +28,7 @@ export default function Navbar({ isLoggedIn }) {
             className="text-black focus:outline-none"
             style={{
               position: "fixed",
-              top: "10px",
+              top: "2px",
               right: "10px",
             }}
           >
@@ -63,7 +63,7 @@ export default function Navbar({ isLoggedIn }) {
           )}
         </div>
         {isOpen && (
-          <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-md shadow-lg z-10 md:hidden">
+          <div className="absolute right-0 top-full w-48 bg-white rounded-md shadow-lg z-10 md:hidden">
             <ul className="py-1">
               <li>
                 <a
