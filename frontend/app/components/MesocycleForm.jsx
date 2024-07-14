@@ -121,6 +121,7 @@ const MesocycleForm = ({ onSubmit }) => {
             display: "flex",
             justifyContent: "space-between",
             width: "100%",
+            overflow: "auto",
           }}
         >
           {plan.map((day, dayIndex) => (
