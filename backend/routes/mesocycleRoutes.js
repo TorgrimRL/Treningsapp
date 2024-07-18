@@ -20,25 +20,14 @@ router.post("/mesocycles", (req, res) => {
   });
 });
 
-// Endpoint to fetch all standard mesocycles
-router.get("/mesocycles/standard", (req, res) => {
-  const query = "SELECT * FROM mesocycles WHERE user_id IS NULL";
-
-  db.all(query, [], (err, rows) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    res.json(rows);
-  });
-});
-
-// Endpoint to fetch all user-specific mesocycles
-router.get("/mesocycles/custom", (req, res) => {
-  const userID = req.user.id;
+router.get("/mesocycles", (req, res) => {
+  console.log("Fetching mesocycles for user:1"); // Add this line
+  const userID = 1;
   const query = "SELECT * FROM mesocycles WHERE user_id = ?";
 
   db.all(query, [userID], (err, rows) => {
     if (err) {
+      console.log("Error fetching mesocycles:", err); // Add this line
       return res.status(500).json({ error: err.message });
     }
     res.json(rows);

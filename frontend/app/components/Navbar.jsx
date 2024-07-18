@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Form } from "@remix-run/react";
+import { useAuth } from "../utils/AuthContext";
 
-export default function Navbar({ isLoggedIn }) {
+export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-
+  const { isLoggedIn } = useAuth();
   const toggleMenu = () => {
     setIsOpen(!isOpen);
   };
@@ -97,7 +98,15 @@ export default function Navbar({ isLoggedIn }) {
                 <>
                   <li>
                     <a
-                      href="/mesocycles/new"
+                      href="/mesocycles"
+                      className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-200"
+                    >
+                      Mesocycles
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      href="/mesocycles-new"
                       className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-200"
                     >
                       Plan a new mesocycle

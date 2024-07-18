@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import MesocycleForm from "../components/MesocycleForm";
+import { getCookie } from "../utils/cookies";
 
 export default function NewMesocycle() {
   const [csrfToken, setCSRFToken] = useState("");
@@ -18,11 +19,14 @@ export default function NewMesocycle() {
 
   const handleFormSubmit = async (mesocycle) => {
     try {
-      const response = await fetch("http://localhost:3000/api/mesocycles", {
+      const token = getCookie("token");
+      console.log("Retrieved token:", token);
+      const response = await fetch("http://localhost:3000/mesocycles", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "X-CSRF-Token": csrfToken,
+          Authorization: `Bearer ${token}`,
         },
         credentials: "include",
         body: JSON.stringify(mesocycle),

@@ -9,7 +9,7 @@ Modal.setAppElement("#root");
 
 const MesocycleForm = ({ onSubmit }) => {
   const [plan, setPlan] = useState(
-    Array(3)
+    Array(1)
       .fill()
       .map(() => ({ label: "", exercises: [] }))
   );

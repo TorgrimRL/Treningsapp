@@ -24,8 +24,8 @@ app.use(
 );
 
 app.use((req, res, next) => {
-  console.log("Request Headers:", req.headers);
-  console.log("Cookies:", req.cookies);
+  // console.log("Request Headers:", req.headers);
+  // console.log("Cookies:", req.cookies);
   next();
 });
 // CSRF-beskyttelse middleware
@@ -36,13 +36,14 @@ const secretKey = "secretkey";
 
 // Middleware for å verifisere token
 export const authenticateToken = (req, res, next) => {
-  const token = req.header("Authorization");
+  console.log("Request Headers:", req.headers);
+  const token = req.cookies.token;
   if (!token) {
     console.log("No token provided");
     return res.status(401).send("Access Denied");
   }
   try {
-    const verified = jwt.verify(token.split(" ")[1], secretKey); // Split for å håndtere 'Bearer' token
+    const verified = jwt.verify(token, secretKey);
     req.user = verified;
     next();
   } catch (error) {
@@ -51,7 +52,36 @@ export const authenticateToken = (req, res, next) => {
   }
 };
 
-app.use("/api", mesocycleRoutes);
+app.post("/mesocycles", authenticateToken, csrfProtection, (req, res) => {
+  const { name, weeks, plan } = req.body;
+
+  const userID = req.user.id;
+
+  const query =
+    "INSERT INTO mesocycles (name, weeks, plan, user_id) VALUES (?,?,?,?)";
+
+  db.run(query, [name, weeks, JSON.stringify(plan), userID], function (err) {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    res.status(201).json({ id: this.lastID });
+  });
+});
+app.get("/mesocycles", authenticateToken, csrfProtection, (req, res) => {
+  console.log("Fetching mesocycles for user:", req.user.id); // Add this line
+  const userID = req.user.id;
+  const query = "SELECT * FROM mesocycles WHERE user_id = ?";
+
+  db.all(query, [userID], (err, rows) => {
+    if (err) {
+      console.log("Error fetching mesocycles:", err); // Add this line
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(rows);
+  });
+});
+
+// app.use("/api", mesocycleRoutes);
 
 // Rute for å hente en CSRF-token
 app.get("/csrf-token", authenticateToken, csrfProtection, (req, res) => {
@@ -110,7 +140,7 @@ app.post("/login", async (req, res) => {
         return res.status(400).send("Username or password is incorrect");
       }
 
-      const token = jwt.sign({ id: user.id }, secretKey, { expiresIn: "1h" });
+      const token = jwt.sign({ id: user.id }, secretKey, { expiresIn: "365d" });
       console.log("Generated Token:", token);
 
       res.cookie("token", token, {
@@ -121,6 +151,11 @@ app.post("/login", async (req, res) => {
       res.json({ token });
     }
   );
+});
+
+//Endepunkt for å sjekke autentiseringsstatus
+app.get("/check-auth", authenticateToken, (req, res) => {
+  return res.json({ isLoggedin: true });
 });
 
 //Endepunkt for å logge ut en bruker
