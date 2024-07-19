@@ -11,11 +11,17 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const checkAuthStatus = async () => {
-      const response = await fetch("http://localhost:3000/check-auth", {
-        credentials: "include",
-      });
-      const data = await response.json();
-      setIsLoggedInn(data.isLoggedIn);
+      try {
+        const response = await fetch("http://localhost:3000/check-auth", {
+          credentials: "include",
+        });
+        const data = await response.json();
+        setIsLoggedInn(data.isLoggedIn);
+        console.log("Auth status checked:", data.isLoggedIn);
+      } catch (error) {
+        console.error("Failed to check auth status:", error);
+        setIsLoggedInn(false);
+      }
     };
     checkAuthStatus();
   }, []);
@@ -27,4 +33,10 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};

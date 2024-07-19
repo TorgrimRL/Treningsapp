@@ -1,13 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Form } from "@remix-run/react";
 import { useAuth } from "../utils/AuthContext";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const { isLoggedIn } = useAuth();
+
   const toggleMenu = () => {
     setIsOpen(!isOpen);
   };
+
+  useEffect(() => {
+    console.log("Isloggedin status:", isLoggedIn);
+  }, [isLoggedIn]);
 
   return (
     <nav
@@ -55,11 +60,14 @@ export default function Navbar() {
               <a href="/mesocycles/new" className="text-white">
                 Plan a new mesocycle
               </a>
-              <Form method="post" action="/logout">
-                <button type="submit" className="text-white">
+              <form method="post" action="/logout">
+                <button
+                  type="submit"
+                  className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-200"
+                >
                   Logout
                 </button>
-              </Form>
+              </form>
             </>
           )}
         </div>
@@ -113,14 +121,14 @@ export default function Navbar() {
                     </a>
                   </li>
                   <li>
-                    <Form method="post" action="/logout">
+                    <form method="post" action="/logout">
                       <button
                         type="submit"
                         className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-200"
                       >
                         Logout
                       </button>
-                    </Form>
+                    </form>
                   </li>
                 </>
               )}

@@ -155,12 +155,32 @@ app.post("/login", async (req, res) => {
 
 //Endepunkt for å sjekke autentiseringsstatus
 app.get("/check-auth", authenticateToken, (req, res) => {
-  return res.json({ isLoggedin: true });
+  const token = req.cookies.token;
+  if (!token) {
+    return res.json({ isLoggedIn: false });
+  }
+
+  try {
+    const verified = jwt.verify(token, secretKey);
+    res.json({ isLoggedIn: true });
+  } catch (error) {
+    res.json({ isLoggedIn: false });
+  }
 });
 
-//Endepunkt for å logge ut en bruker
+// Endepunkt for å logge ut en bruker
 app.post("/logout", async (req, res) => {
-  res.clearCookie("token");
+  console.log("Logout request received");
+  console.log("Cookies before clearing:", req.cookies);
+
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/",
+  });
+
+  console.log("Cookies after clearing:", req.cookies);
   res.status(200).send("Logged out successfully");
 });
 
