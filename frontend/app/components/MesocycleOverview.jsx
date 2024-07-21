@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faEllipsisV } from "@fortawesome/free-solid-svg-icons";
 
 const MesocycleOverview = () => {
   const [mesocycles, setMesocycles] = useState([]);
+  const [openMenus, setOpenMenus] = useState({});
 
   useEffect(() => {
     const fetchMesocycles = async () => {
@@ -32,13 +35,23 @@ const MesocycleOverview = () => {
     return mesocycle;
   };
 
+  const toggleMenu = (id) => {
+    setOpenMenus((prevState) => ({
+      ...prevState,
+      [id]: !prevState[id],
+    }));
+  };
+
   return (
-    <div className="w-4/5 mx-auto p-5 bg-gray-900 text-white">
+    <div className=" mx-auto p-5 bg-gray-900 text-white">
       <header className="flex justify-between items-center mb-5">
         <h1 className="text-2xl m-0">Mesocycles</h1>
-        <button className="bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-lg rounded">
+        <a
+          href="mesocycles-new"
+          className="bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-lg rounded"
+        >
           + NEW
-        </button>
+        </a>
       </header>
       <ul className="list-none p-0 m-0">
         {mesocycles.map((mesocycle) => (
@@ -60,13 +73,61 @@ const MesocycleOverview = () => {
                 </p>
               )}
             </div>
-            <span
-              className={`py-1 px-2 rounded text-sm ${
-                mesocycle.isCurrent ? "bg-orange-600" : "bg-gray-600"
-              }`}
-            >
-              {mesocycle.isCurrent ? "CURRENT" : "PAST"}
-            </span>
+            <div className="flex items-center">
+              <span
+                className={`py-1 px-2 rounded text-sm mr-2 ${
+                  mesocycle.isCurrent
+                    ? "bg-orange-600"
+                    : mesocycle.completedDate
+                    ? "bg-green-600"
+                    : "bg-gray-600"
+                }`}
+              >
+                {mesocycle.isCurrent
+                  ? "CURRENT"
+                  : mesocycle.completedDate
+                  ? new Date(mesocycle.completedDate).toLocaleDateString()
+                  : "NOT COMPLETED"}
+              </span>
+              <div className="relative">
+                <button
+                  onClick={() => toggleMenu(mesocycle.id)}
+                  className="text-white focus:outline-none py-2"
+                >
+                  <FontAwesomeIcon icon={faEllipsisV} />
+                </button>
+              </div>
+              {openMenus[mesocycle.id] && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
+                  <ul className="py-1">
+                    <li>
+                      <a
+                        href="#"
+                        className="block px-4 py-2 text-gray-800 hover:bg-gray-200"
+                      >
+                        Edit
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        href="#"
+                        className="block px-4 py-2 text-gray-800 hover:bg-gray-200"
+                      >
+                        Delete
+                      </a>
+                    </li>
+                    <li>
+                      <a
+                        href="#"
+                        className="block px-4 py-2 text-gray-800 hover:bg-gray-200"
+                      >
+                        View Details
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              )}
+            </div>
           </li>
         ))}
       </ul>
