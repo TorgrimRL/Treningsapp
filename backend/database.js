@@ -23,6 +23,32 @@ db.serialize(() => {
         user_id INTERGER,
         FOREIGN KEY(user_id) REFERENCES users(id)
     )`);
+
+  db.all("PRAGMA table_info(mesocycles)", (err, columns) => {
+    if (err) {
+      console.error("Error fetching table info:", err.message);
+      return;
+    }
+    const columnNames = columns.map((col) => col.name);
+    const addColumn = (column, type) => {
+      if (!columnNames.includes(column)) {
+        db.run(
+          `ALTER TABLE Mesocycles ADD COLUMN ${column} ${type}`,
+          [],
+          function (err) {
+            if (err) {
+              console.error(`Error adding '${column}' column:`, err.message);
+            } else {
+              console.log(`Added '${column}' column to 'Mesocycles' table`);
+            }
+          }
+        );
+      }
+    };
+    addColumn("daysPerWeek", "INTEGER");
+    addColumn("completedDate", "TEXT");
+    addColumn("isCurrent", "INTEGER");
+  });
 });
 
 export default db;

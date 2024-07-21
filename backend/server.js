@@ -1,5 +1,7 @@
 import express from "express";
-import bodyParser from "body-parser";
+import pkg from "body-parser";
+const { json } = pkg;
+
 import db from "./database.js";
 import Joi from "joi";
 import jwt from "jsonwebtoken";
@@ -12,7 +14,7 @@ import mesocycleRoutes from "./routes/mesocycleRoutes.js";
 const app = express();
 const port = 3000;
 
-app.use(bodyParser.json());
+app.use(json());
 app.use(cookieParser());
 
 // Cross Origin Resource Sharing
@@ -53,32 +55,86 @@ export const authenticateToken = (req, res, next) => {
 };
 
 app.post("/mesocycles", authenticateToken, csrfProtection, (req, res) => {
-  const { name, weeks, plan } = req.body;
+  const { name, weeks, plan, daysPerWeek, isCurrent, completedDate } = req.body;
 
   const userID = req.user.id;
 
-  const query =
-    "INSERT INTO mesocycles (name, weeks, plan, user_id) VALUES (?,?,?,?)";
-
-  db.run(query, [name, weeks, JSON.stringify(plan), userID], function (err) {
-    if (err) {
-      return res.status(500).json({ error: err.message });
+  const query = `
+ INSERT INTO Mesocycles (name, weeks, plan, daysPerWeek, isCurrent, completedDate, user_id) 
+  VALUES (?, ?, ?, ?, ?, ?, ?)
+`;
+  db.run(
+    query,
+    [name, weeks, JSON.stringify(plan), daysPerWeek, isCurrent, null, userID],
+    function (err) {
+      if (err) {
+        console.error("Database error:", err.message);
+        return res.status(500).json({ error: err.message });
+      }
+      res.status(201).json({ id: this.lastID });
     }
-    res.status(201).json({ id: this.lastID });
-  });
+  );
 });
 app.get("/mesocycles", authenticateToken, csrfProtection, (req, res) => {
-  console.log("Fetching mesocycles for user:", req.user.id); // Add this line
+  console.log("Fetching mesocycles for user:", req.user.id);
   const userID = req.user.id;
   const query = "SELECT * FROM mesocycles WHERE user_id = ?";
 
   db.all(query, [userID], (err, rows) => {
     if (err) {
-      console.log("Error fetching mesocycles:", err); // Add this line
+      console.log("Error fetching mesocycles:", err);
       return res.status(500).json({ error: err.message });
     }
-    res.json(rows);
+    res.json(
+      rows.map((row) => ({
+        ...row,
+        plan: JSON.parse(row.plan),
+        isCurrent: !!row.isCurrent,
+        completedDate: row.completedDate
+          ? new Date(row.completedDate).toISOString()
+          : null,
+      }))
+    );
   });
+});
+
+app.put("/mesocycles/:id", authenticateToken, csrfProtection, (req, res) => {
+  const { id } = req.params;
+  const { name, weeks, plan, daysPerWeek, isCurrent, completedDate } = req.body;
+
+  const query = `
+    UPDATE mesocycles
+    SET name = ?, weeks = ?, plan = ?, daysPerWeek = ?, isCurrent = ?, completedDate = ?
+    WHERE id = ? AND user_id = ?
+  `;
+
+  const userID = req.user.id;
+  const allDaysCompleted = plan.every((day) =>
+    day.exercises.every((exercise) => exercise.completed)
+  );
+  const newCompletedDate = allDaysCompleted
+    ? new Date().toISOString()
+    : completedDate;
+
+  db.run(
+    query,
+    [
+      name,
+      weeks,
+      JSON.stringify(plan),
+      daysPerWeek,
+      isCurrent,
+      newCompletedDate,
+      id,
+      userID,
+    ],
+    function (err) {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      res.status(200).json({ changes: this.changes });
+    }
+  );
 });
 
 // app.use("/api", mesocycleRoutes);

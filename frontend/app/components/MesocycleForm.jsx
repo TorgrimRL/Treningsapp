@@ -16,6 +16,7 @@ const MesocycleForm = ({ onSubmit }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [mesocycleName, setMesocycleName] = useState("");
   const [numberOfWeeks, setNumberOfWeeks] = useState("");
+  const [isCurrent, setIsCurrent] = useState(false);
 
   const handleChange = (dayIndex, exerciseIndex, field, value) => {
     const updatedPlan = [...plan];
@@ -77,10 +78,14 @@ const MesocycleForm = ({ onSubmit }) => {
         priority: selectedGroups[exercise.muscleGroup],
       })),
     }));
+    const daysPerWeek = plan.length;
     const mesocycleData = {
       name: mesocycleName,
       weeks: numberOfWeeks,
+      daysPerWeek: daysPerWeek,
       plan: updatedPlan,
+      completedDate: null,
+      isCurrent: false,
     };
     onSubmit(mesocycleData);
     setIsModalOpen(false);

@@ -77,7 +77,7 @@ export default function Navbar() {
               <li>
                 <a
                   href="/"
-                  className="block px-2 py-2 text-gray-800 hover:bg-gray-200"
+                  className="block px-4 py-2 text-gray-800 hover:bg-gray-200"
                 >
                   Home
                 </a>
