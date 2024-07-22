@@ -9,7 +9,7 @@ const MesocycleOverview = () => {
   useEffect(() => {
     const fetchMesocycles = async () => {
       try {
-        const response = await fetch("http://localhost:3000/mesocycles", {
+        const response = await fetch("http://localhost:3000/api/mesocycles", {
           method: "GET",
           credentials: "include",
         });

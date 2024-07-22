@@ -21,7 +21,7 @@ export default function NewMesocycle() {
     try {
       const token = getCookie("token");
       console.log("Retrieved token:", token);
-      const response = await fetch("http://localhost:3000/mesocycles", {
+      const response = await fetch("http://localhost:3000/api/mesocycles", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
