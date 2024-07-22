@@ -1,10 +1,27 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEllipsisV } from "@fortawesome/free-solid-svg-icons";
 
 const MesocycleOverview = () => {
   const [mesocycles, setMesocycles] = useState([]);
   const [openMenus, setOpenMenus] = useState({});
+  const menuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutSide = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setOpenMenus({});
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutSide);
+    document.addEventListener("touchstart", handleClickOutSide);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutSide);
+      document.removeEventListener("touchstart", handleClickOutSide);
+    };
+  }, [menuRef]);
 
   useEffect(() => {
     const fetchMesocycles = async () => {
@@ -89,7 +106,7 @@ const MesocycleOverview = () => {
                   ? new Date(mesocycle.completedDate).toLocaleDateString()
                   : "NOT COMPLETED"}
               </span>
-              <div className="relative">
+              <div className="relative" ref={menuRef}>
                 <button
                   onClick={() => toggleMenu(mesocycle.id)}
                   className="text-white focus:outline-none py-2"
@@ -98,12 +115,16 @@ const MesocycleOverview = () => {
                 </button>
               </div>
               {openMenus[mesocycle.id] && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10">
+                <div
+                  className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10"
+                  ref={menuRef}
+                >
                   <ul className="py-1">
                     <li>
                       <a
                         href="#"
                         className="block px-4 py-2 text-gray-800 hover:bg-gray-200"
+                        // onClick={(e) => e.stopPropagation()}
                       >
                         Edit
                       </a>

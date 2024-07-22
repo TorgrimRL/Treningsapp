@@ -1,14 +1,28 @@
-import React, { useState, useEffect } from "react";
-import { Form } from "@remix-run/react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../utils/AuthContext";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const { isLoggedIn } = useAuth();
+  const menuRef = useRef(null);
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
   };
+  useEffect(() => {
+    const handleClickOutSide = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutSide);
+    document.addEventListener("touchstart", handleClickOutSide);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutSide);
+      document.removeEventListener("touchstart", handleClickOutSide);
+    };
+  }, [menuRef]);
 
   useEffect(() => {
     console.log("Isloggedin status:", isLoggedIn);
@@ -72,7 +86,10 @@ export default function Navbar() {
           )}
         </div>
         {isOpen && (
-          <div className="absolute right-0 top-full w-48 bg-white rounded-md shadow-lg z-10 md:hidden">
+          <div
+            className="absolute right-0 top-full w-48 bg-white rounded-md shadow-lg z-10 md:hidden"
+            ref={menuRef}
+          >
             <ul className="py-1">
               <li>
                 <a

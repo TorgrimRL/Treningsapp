@@ -31,128 +31,13 @@ app.use(
 );
 
 app.use((req, res, next) => {
-  // console.log("Request Headers:", req.headers);
-  // console.log("Cookies:", req.cookies);
   next();
 });
-// CSRF-beskyttelse middleware
-// const csrfProtection = csurf({ cookie: true });
-// export { csrfProtection };
-// app.use(csrfProtection);
 
 const secretKey = "secretkey";
 
-// // Middleware for å verifisere token
-// export const authenticateToken = (req, res, next) => {
-//   console.log("Request Headers:", req.headers);
-//   const token = req.cookies.token;
-//   if (!token) {
-//     console.log("No token provided");
-//     return res.status(401).send("Access Denied");
-//   }
-//   try {
-//     const verified = jwt.verify(token, secretKey);
-//     req.user = verified;
-//     next();
-//   } catch (error) {
-//     console.log("Invalid Token:", error);
-//     res.status(400).send("Invalid Token");
-//   }
-// };
-
-// app.post("/mesocycles", authenticateToken, csrfProtection, (req, res) => {
-//   const { name, weeks, plan, daysPerWeek, isCurrent, completedDate } = req.body;
-
-//   const userID = req.user.id;
-
-//   const query = `
-//  INSERT INTO Mesocycles (name, weeks, plan, daysPerWeek, isCurrent, completedDate, user_id)
-//   VALUES (?, ?, ?, ?, ?, ?, ?)
-// `;
-//   db.run(
-//     query,
-//     [name, weeks, JSON.stringify(plan), daysPerWeek, isCurrent, null, userID],
-//     function (err) {
-//       if (err) {
-//         console.error("Database error:", err.message);
-//         return res.status(500).json({ error: err.message });
-//       }
-//       res.status(201).json({ id: this.lastID });
-//     }
-//   );
-// });
-// app.get("/mesocycles", authenticateToken, csrfProtection, (req, res) => {
-//   console.log("Fetching mesocycles for user:", req.user.id);
-//   const userID = req.user.id;
-//   const query = "SELECT * FROM mesocycles WHERE user_id = ?";
-
-//   db.all(query, [userID], (err, rows) => {
-//     if (err) {
-//       console.log("Error fetching mesocycles:", err);
-//       return res.status(500).json({ error: err.message });
-//     }
-//     res.json(
-//       rows.map((row) => ({
-//         ...row,
-//         plan: JSON.parse(row.plan),
-//         isCurrent: !!row.isCurrent,
-//         completedDate: row.completedDate
-//           ? new Date(row.completedDate).toISOString()
-//           : null,
-//       }))
-//     );
-//   });
-// });
-
-// app.put("/mesocycles/:id", authenticateToken, csrfProtection, (req, res) => {
-//   const { id } = req.params;
-//   const { name, weeks, plan, daysPerWeek, isCurrent, completedDate } = req.body;
-
-//   const query = `
-//     UPDATE mesocycles
-//     SET name = ?, weeks = ?, plan = ?, daysPerWeek = ?, isCurrent = ?, completedDate = ?
-//     WHERE id = ? AND user_id = ?
-//   `;
-
-//   const userID = req.user.id;
-//   const allDaysCompleted = plan.every((day) =>
-//     day.exercises.every((exercise) => exercise.completed)
-//   );
-//   const newCompletedDate = allDaysCompleted
-//     ? new Date().toISOString()
-//     : completedDate;
-
-//   db.run(
-//     query,
-//     [
-//       name,
-//       weeks,
-//       JSON.stringify(plan),
-//       daysPerWeek,
-//       isCurrent,
-//       newCompletedDate,
-//       id,
-//       userID,
-//     ],
-//     function (err) {
-//       if (err) {
-//         return res.status(500).json({ error: err.message });
-//       }
-//       res.status(200).json({ changes: this.changes });
-//     }
-//   );
-// });
-
 app.use("/api", mesocycleRoutes);
 csrfTokenRoute(app);
-
-// // Rute for å hente en CSRF-token
-// app.get("/csrf-token", authenticateToken, csrfProtection, (req, res) => {
-//   const csrfToken = req.csrfToken();
-//   res.cookie("XSRF-TOKEN", csrfToken);
-//   console.log("Generated CSRF Token:", csrfToken);
-//   res.json({ csrfToken });
-// });
 
 // Rute for brukerregistrering (uten CSRF-beskyttelse)
 app.post("/register", async (req, res) => {
