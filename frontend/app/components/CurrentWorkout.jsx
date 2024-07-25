@@ -2,6 +2,19 @@ import { useEffect, useState } from "react";
 import { FaCalendarAlt } from "react-icons/fa";
 import CalendarModal from "./CalendarModal";
 
+const getFirstIncompleteDay = (plan) => {
+  for (let i = 0; i < plan.length; i++) {
+    const day = plan[i];
+    const allExercisesCompleted = day.exercises.every(
+      (exercise) => exercise.completed
+    );
+    if (!allExercisesCompleted) {
+      return i;
+    }
+    return plan.length - 1;
+  }
+};
+
 export default function CurrentWorkout() {
   const [currentMesocycle, setCurrentMesocycle] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,6 +36,9 @@ export default function CurrentWorkout() {
         const data = await response.json();
         console.log("Mesocycle Data:", data);
         setCurrentMesocycle(data);
+
+        const firstIncompleteDayIndex = getFirstIncompleteDay(data.plan);
+        setCurrentDayIndex(firstIncompleteDayIndex);
       } catch (error) {
         console.error("Error fetchign mesocycles", error);
       } finally {
@@ -35,6 +51,7 @@ export default function CurrentWorkout() {
   if (loading) {
     return <div>Loading...</div>;
   }
+
   const handleDayClick = (index) => {
     setCurrentDayIndex(index);
     setIsCalendarModalOpen(false); // Lukk modalen når en dag blir klikket
@@ -59,11 +76,9 @@ export default function CurrentWorkout() {
     return { week, day };
   };
 
-  const firstDay = currentMesocycle.plan && currentMesocycle.plan[0];
-
   return (
     <div>
-      <h1 className="text-sm text-gray-500 bg-gray-200 pl-4">
+      <h1 className="text-sm text-gray-500 bg-gray-200 pl-4 uppercase">
         {currentMesocycle.name}
       </h1>
       {currentMesocycle ? (
@@ -77,7 +92,7 @@ export default function CurrentWorkout() {
               <li key={index} className="mb-4">
                 <div className="p-1 bg-gray-200 rounded mb-2 flex items-center justify-between">
                   <div className="space-x-2 pl-3">
-                    <span className="font-semibold">
+                    <span className="font-semibold uppercase">
                       Week {week} Day {dayNumber} {getDayLabel(day)}
                     </span>{" "}
                   </div>
