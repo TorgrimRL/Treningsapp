@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { FaCalendarAlt } from "react-icons/fa";
 
 export default function CurrentWorkout() {
   const [currentMesocycle, setCurrentMesocycle] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchMesocycle = async () => {
@@ -17,26 +19,74 @@ export default function CurrentWorkout() {
         setCurrentMesocycle(data);
       } catch (error) {
         console.error("Error fetchign mesocycles", error);
+      } finally {
+        setLoading(false);
       }
     };
     fetchMesocycle();
   }, []);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  const getDayLabel = (day) => {
+    const daysOfWeek = [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+      "Sunday",
+    ];
+    return daysOfWeek.includes(day.label) ? day.label : "";
+  };
+
+  const getWeekAndDay = (index, daysOfWeek) => {
+    const week = Math.floor(index / daysOfWeek) + 1;
+    const day = (index % daysOfWeek) + 1;
+    return { week, day };
+  };
+
   const firstDay = currentMesocycle.plan && currentMesocycle.plan[0];
 
   return (
     <div>
-      <h1>Current Workout</h1>
-      {firstDay ? (
-        <div>
-          <h3>{firstDay.label}</h3>
-          <ul>
-            {firstDay.exercises.map((exercise, exIndex) => (
-              <li key={exIndex}>{exercise.exercise}</li>
-            ))}
-          </ul>
-        </div>
+      <h1 className="text-sm text-gray-500 bg-gray-200 pl-4">
+        {currentMesocycle.name}
+      </h1>
+      {currentMesocycle ? (
+        <ul>
+          {currentMesocycle.plan.map((day, index) => {
+            const { week, day: dayNumber } = getWeekAndDay(
+              index,
+              currentMesocycle.daysPerWeek
+            );
+            return (
+              <li key={index} className="mb-4">
+                <div className="p-1 bg-gray-200 rounded mb-2 flex items-center justify-between">
+                  <div className="space-x-2 pl-3">
+                    <span className="font-semibold">
+                      Week {week} Day {dayNumber} {getDayLabel(day)}
+                    </span>{" "}
+                  </div>
+                  <FaCalendarAlt className="text-gray-500" />{" "}
+                  {/* Calendar icon */}
+                </div>
+                <ul className="list-disc list-inside">
+                  {day.exercises.map((exercise, exIndex) => (
+                    <li key={exIndex} className="ml-4">
+                      {exercise.exercise}
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            );
+          })}
+        </ul>
       ) : (
-        <div>No days found in current workout</div>
+        <div className="text-red-500">No current workout found</div>
       )}
     </div>
   );
