@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import Modal from "react-modal";
 import MuscleGroupModal from "./MuscleGroupModal";
+import { useNavigate } from "@remix-run/react";
 
 Modal.setAppElement("#root");
 
@@ -16,7 +17,8 @@ const MesocycleForm = ({ onSubmit }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [mesocycleName, setMesocycleName] = useState("");
   const [numberOfWeeks, setNumberOfWeeks] = useState("");
-  const [isCurrent, setIsCurrent] = useState(false);
+
+  const navigate = useNavigate();
 
   const handleChange = (dayIndex, exerciseIndex, field, value) => {
     const updatedPlan = [...plan];
@@ -71,24 +73,41 @@ const MesocycleForm = ({ onSubmit }) => {
   };
 
   const handleModalSave = (selectedGroups) => {
-    const updatedPlan = plan.map((day) => ({
-      ...day,
-      exercises: day.exercises.map((exercise) => ({
-        ...exercise,
-        priority: selectedGroups[exercise.muscleGroup],
-      })),
-    }));
-    const daysPerWeek = plan.length;
+    const firstWeekPlan = [...plan];
+    const totalDays = numberOfWeeks * firstWeekPlan.length;
+    const filledPlan = [];
+
+    for (let i = 0; i < numberOfWeeks; i++) {
+      filledPlan.push(
+        ...firstWeekPlan.map((day) => ({
+          ...day,
+          exercises: day.exercises.map((exercise) => ({
+            ...exercise,
+            priority: selectedGroups[exercise.muscleGroup],
+          })),
+        }))
+      );
+    }
+
+    // const updatedPlan = plan.map((day) => ({
+    //   ...day,
+    //   exercises: day.exercises.map((exercise) => ({
+    //     ...exercise,
+    //     priority: selectedGroups[exercise.muscleGroup],
+    //   })),
+    // }));
+    // const daysPerWeek = plan.length;
     const mesocycleData = {
       name: mesocycleName,
       weeks: numberOfWeeks,
-      daysPerWeek: daysPerWeek,
-      plan: updatedPlan,
+      daysPerWeek: firstWeekPlan.length,
+      plan: filledPlan,
       completedDate: null,
-      isCurrent: false,
+      isCurrent: true,
     };
     onSubmit(mesocycleData);
     setIsModalOpen(false);
+    navigate("currentworkout");
   };
 
   return (
@@ -229,6 +248,7 @@ const MesocycleForm = ({ onSubmit }) => {
         onRequestClose={() => setIsModalOpen(false)}
         muscleGroups={muscleGroups}
         onSave={handleModalSave}
+        href="/current-workout"
       />
     </form>
   );

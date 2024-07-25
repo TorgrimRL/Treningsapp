@@ -5,26 +5,43 @@ import { authenticateToken, csrfProtection } from "../middleware.js";
 const router = express.Router();
 
 // Endpoint to add a new mesocycle
-router.post("/mesocycles", authenticateToken, csrfProtection, (req, res) => {
-  const { name, weeks, plan, daysPerWeek, isCurrent, completedDate } = req.body;
+router.post("/mesocycles", authenticateToken, (req, res) => {
+  const userId = req.user.id; // Assuming req.user contains the authenticated user's information
+  const { name, weeks, daysPerWeek, plan, completedDate, isCurrent } = req.body;
 
-  const userID = req.user.id;
-
-  const query = `
- INSERT INTO Mesocycles (name, weeks, plan, daysPerWeek, isCurrent, completedDate, user_id) 
-  VALUES (?, ?, ?, ?, ?, ?, ?)
-`;
-  db.run(
-    query,
-    [name, weeks, JSON.stringify(plan), daysPerWeek, isCurrent, null, userID],
-    function (err) {
-      if (err) {
-        console.error("Database error:", err.message);
-        return res.status(500).json({ error: err.message });
-      }
-      res.status(201).json({ id: this.lastID });
+  // Update all existing mesocycles to set isCurrent to false
+  const updateQuery = "UPDATE mesocycles SET isCurrent = 0 WHERE user_id = ?";
+  db.run(updateQuery, [userId], function (err) {
+    if (err) {
+      console.error("Error updating mesocycles:", err.message);
+      return res.status(500).json({ error: "Failed to update mesocycles" });
     }
-  );
+
+    // Insert the new mesocycle with isCurrent = true
+    const insertQuery = `
+      INSERT INTO mesocycles (name, weeks, daysPerWeek, plan, user_id, completedDate, isCurrent)
+      VALUES (?, ?, ?, ?, ?, ?, 1)
+    `;
+    const planJson = JSON.stringify(plan);
+
+    db.run(
+      insertQuery,
+      [name, weeks, daysPerWeek, planJson, userId, completedDate],
+      function (err) {
+        if (err) {
+          console.error("Error creating new mesocycle:", err.message);
+          return res
+            .status(500)
+            .json({ error: "Failed to create new mesocycle" });
+        }
+
+        res.status(201).json({
+          message: "Mesocycle created successfully",
+          mesocycleId: this.lastID,
+        });
+      }
+    );
+  });
 });
 
 // Fetch all mesocycles

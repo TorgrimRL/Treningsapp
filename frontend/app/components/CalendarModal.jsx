@@ -33,13 +33,13 @@ export default function CalendarModal({
     >
       <div className="p-4 bg-gray-600">
         <div
-          className="grid gap-0 text-center"
+          className="grid gap-0 text-center transform scale-75"
           style={{
-            gridTemplateColumns: `repeat(${mesocycle.weeks},1fr)`,
-            gridTemplateRows: `repeat(${mesocycle.daysPerWeek}, auto)`,
+            gridTemplateColumns: `repeat(${numCols}, 1fr)`,
+            gridTemplateRows: `repeat(${numRows}, auto)`,
           }}
         >
-          {Array.from({ length: mesocycle.weeks }).map((_, weekIndex) => (
+          {Array.from({ length: numCols }).map((_, weekIndex) => (
             <div
               key={weekIndex}
               className="border-transparent text-center bg-black-600 text-white"
@@ -48,33 +48,29 @@ export default function CalendarModal({
                 Week {weekIndex + 1}
               </h3>
               <ul className="list-none p-0 m-0 space-y-0">
-                {mesocycle.plan
-                  .slice(
-                    weekIndex * mesocycle.daysPerWeek,
-                    (weekIndex + 1) * mesocycle.daysPerWeek
-                  )
-                  .map((day, dayIndex) => (
+                {Array.from({ length: numRows }).map((_, dayIndex) => {
+                  const day = mesocycle.plan[weekIndex * numRows + dayIndex];
+                  if (!day) return null;
+                  return (
                     <li
                       key={dayIndex}
                       className={`border p-0 mb-1 cursor-pointer text-xs uppercase min-w-[75px] min-h-[50px] flex items-center justify-center ${
-                        currentDayIndex ===
-                        weekIndex * mesocycle.daysPerWeek + dayIndex
+                        currentDayIndex === weekIndex * numRows + dayIndex
                           ? "bg-red-500"
                           : "bg-gray-800"
                       }`}
                       onClick={() => {
                         console.log(
                           "Day item clicked:",
-                          weekIndex * mesocycle.daysPerWeek + dayIndex
+                          weekIndex * numRows + dayIndex
                         );
-                        onDayClick(
-                          weekIndex * mesocycle.daysPerWeek + dayIndex
-                        );
+                        onDayClick(weekIndex * numRows + dayIndex);
                       }}
                     >
-                      {day.label ? `${day.label}` : ""}
+                      {day.label ? `${day.label}` : `Day ${dayIndex + 1}`}
                     </li>
-                  ))}
+                  );
+                })}
               </ul>
             </div>
           ))}
