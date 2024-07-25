@@ -1,9 +1,14 @@
 import { useEffect, useState } from "react";
 import { FaCalendarAlt } from "react-icons/fa";
+import CalendarModal from "./CalendarModal";
 
 export default function CurrentWorkout() {
   const [currentMesocycle, setCurrentMesocycle] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
+  const [currentDayIndex, setCurrentDayIndex] = useState(null);
+
+  const openCalendarModal = () => setIsCalendarModalOpen(true);
 
   useEffect(() => {
     const fetchMesocycle = async () => {
@@ -16,6 +21,7 @@ export default function CurrentWorkout() {
           }
         );
         const data = await response.json();
+        console.log("Mesocycle Data:", data);
         setCurrentMesocycle(data);
       } catch (error) {
         console.error("Error fetchign mesocycles", error);
@@ -29,6 +35,10 @@ export default function CurrentWorkout() {
   if (loading) {
     return <div>Loading...</div>;
   }
+  const handleDayClick = (index) => {
+    setCurrentDayIndex(index);
+    setIsCalendarModalOpen(false); // Lukk modalen når en dag blir klikket
+  };
 
   const getDayLabel = (day) => {
     const daysOfWeek = [
@@ -71,7 +81,10 @@ export default function CurrentWorkout() {
                       Week {week} Day {dayNumber} {getDayLabel(day)}
                     </span>{" "}
                   </div>
-                  <FaCalendarAlt className="text-gray-500" />{" "}
+                  <FaCalendarAlt
+                    className="text-gray-500 cursor-pointer"
+                    onClick={openCalendarModal}
+                  />{" "}
                   {/* Calendar icon */}
                 </div>
                 <ul className="list-disc list-inside">
@@ -88,6 +101,15 @@ export default function CurrentWorkout() {
       ) : (
         <div className="text-red-500">No current workout found</div>
       )}
+      <CalendarModal
+        isOpen={isCalendarModalOpen}
+        onRequestClose={() => setIsCalendarModalOpen(false)}
+        mesocycle={currentMesocycle}
+        currentDayIndex={currentDayIndex}
+        onDayClick={handleDayClick}
+      >
+        <h2>Mesocycle Overview</h2>
+      </CalendarModal>
     </div>
   );
 }
