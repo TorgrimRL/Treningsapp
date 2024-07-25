@@ -52,7 +52,7 @@ router.get("/mesocycles", authenticateToken, csrfProtection, (req, res) => {
 });
 
 // Update a specific mesocycle
-router.put("/mesocycles/:id", authenticateToken, csrfProtection, (req, res) => {
+router.put("/mesocycles/:id", authenticateToken, (req, res) => {
   const { id } = req.params;
   const { name, weeks, plan, daysPerWeek, isCurrent, completedDate } = req.body;
 
@@ -107,5 +107,35 @@ router.get("/mesocycles/:id", (req, res) => {
     res.json(row);
   });
 });
+
+// Endpoint to fetch the current workout
+router.get(
+  "/current-workout",
+  authenticateToken,
+  csrfProtection,
+  (req, res) => {
+    console.log("Fetching current workout for user:", req.user.id);
+    const query =
+      "SELECT * FROM mesocycles WHERE isCurrent = 1 AND user_id = ?";
+    db.get(query, [req.user.id], (err, row) => {
+      if (err) {
+        console.log("Error fetching current workout:", err);
+        return res.status(500).json({ error: err.message });
+      }
+      if (!row) {
+        console.log("No current workout found for user:", req.user.id);
+        return res.status(404).json({ error: "Current workout not found" });
+      }
+      res.json({
+        ...row,
+        plan: JSON.parse(row.plan), // Ensure plan is parsed as JSON
+        isCurrent: !!row.isCurrent,
+        completedDate: row.completedDate
+          ? new Date(row.completedDate).toISOString()
+          : null,
+      });
+    });
+  }
+);
 
 export default router;

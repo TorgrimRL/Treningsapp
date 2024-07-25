@@ -14,4 +14,12 @@ export default defineConfig({
   build: {
     sourcemap: true,
   },
+  server: {
+    proxy: {
+      "/installHook.js.map": "http://localhost:3000", // Dummy route to avoid errors
+      "/backendManager.js.map": "http://localhost:3000", // Dummy route to avoid errors
+      "/renderer.js.map": "http://localhost:3000", // Dummy route to avoid errors
+      "/react_devtools_backend_compact.js.map": "http://localhost:3000", // Dummy route to avoid errors
+    },
+  },
 });

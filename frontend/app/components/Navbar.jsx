@@ -71,6 +71,9 @@ export default function Navbar() {
           )}
           {isLoggedIn && (
             <>
+              <a href="/currentworkout" className="text-white">
+                Current workout
+              </a>
               <a href="/mesocycles/new" className="text-white">
                 Plan a new mesocycle
               </a>
@@ -122,6 +125,12 @@ export default function Navbar() {
               {isLoggedIn && (
                 <>
                   <li>
+                    <a
+                      href="/currentworkout"
+                      className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-200"
+                    >
+                      Current workout
+                    </a>
                     <a
                       href="/mesocycles"
                       className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-200"

@@ -162,6 +162,15 @@ app.get("/", (req, res) => {
   res.send("Welcome to the Workout App API!");
 });
 
+app.get("/api/current-workout", authenticateToken, async (req, res) => {
+  // Dummy data for testing
+  const currentWorkout = {
+    exercises: [{ name: "Push-up" }, { name: "Squat" }, { name: "Pull-up" }],
+  };
+
+  res.json(currentWorkout);
+});
+
 // Endepunkt for å lage en ny treningsøkt
 app.post("/workouts", authenticateToken, csrfProtection, (req, res) => {
   const { error } = workoutSchema.validate(req.body);
