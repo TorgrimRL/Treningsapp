@@ -40,16 +40,16 @@ export default function Navbar() {
         boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
       }}
     >
-      <div className="container mx-auto flex justify-between items-center px-4 text-white bg-darkGray">
+      <div className="container mx-auto flex justify-between items-center px-4 py-3 text-white bg-darkGray">
         <div className="text-white bg-darkGray text-xl font-bold">My App</div>
         <div className="md:hidden relative">
           <button
             onClick={toggleMenu}
-            className="text-white focus:outline-none"
+            className="text-white focus:outline-none "
             style={{
               position: "fixed",
-              top: "2px",
-              right: "10px",
+              top: "8px",
+              right: "16px",
             }}
           >
             ☰

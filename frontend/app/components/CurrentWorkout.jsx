@@ -28,7 +28,7 @@ export default function CurrentWorkout() {
       [dayIndex]: {
         ...prev[dayIndex],
         [exerciseIndex]: prev[dayIndex][exerciseIndex].map((set, sIndex) =>
-          sIndex === setIndex ? { ...set, reps: value } : set
+          sIndex === setIndex ? { ...set, reps: value, completed: false } : set
         ),
       },
     }));
@@ -40,7 +40,9 @@ export default function CurrentWorkout() {
       [dayIndex]: {
         ...prev[dayIndex],
         [exerciseIndex]: prev[dayIndex][exerciseIndex].map((set, sIndex) =>
-          sIndex === setIndex ? { ...set, weight: value } : set
+          sIndex === setIndex
+            ? { ...set, weight: value, completed: false }
+            : set
         ),
       },
     }));
@@ -156,6 +158,7 @@ export default function CurrentWorkout() {
       };
 
       // Updating mesocycle with the new data for sets
+
       const updatedMesocycle = {
         ...currentMesocycle,
         plan: currentMesocycle.plan.map((day, dIndex) =>
@@ -205,13 +208,13 @@ export default function CurrentWorkout() {
     });
   };
   return (
-    <div>
-      <h1 className="text-sm text-gray-500 bg-darkGray pl-4 uppercase">
+    <div className="pt-6">
+      <h1 className="text-sm text-gray-500 bg-darkGray sticky top-12 z-20 pl-4 uppercase">
         {currentMesocycle.name}
       </h1>
       {currentDay ? (
         <div className="mb-4">
-          <div className="p-1 text-white bg-darkGray mb-2 flex items-center justify-between">
+          <div className="p-1 text-white bg-darkGray mb-1 flex items-center justify-between sticky top-16 z-10">
             <div className="space-x-2 pl-3">
               <span className="font-semibold uppercase">
                 Week {week} Day {dayNumber} {getDayLabel(currentDay)}
@@ -223,80 +226,108 @@ export default function CurrentWorkout() {
             />{" "}
             {/* Calendar icon */}
           </div>
-          <ul className="list-disc list-inside text-white bg-darkGray">
-            {currentDay.exercises.map((exercise, exIndex) => (
-              <li key={exIndex} className="ml-4 overflow-auto ">
-                {exercise.exercise}
-                {sets[currentDayIndex]?.[exIndex]?.map((set, setIndex) => (
-                  <div key={setIndex} className="flex items-center space-x-2">
-                    <label className="flex-1">
-                      WEIGHT
-                      <input
-                        type="number"
-                        value={set.weight || ""}
-                        onChange={(e) =>
-                          handleWeightChange(
-                            currentDayIndex,
-                            exIndex,
-                            setIndex,
-                            e.target.value
-                          )
-                        }
-                        placeholder="KGS"
-                        className="border rounded p-1"
-                      ></input>
-                    </label>
-                    <label className="flex-1">
-                      REPS
-                      <input
-                        type="number"
-                        value={set.reps || ""}
-                        onChange={(e) =>
-                          handleRepsChange(
-                            currentDayIndex,
-                            exIndex,
-                            setIndex,
-                            e.target.value
-                          )
-                        }
-                        placeholder="3 REPS IN RESERVE"
-                        className="border rounded p-1"
-                      ></input>
-                    </label>
-                    <label className=" flex-1">
-                      COMPLETED
-                      <input
-                        type="checkbox"
-                        checked={
-                          sets[currentDayIndex]?.[exIndex]?.[setIndex]
-                            ?.completed || false
-                        }
-                        onChange={(e) =>
-                          handleSetCompletionChange(
-                            currentDayIndex,
-                            exIndex,
-                            setIndex,
-                            e.target.checked,
-                            sets[currentDayIndex]?.[exIndex]?.[setIndex]
-                              ?.weight || "",
-                            sets[currentDayIndex]?.[exIndex]?.[setIndex]
-                              ?.reps || ""
-                          )
-                        }
-                        className="border rounded p-1"
-                      />
-                    </label>
+          <div className="overflow-y-auto max-h-[calc(100vh-150px)]">
+            <ul className="list-none list-inside text-white ">
+              {currentDay.exercises.map((exercise, exIndex) => (
+                <li key={exIndex} className="p-2 overflow-auto bg-darkGray">
+                  <div className="flex flex-col items-start">
+                    <span className="text-sm text-white border uppercase border-red-500 bg-darkBackgroundRed inline-block w-auto px-2 py-1 ">
+                      {exercise.muscleGroup}
+                    </span>
+                    <span className="font-semibold">{exercise.exercise}</span>
                   </div>
-                ))}{" "}
-                <button
-                  onClick={() => addSet(currentDayIndex, exIndex)}
-                  className="text-white"
-                >
-                  ADD SET
-                </button>
-              </li>
-            ))}{" "}
-          </ul>
+                  {sets[currentDayIndex]?.[exIndex]?.map((set, setIndex) => (
+                    <div
+                      key={setIndex}
+                      className="flex flex-row items-stretch items-center space-y-0 mb-4 border-b border-gray-600 pb-2"
+                    >
+                      <div className="flex flex-col items-center space-y-1 flex-grow">
+                        <label className="text-center h-6 flex items-center justify-center">
+                          WEIGHT
+                        </label>
+                        <input
+                          type="number"
+                          value={set.weight || ""}
+                          onChange={(e) =>
+                            handleWeightChange(
+                              currentDayIndex,
+                              exIndex,
+                              setIndex,
+                              e.target.value
+                            )
+                          }
+                          placeholder="KGS"
+                          className="bg-inputBGGray text-center border-black w-20 rounded p-1"
+                          style={{
+                            WebkitAppearance: "none",
+                            MozAppearance: "textfield",
+                          }}
+                        ></input>
+                      </div>
+                      <div className="flex flex-col items-center space-y-1 flex-grow">
+                        <label className="text-center h-6 flex items-center justify-center ">
+                          REPS
+                        </label>
+                        <input
+                          type="number"
+                          value={set.reps || ""}
+                          onChange={(e) =>
+                            handleRepsChange(
+                              currentDayIndex,
+                              exIndex,
+                              setIndex,
+                              e.target.value
+                            )
+                          }
+                          placeholder="3 REPS IN RESERVE"
+                          className="bg-inputBGGray text-center border-black w-20 rounded p-1"
+                          style={{
+                            WebkitAppearance: "none",
+                            MozAppearance: "textfield",
+                          }}
+                        ></input>
+                      </div>
+                      <div className="flex flex-col items-center space-y-1 flex-grow">
+                        <label className="text-center h-6 flex items-center justify-center">
+                          LOG
+                        </label>
+                        <input
+                          type="checkbox"
+                          checked={
+                            sets[currentDayIndex]?.[exIndex]?.[setIndex]
+                              ?.completed || false
+                          }
+                          onChange={(e) =>
+                            handleSetCompletionChange(
+                              currentDayIndex,
+                              exIndex,
+                              setIndex,
+                              e.target.checked,
+                              sets[currentDayIndex]?.[exIndex]?.[setIndex]
+                                ?.weight || "",
+                              sets[currentDayIndex]?.[exIndex]?.[setIndex]
+                                ?.reps || ""
+                            )
+                          }
+                          className="border rounded p-1 scale-125 text-green-500 focus:ring-green-500 checked:bg-green-500 checked:border-transparent"
+                          style={{
+                            width: "20px",
+                            height: "20px",
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}{" "}
+                  <button
+                    onClick={() => addSet(currentDayIndex, exIndex)}
+                    className="text-white"
+                  >
+                    ADD SET
+                  </button>
+                </li>
+              ))}{" "}
+            </ul>
+          </div>
         </div>
       ) : (
         <div className="text-red-500">No current workout found</div>

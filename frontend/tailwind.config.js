@@ -5,6 +5,9 @@ export default {
       colors: {
         darkGray: "#333333",
         darkestGray: "#1d1a1d",
+        inputBGGray: "#262626",
+        inputNRGray: "8a8a8a",
+        darkBackgroundRed: "#543233",
       },
     },
   },
