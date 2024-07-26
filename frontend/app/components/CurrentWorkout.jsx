@@ -24,41 +24,62 @@ export default function CurrentWorkout() {
   const [reps, setReps] = useState({});
   const [weight, setWeight] = useState({});
 
-  const handleSetChange = (exerciseIndex, setIndex, value) => {
-    setSets((prev) => ({
-      ...prev,
-      [exerciseIndex]: { ...prev[exerciseIndex], [setIndex]: value },
-    }));
-  };
+  //   const handleSetChange = (exerciseIndex, setIndex, value) => {
+  //     setSets((prev) => ({
+  //       ...prev,
+  //       [exerciseIndex]: { ...prev[exerciseIndex], [setIndex]: value },
+  //     }));
+  //   };
 
-  const handleRepsChange = (exerciseIndex, setIndex, value) => {
+  const handleRepsChange = (dayIndex, exerciseIndex, setIndex, value) => {
     setReps((prev) => ({
       ...prev,
-      [exerciseIndex]: { ...prev[exerciseIndex], [setIndex]: value },
+      [dayIndex]: {
+        ...prev[dayIndex],
+        [exerciseIndex]: {
+          ...prev[dayIndex]?.[exerciseIndex],
+          [setIndex]: value,
+        },
+      },
     }));
   };
 
-  const handleWeightChange = (exerciseIndex, setIndex, value) => {
+  const handleWeightChange = (dayIndex, exerciseIndex, setIndex, value) => {
     setWeight((prev) => ({
       ...prev,
-      [exerciseIndex]: { ...prev[exerciseIndex], [setIndex]: value },
+      [dayIndex]: {
+        ...prev[dayIndex],
+        [exerciseIndex]: {
+          ...prev[dayIndex]?.[exerciseIndex],
+          [setIndex]: value,
+        },
+      },
     }));
   };
 
-  const addSet = (exerciseIndex) => {
+  const addSet = (dayIndex, exerciseIndex) => {
     setSets((prev) => ({
       ...prev,
-      [exerciseIndex]: [...(prev[exerciseIndex] || []), ""],
+      [dayIndex]: {
+        ...prev[dayIndex],
+        [exerciseIndex]: [...(prev[dayIndex]?.[exerciseIndex] || []), ""],
+      },
     }));
 
     setReps((prev) => ({
       ...prev,
-      [exerciseIndex]: [...(prev[exerciseIndex] || []), ""],
+      [dayIndex]: {
+        ...prev[dayIndex],
+        [exerciseIndex]: [...(prev[dayIndex]?.[exerciseIndex] || []), ""],
+      },
     }));
 
     setWeight((prev) => ({
       ...prev,
-      [exerciseIndex]: [...(prev[exerciseIndex] || []), ""],
+      [dayIndex]: {
+        ...prev[dayIndex],
+        [exerciseIndex]: [...(prev[dayIndex]?.[exerciseIndex] || []), ""],
+      },
     }));
   };
 
@@ -121,6 +142,7 @@ export default function CurrentWorkout() {
     currentDayIndex,
     currentMesocycle.daysPerWeek
   );
+  console.log("Sets state:", sets);
 
   return (
     <div>
@@ -143,20 +165,26 @@ export default function CurrentWorkout() {
           </div>
           <ul className="list-disc list-inside">
             {currentDay.exercises.map((exercise, exIndex) => (
-              <li key={exIndex} className="ml-4">
+              <li key={exIndex} className="ml-4 overflow-auto">
                 {exercise.exercise}
-                {(sets[exIndex] || []).map((set, setIndex) => (
+                {sets[currentDayIndex]?.[exIndex]?.map((set, setIndex) => (
                   <div key={setIndex} className="flex items-center space-x-2">
                     <label className="flex-1">
                       WEIGHT
                       <input
                         type="number"
                         value={
-                          weight[exIndex] ? weight[exIndex][setIndex] || "" : ""
+                          weight[currentDayIndex]?.[exIndex]?.[setIndex] || ""
                         }
                         onChange={(e) =>
-                          handleWeightChange(exIndex, setIndex, e.target.value)
+                          handleWeightChange(
+                            currentDayIndex,
+                            exIndex,
+                            setIndex,
+                            e.target.value
+                          )
                         }
+                        placeholder="weight"
                         className="border rounded p-1"
                       ></input>
                     </label>
@@ -165,25 +193,30 @@ export default function CurrentWorkout() {
                       <input
                         type="number"
                         value={
-                          reps[exIndex] ? reps[exIndex][setIndex] || "" : ""
+                          reps[currentDayIndex]?.[exIndex]?.[setIndex] || ""
                         }
                         onChange={(e) =>
-                          handleRepsChange(exIndex, setIndex, e.target.value)
+                          handleRepsChange(
+                            currentDayIndex,
+                            exIndex,
+                            setIndex,
+                            e.target.value
+                          )
                         }
+                        placeholder="Reps"
                         className="border rounded p-1"
                       ></input>
                     </label>
                   </div>
-                ))}
+                ))}{" "}
                 <button
-                  onClick={() => addSet(exIndex)}
+                  onClick={() => addSet(currentDayIndex, exIndex)}
                   className="text-blue-500"
                 >
                   ADD SET
                 </button>
-                }
               </li>
-            ))}
+            ))}{" "}
           </ul>
         </div>
       ) : (
