@@ -73,6 +73,8 @@ router.put("/mesocycles/:id", authenticateToken, (req, res) => {
   const { id } = req.params;
   const { name, weeks, plan, daysPerWeek, isCurrent, completedDate } = req.body;
 
+  console.log("Received mesocycle data:", JSON.stringify(req.body, null, 2));
+
   const query = `
     UPDATE mesocycles
     SET name = ?, weeks = ?, plan = ?, daysPerWeek = ?, isCurrent = ?, completedDate = ?
@@ -81,7 +83,11 @@ router.put("/mesocycles/:id", authenticateToken, (req, res) => {
 
   const userID = req.user.id;
   const allDaysCompleted = plan.every((day) =>
-    day.exercises.every((exercise) => exercise.completed)
+    day.exercises.every(
+      (exercise) =>
+        Array.isArray(exercise.sets) &&
+        exercise.sets.every((set) => set.completed)
+    )
   );
   const newCompletedDate = allDaysCompleted
     ? new Date().toISOString()

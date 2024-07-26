@@ -21,38 +21,27 @@ export default function CurrentWorkout() {
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
   const [currentDayIndex, setCurrentDayIndex] = useState(null);
   const [sets, setSets] = useState({});
-  const [reps, setReps] = useState({});
-  const [weight, setWeight] = useState({});
-
-  //   const handleSetChange = (exerciseIndex, setIndex, value) => {
-  //     setSets((prev) => ({
-  //       ...prev,
-  //       [exerciseIndex]: { ...prev[exerciseIndex], [setIndex]: value },
-  //     }));
-  //   };
 
   const handleRepsChange = (dayIndex, exerciseIndex, setIndex, value) => {
-    setReps((prev) => ({
+    setSets((prev) => ({
       ...prev,
       [dayIndex]: {
         ...prev[dayIndex],
-        [exerciseIndex]: {
-          ...prev[dayIndex]?.[exerciseIndex],
-          [setIndex]: value,
-        },
+        [exerciseIndex]: prev[dayIndex][exerciseIndex].map((set, sIndex) =>
+          sIndex === setIndex ? { ...set, reps: value } : set
+        ),
       },
     }));
   };
 
   const handleWeightChange = (dayIndex, exerciseIndex, setIndex, value) => {
-    setWeight((prev) => ({
+    setSets((prev) => ({
       ...prev,
       [dayIndex]: {
         ...prev[dayIndex],
-        [exerciseIndex]: {
-          ...prev[dayIndex]?.[exerciseIndex],
-          [setIndex]: value,
-        },
+        [exerciseIndex]: prev[dayIndex][exerciseIndex].map((set, sIndex) =>
+          sIndex === setIndex ? { ...set, weight: value } : set
+        ),
       },
     }));
   };
@@ -62,23 +51,10 @@ export default function CurrentWorkout() {
       ...prev,
       [dayIndex]: {
         ...prev[dayIndex],
-        [exerciseIndex]: [...(prev[dayIndex]?.[exerciseIndex] || []), ""],
-      },
-    }));
-
-    setReps((prev) => ({
-      ...prev,
-      [dayIndex]: {
-        ...prev[dayIndex],
-        [exerciseIndex]: [...(prev[dayIndex]?.[exerciseIndex] || []), ""],
-      },
-    }));
-
-    setWeight((prev) => ({
-      ...prev,
-      [dayIndex]: {
-        ...prev[dayIndex],
-        [exerciseIndex]: [...(prev[dayIndex]?.[exerciseIndex] || []), ""],
+        [exerciseIndex]: [
+          ...(prev[dayIndex]?.[exerciseIndex] || []),
+          { weight: "", reps: "", completed: false },
+        ],
       },
     }));
   };
@@ -101,6 +77,15 @@ export default function CurrentWorkout() {
 
         const firstIncompleteDayIndex = getFirstIncompleteDay(data.plan);
         setCurrentDayIndex(firstIncompleteDayIndex);
+
+        const setsData = {};
+        data.plan.forEach((day, dayIndex) => {
+          setsData[dayIndex] = {};
+          day.exercises.forEach((exercise, exerciseIndex) => {
+            setsData[dayIndex][exerciseIndex] = exercise.sets || [];
+          });
+        });
+        setSets(setsData);
       } catch (error) {
         console.error("Error fetchign mesocycles", error);
       } finally {
@@ -116,7 +101,7 @@ export default function CurrentWorkout() {
 
   const handleDayClick = (index) => {
     setCurrentDayIndex(index);
-    setIsCalendarModalOpen(false); // Lukk modalen når en dag blir klikket
+    setIsCalendarModalOpen(false);
   };
 
   const getDayLabel = (day) => {
@@ -142,8 +127,83 @@ export default function CurrentWorkout() {
     currentDayIndex,
     currentMesocycle.daysPerWeek
   );
-  console.log("Sets state:", sets);
 
+  const handleSetCompletionChange = async (
+    dayIndex,
+    exerciseIndex,
+    setIndex,
+    value,
+    weightValue,
+    repsValue
+  ) => {
+    // Updating sets localy
+    setSets((prev) => {
+      const updatedSets = {
+        ...prev,
+        [dayIndex]: {
+          ...prev[dayIndex],
+          [exerciseIndex]: prev[dayIndex][exerciseIndex].map((set, sIndex) =>
+            sIndex === setIndex
+              ? {
+                  ...set,
+                  completed: value,
+                  weight: weightValue,
+                  reps: repsValue,
+                }
+              : set
+          ),
+        },
+      };
+
+      // Updating mesocycle with the new data for sets
+      const updatedMesocycle = {
+        ...currentMesocycle,
+        plan: currentMesocycle.plan.map((day, dIndex) =>
+          dIndex === dayIndex
+            ? {
+                ...day,
+                exercises: day.exercises.map((exercise, eIndex) =>
+                  eIndex === exerciseIndex
+                    ? {
+                        ...exercise,
+                        sets: updatedSets[dayIndex][exerciseIndex],
+                      }
+                    : exercise
+                ),
+              }
+            : day
+        ),
+      };
+
+      // Sending updated mesocycle to backend
+      (async () => {
+        try {
+          const response = await fetch(
+            `http://localhost:3000/api/mesocycles/${currentMesocycle.id}`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              credentials: "include",
+              body: JSON.stringify(updatedMesocycle),
+            }
+          );
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to update mesocycle: ${errorText}`);
+          }
+
+          console.log("Successfully updated mesocycle");
+        } catch (error) {
+          console.error("Error updating mesocycle:", error);
+        }
+      })();
+
+      return updatedSets;
+    });
+  };
   return (
     <div>
       <h1 className="text-sm text-gray-500 bg-gray-200 pl-4 uppercase">
@@ -173,9 +233,7 @@ export default function CurrentWorkout() {
                       WEIGHT
                       <input
                         type="number"
-                        value={
-                          weight[currentDayIndex]?.[exIndex]?.[setIndex] || ""
-                        }
+                        value={set.weight || ""}
                         onChange={(e) =>
                           handleWeightChange(
                             currentDayIndex,
@@ -184,7 +242,7 @@ export default function CurrentWorkout() {
                             e.target.value
                           )
                         }
-                        placeholder="weight"
+                        placeholder="KGS"
                         className="border rounded p-1"
                       ></input>
                     </label>
@@ -192,9 +250,7 @@ export default function CurrentWorkout() {
                       REPS
                       <input
                         type="number"
-                        value={
-                          reps[currentDayIndex]?.[exIndex]?.[setIndex] || ""
-                        }
+                        value={set.reps || ""}
                         onChange={(e) =>
                           handleRepsChange(
                             currentDayIndex,
@@ -203,9 +259,32 @@ export default function CurrentWorkout() {
                             e.target.value
                           )
                         }
-                        placeholder="Reps"
+                        placeholder="3 REPS IN RESERVE"
                         className="border rounded p-1"
                       ></input>
+                    </label>
+                    <label className=" flex-1">
+                      COMPLETED
+                      <input
+                        type="checkbox"
+                        checked={
+                          sets[currentDayIndex]?.[exIndex]?.[setIndex]
+                            ?.completed || false
+                        }
+                        onChange={(e) =>
+                          handleSetCompletionChange(
+                            currentDayIndex,
+                            exIndex,
+                            setIndex,
+                            e.target.checked,
+                            sets[currentDayIndex]?.[exIndex]?.[setIndex]
+                              ?.weight || "",
+                            sets[currentDayIndex]?.[exIndex]?.[setIndex]
+                              ?.reps || ""
+                          )
+                        }
+                        className="border rounded p-1"
+                      />
                     </label>
                   </div>
                 ))}{" "}
