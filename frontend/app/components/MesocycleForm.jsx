@@ -35,7 +35,13 @@ const MesocycleForm = ({ onSubmit }) => {
 
   const handleAddExercise = (dayIndex) => {
     const updatedPlan = [...plan];
-    updatedPlan[dayIndex].exercises.push({ muscleGroup: "", exercise: "" });
+    updatedPlan[dayIndex].exercises.push({
+      muscleGroup: "",
+      exercise: "",
+      weight: 0,
+      sets: 0,
+      reps: 0,
+    });
     setPlan(updatedPlan);
   };
 
@@ -248,7 +254,7 @@ const MesocycleForm = ({ onSubmit }) => {
         onRequestClose={() => setIsModalOpen(false)}
         muscleGroups={muscleGroups}
         onSave={handleModalSave}
-        href="/current-workout"
+        href="current-workout"
       />
     </form>
   );

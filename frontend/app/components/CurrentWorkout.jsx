@@ -20,6 +20,47 @@ export default function CurrentWorkout() {
   const [loading, setLoading] = useState(true);
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
   const [currentDayIndex, setCurrentDayIndex] = useState(null);
+  const [sets, setSets] = useState({});
+  const [reps, setReps] = useState({});
+  const [weight, setWeight] = useState({});
+
+  const handleSetChange = (exerciseIndex, setIndex, value) => {
+    setSets((prev) => ({
+      ...prev,
+      [exerciseIndex]: { ...prev[exerciseIndex], [setIndex]: value },
+    }));
+  };
+
+  const handleRepsChange = (exerciseIndex, setIndex, value) => {
+    setReps((prev) => ({
+      ...prev,
+      [exerciseIndex]: { ...prev[exerciseIndex], [setIndex]: value },
+    }));
+  };
+
+  const handleWeightChange = (exerciseIndex, setIndex, value) => {
+    setWeight((prev) => ({
+      ...prev,
+      [exerciseIndex]: { ...prev[exerciseIndex], [setIndex]: value },
+    }));
+  };
+
+  const addSet = (exerciseIndex) => {
+    setSets((prev) => ({
+      ...prev,
+      [exerciseIndex]: [...(prev[exerciseIndex] || []), ""],
+    }));
+
+    setReps((prev) => ({
+      ...prev,
+      [exerciseIndex]: [...(prev[exerciseIndex] || []), ""],
+    }));
+
+    setWeight((prev) => ({
+      ...prev,
+      [exerciseIndex]: [...(prev[exerciseIndex] || []), ""],
+    }));
+  };
 
   const openCalendarModal = () => setIsCalendarModalOpen(true);
 
@@ -104,6 +145,43 @@ export default function CurrentWorkout() {
             {currentDay.exercises.map((exercise, exIndex) => (
               <li key={exIndex} className="ml-4">
                 {exercise.exercise}
+                {(sets[exIndex] || []).map((set, setIndex) => (
+                  <div key={setIndex} className="flex items-center space-x-2">
+                    <label className="flex-1">
+                      WEIGHT
+                      <input
+                        type="number"
+                        value={
+                          weight[exIndex] ? weight[exIndex][setIndex] || "" : ""
+                        }
+                        onChange={(e) =>
+                          handleWeightChange(exIndex, setIndex, e.target.value)
+                        }
+                        className="border rounded p-1"
+                      ></input>
+                    </label>
+                    <label className="flex-1">
+                      REPS
+                      <input
+                        type="number"
+                        value={
+                          reps[exIndex] ? reps[exIndex][setIndex] || "" : ""
+                        }
+                        onChange={(e) =>
+                          handleRepsChange(exIndex, setIndex, e.target.value)
+                        }
+                        className="border rounded p-1"
+                      ></input>
+                    </label>
+                  </div>
+                ))}
+                <button
+                  onClick={() => addSet(exIndex)}
+                  className="text-blue-500"
+                >
+                  ADD SET
+                </button>
+                }
               </li>
             ))}
           </ul>
