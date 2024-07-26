@@ -19,13 +19,13 @@ export default function Root() {
         <Meta />
         <Links />
       </head>
-      <body>
+      <body className="bg-darkestGray text white">
         <AuthProvider>
           <Navbar />
           <main>
             <Outlet />
           </main>
-          <footer>
+          <footer className="text-gray-400">
             <p>&copy; 2024 My App</p>
           </footer>
         </AuthProvider>

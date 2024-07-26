@@ -36,16 +36,16 @@ export default function Navbar() {
         left: 0,
         width: "100%",
         zIndex: 1000,
-        backgroundColor: "#fff",
+
         boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
       }}
     >
-      <div className="container mx-auto flex justify-between items-center px-4">
-        <div className="text-black text-xl font-bold">My App</div>
+      <div className="container mx-auto flex justify-between items-center px-4 text-white bg-darkGray">
+        <div className="text-white bg-darkGray text-xl font-bold">My App</div>
         <div className="md:hidden relative">
           <button
             onClick={toggleMenu}
-            className="text-black focus:outline-none"
+            className="text-white focus:outline-none"
             style={{
               position: "fixed",
               top: "2px",

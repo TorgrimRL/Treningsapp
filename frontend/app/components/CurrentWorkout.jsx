@@ -206,26 +206,26 @@ export default function CurrentWorkout() {
   };
   return (
     <div>
-      <h1 className="text-sm text-gray-500 bg-gray-200 pl-4 uppercase">
+      <h1 className="text-sm text-gray-500 bg-darkGray pl-4 uppercase">
         {currentMesocycle.name}
       </h1>
       {currentDay ? (
         <div className="mb-4">
-          <div className="p-1 bg-gray-200 rounded mb-2 flex items-center justify-between">
+          <div className="p-1 text-white bg-darkGray mb-2 flex items-center justify-between">
             <div className="space-x-2 pl-3">
               <span className="font-semibold uppercase">
                 Week {week} Day {dayNumber} {getDayLabel(currentDay)}
               </span>{" "}
             </div>
             <FaCalendarAlt
-              className="text-gray-500 cursor-pointer"
+              className="text-white cursor-pointer"
               onClick={openCalendarModal}
             />{" "}
             {/* Calendar icon */}
           </div>
-          <ul className="list-disc list-inside">
+          <ul className="list-disc list-inside text-white bg-darkGray">
             {currentDay.exercises.map((exercise, exIndex) => (
-              <li key={exIndex} className="ml-4 overflow-auto">
+              <li key={exIndex} className="ml-4 overflow-auto ">
                 {exercise.exercise}
                 {sets[currentDayIndex]?.[exIndex]?.map((set, setIndex) => (
                   <div key={setIndex} className="flex items-center space-x-2">
@@ -290,7 +290,7 @@ export default function CurrentWorkout() {
                 ))}{" "}
                 <button
                   onClick={() => addSet(currentDayIndex, exIndex)}
-                  className="text-blue-500"
+                  className="text-white"
                 >
                   ADD SET
                 </button>

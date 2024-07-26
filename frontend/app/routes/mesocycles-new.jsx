@@ -47,7 +47,7 @@ export default function NewMesocycle() {
     handleFormSubmit(mesocycleData);
   };
   return (
-    <div>
+    <div className=" text-white bg-darkGray">
       <h1>Create a new mesocycle</h1>
       <MesocycleForm onSubmit={handleSubmit} />
       <div id="root">{/* <TestModal /> */}</div>

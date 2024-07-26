@@ -60,7 +60,7 @@ const MesocycleOverview = () => {
   };
 
   return (
-    <div className=" mx-auto p-5 bg-gray-900 text-white">
+    <div className=" mx-auto p-5 text-white bg-darkGray">
       <header className="flex justify-between items-center mb-5">
         <h1 className="text-2xl m-0">Mesocycles</h1>
         <a
@@ -124,7 +124,6 @@ const MesocycleOverview = () => {
                       <a
                         href="#"
                         className="block px-4 py-2 text-gray-800 hover:bg-gray-200"
-                        // onClick={(e) => e.stopPropagation()}
                       >
                         Edit
                       </a>
