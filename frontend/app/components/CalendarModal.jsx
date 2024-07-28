@@ -10,12 +10,10 @@ export default function CalendarModal({
   mesocycle,
   currentDayIndex,
   onDayClick,
-  calendarIconRef,
 }) {
   const calendarRef = useRef(null);
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // Sjekk om klikket er utenfor modalen
       if (calendarRef.current && !calendarRef.current.contains(event.target)) {
         onRequestClose();
       }
@@ -79,7 +77,7 @@ export default function CalendarModal({
                       className={`border p-0 mb-1 cursor-pointer text-xs uppercase min-w-[75px] min-h-[50px] flex items-center justify-center ${
                         currentDayIndex === weekIndex * numRows + dayIndex
                           ? "bg-red-500"
-                          : "bg-gray-800"
+                          : "bg-darkestGray"
                       }`}
                       onClick={() => {
                         console.log(

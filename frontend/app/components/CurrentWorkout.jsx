@@ -1,7 +1,9 @@
-import { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { FaCalendarAlt } from "react-icons/fa";
 import Modal from "react-modal";
 import CalendarModal from "./CalendarModal";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faEllipsisV } from "@fortawesome/free-solid-svg-icons";
 
 Modal.setAppElement("#root");
 
@@ -25,6 +27,41 @@ export default function CurrentWorkout() {
   const [currentDayIndex, setCurrentDayIndex] = useState(null);
   const [sets, setSets] = useState({});
   const calendarIconRef = useRef(null);
+  const [openMenus, setOpenMenus] = useState({});
+  const menuRefs = useRef({});
+
+  const toggleMenu = useCallback((id) => {
+    setOpenMenus((prevState) => ({
+      ...prevState,
+      [id]: !prevState[id],
+    }));
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutSide = (event) => {
+      let anyMenuOpen = false;
+      for (const key in menuRefs.current) {
+        if (
+          menuRefs.current[key] &&
+          menuRefs.current[key].contains(event.target)
+        ) {
+          anyMenuOpen = true;
+          break;
+        }
+      }
+      if (!anyMenuOpen) {
+        setOpenMenus({});
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutSide);
+    document.addEventListener("touchstart", handleClickOutSide);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutSide);
+      document.removeEventListener("touchstart", handleClickOutSide);
+    };
+  }, []);
 
   const handleRepsChange = (dayIndex, exerciseIndex, setIndex, value) => {
     setSets((prev) => ({
@@ -213,6 +250,7 @@ export default function CurrentWorkout() {
       return updatedSets;
     });
   };
+
   return (
     <div className="pt-6">
       <h1 className="text-sm text-gray-500 bg-darkGray sticky top-12 pl-4 uppercase">
@@ -236,17 +274,33 @@ export default function CurrentWorkout() {
             <ul className="list-none list-inside text-white ">
               {currentDay.exercises.map((exercise, exIndex) => (
                 <li key={exIndex} className="p-3 overflow-auto bg-darkGray">
-                  <div className="flex flex-col items-start">
-                    <div className=" flex flex-row flex items-center">
-                      <span className="text-sm text-white border uppercase border-red-500 bg-darkBackgroundRed inline-block w-auto px-2 py-1 ">
+                  <div
+                    className="flex justify-between items-center relative"
+                    ref={(el) => (menuRefs.current[exIndex] = el)}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-white border uppercase border-red-500 bg-darkBackgroundRed inline-block w-auto px-2 py-1">
                         {exercise.muscleGroup}
                       </span>
-
-                      <span className="text-sm text-gray-500 uppercase pl-2 ">
+                      <span className="text-sm text-gray-500 uppercase">
                         {exercise.priority || "none"}
                       </span>
                     </div>
-                    <span className="font-semibold">{exercise.exercise}</span>
+                    <button
+                      onClick={() => toggleMenu(exIndex)}
+                      className="text-white focus:outline-none"
+                    >
+                      <FontAwesomeIcon icon={faEllipsisV} />
+                    </button>
+                    {openMenus[exIndex] && (
+                      <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-md shadow-lg z-10">
+                        <ul className="py-1 bg-hamburgerbackground ">
+                          <li className="block px-4 py-2 text-white hover:bg-darkGray">
+                            Placeholder
+                          </li>
+                        </ul>
+                      </div>
+                    )}
                   </div>
                   {sets[currentDayIndex]?.[exIndex]?.map((set, setIndex) => (
                     <div
@@ -321,7 +375,7 @@ export default function CurrentWorkout() {
                                 ?.reps || ""
                             )
                           }
-                          className="border rounded p-1 scale-125 text-green-500 focus:ring-green-500 checked:bg-green-500 checked:text-white"
+                          className="scale-125"
                           style={{
                             width: "20px",
                             height: "20px",

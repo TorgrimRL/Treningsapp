@@ -8,6 +8,8 @@ export default {
         inputBGGray: "#262626",
         inputNRGray: "8a8a8a",
         darkBackgroundRed: "#543233",
+        hamburgerbackground: "#454545",
+        hamburgertitle: "#3d3d3d",
       },
     },
   },
