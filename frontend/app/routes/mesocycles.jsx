@@ -8,3 +8,6 @@ export default function Mesocycles() {
     </div>
   );
 }
+{
+  /* <div style={{ paddingTop: "30px" }}></div> */
+}

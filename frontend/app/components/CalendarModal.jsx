@@ -1,5 +1,8 @@
 import React from "react";
 import Modal from "react-modal";
+import { useEffect, useRef } from "react";
+
+Modal.setAppElement("#root");
 
 export default function CalendarModal({
   isOpen,
@@ -7,17 +10,39 @@ export default function CalendarModal({
   mesocycle,
   currentDayIndex,
   onDayClick,
+  calendarIconRef,
 }) {
+  const calendarRef = useRef(null);
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // Sjekk om klikket er utenfor modalen
+      if (calendarRef.current && !calendarRef.current.contains(event.target)) {
+        onRequestClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("touchstart", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [isOpen, onRequestClose]);
+
   const numCols = mesocycle.weeks;
   const numRows = mesocycle.daysPerWeek;
   return (
     <Modal
       isOpen={isOpen}
       onRequestClose={onRequestClose}
+      contentLabel="Calendar Modal"
       shouldCloseOnOverlayClick={true}
       shouldCloseOnEsc={true}
-      className="bg-gray-800 rounded shadow-lg p-0 max-w-3xl mx-auto mt-20 text-2sm"
-      overlayClassName="fixed inset-0 flex items-start justify-center bg-transparent"
+      className="bg-gray-800 rounded focus:outline-none shadow-lg p-0 max-w-3xl mx-auto mt-20 text-2sm "
+      overlayClassName="fixed inset-0 flex items-start justify-center bg-black bg-opacity-50 z-50 "
       style={{
         content: {
           background: "transparent",
@@ -26,12 +51,9 @@ export default function CalendarModal({
           inset: "unset",
           maxWidth: "none",
         },
-        overlay: {
-          background: "transparent",
-        },
       }}
     >
-      <div className="p-4 bg-gray-600">
+      <div className="  max-height: vh p-4 bg-darkGray">
         <div
           className="grid gap-0 text-center transform scale-75"
           style={{

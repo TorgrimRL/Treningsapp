@@ -35,21 +35,24 @@ export default function Navbar() {
         top: 0,
         left: 0,
         width: "100%",
-        zIndex: 1000,
+        zIndex: 5,
 
         boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
       }}
     >
-      <div className="container mx-auto flex justify-between items-center px-4 py-3 text-white bg-darkGray">
+      <div
+        className="container mx-auto flex justify-between items-center px-4 py-3 text-white bg-darkGray"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="text-white bg-darkGray text-xl font-bold">My App</div>
         <div className="md:hidden relative">
           <button
             onClick={toggleMenu}
-            className="text-white focus:outline-none "
+            className="text-white focus:outline-none text-xl"
             style={{
               position: "fixed",
-              top: "8px",
-              right: "16px",
+              top: "10px",
+              right: "15px",
             }}
           >
             ☰

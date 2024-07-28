@@ -1,6 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { FaCalendarAlt } from "react-icons/fa";
+import Modal from "react-modal";
 import CalendarModal from "./CalendarModal";
+
+Modal.setAppElement("#root");
 
 const getFirstIncompleteDay = (plan) => {
   for (let i = 0; i < plan.length; i++) {
@@ -21,6 +24,7 @@ export default function CurrentWorkout() {
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
   const [currentDayIndex, setCurrentDayIndex] = useState(null);
   const [sets, setSets] = useState({});
+  const calendarIconRef = useRef(null);
 
   const handleRepsChange = (dayIndex, exerciseIndex, setIndex, value) => {
     setSets((prev) => ({
@@ -40,7 +44,9 @@ export default function CurrentWorkout() {
       [dayIndex]: {
         ...prev[dayIndex],
         [exerciseIndex]: prev[dayIndex][exerciseIndex].map((set, sIndex) =>
-          sIndex === setIndex
+          setIndex === 0
+            ? { ...set, weight: value, completed: false }
+            : sIndex === setIndex
             ? { ...set, weight: value, completed: false }
             : set
         ),
@@ -209,31 +215,37 @@ export default function CurrentWorkout() {
   };
   return (
     <div className="pt-6">
-      <h1 className="text-sm text-gray-500 bg-darkGray sticky top-12 z-20 pl-4 uppercase">
+      <h1 className="text-sm text-gray-500 bg-darkGray sticky top-12 pl-4 uppercase">
         {currentMesocycle.name}
       </h1>
       {currentDay ? (
         <div className="mb-4">
-          <div className="p-1 text-white bg-darkGray mb-1 flex items-center justify-between sticky top-16 z-10">
-            <div className="space-x-2 pl-3">
+          <div className="p-1 text-white bg-darkGray mb-1 flex items-center justify-between sticky top-16 ">
+            <div className="space-x-2 pl-3 mr-auto">
               <span className="font-semibold uppercase">
                 Week {week} Day {dayNumber} {getDayLabel(currentDay)}
               </span>{" "}
             </div>
             <FaCalendarAlt
-              className="text-white cursor-pointer"
+              className="text-white cursor-pointer text-xl -ml-4"
               onClick={openCalendarModal}
+              style={{ transform: "translateX(-10px)" }}
             />{" "}
-            {/* Calendar icon */}
           </div>
-          <div className="overflow-y-auto max-h-[calc(100vh-150px)]">
+          <div className="overflow-y-auto max-h-[calc(100vh-150px)] ">
             <ul className="list-none list-inside text-white ">
               {currentDay.exercises.map((exercise, exIndex) => (
-                <li key={exIndex} className="p-2 overflow-auto bg-darkGray">
+                <li key={exIndex} className="p-3 overflow-auto bg-darkGray">
                   <div className="flex flex-col items-start">
-                    <span className="text-sm text-white border uppercase border-red-500 bg-darkBackgroundRed inline-block w-auto px-2 py-1 ">
-                      {exercise.muscleGroup}
-                    </span>
+                    <div className=" flex flex-row flex items-center">
+                      <span className="text-sm text-white border uppercase border-red-500 bg-darkBackgroundRed inline-block w-auto px-2 py-1 ">
+                        {exercise.muscleGroup}
+                      </span>
+
+                      <span className="text-sm text-gray-500 uppercase pl-2 ">
+                        {exercise.priority || "none"}
+                      </span>
+                    </div>
                     <span className="font-semibold">{exercise.exercise}</span>
                   </div>
                   {sets[currentDayIndex]?.[exIndex]?.map((set, setIndex) => (
@@ -309,10 +321,11 @@ export default function CurrentWorkout() {
                                 ?.reps || ""
                             )
                           }
-                          className="border rounded p-1 scale-125 text-green-500 focus:ring-green-500 checked:bg-green-500 checked:border-transparent"
+                          className="border rounded p-1 scale-125 text-green-500 focus:ring-green-500 checked:bg-green-500 checked:text-white"
                           style={{
                             width: "20px",
                             height: "20px",
+                            marginTop: "10px",
                           }}
                         />
                       </div>
@@ -320,7 +333,7 @@ export default function CurrentWorkout() {
                   ))}{" "}
                   <button
                     onClick={() => addSet(currentDayIndex, exIndex)}
-                    className="text-white"
+                    className="text-white focus:outline-none"
                   >
                     ADD SET
                   </button>
@@ -338,6 +351,7 @@ export default function CurrentWorkout() {
         mesocycle={currentMesocycle}
         currentDayIndex={currentDayIndex}
         onDayClick={handleDayClick}
+        calendarIconRef={calendarIconRef}
       >
         <h2>Mesocycle Overview</h2>
       </CalendarModal>

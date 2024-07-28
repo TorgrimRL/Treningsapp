@@ -29,6 +29,10 @@ const MesocycleForm = ({ onSubmit }) => {
     updatedPlan[dayIndex].exercises[exerciseIndex] = {
       ...updatedPlan[dayIndex].exercises[exerciseIndex],
       [field]: value,
+      priority:
+        field === "muscleGroup"
+          ? selectedGroups[value]
+          : updatedPlan[dayIndex].exercises[exerciseIndex].priority,
     };
     setPlan(updatedPlan);
   };
@@ -95,14 +99,6 @@ const MesocycleForm = ({ onSubmit }) => {
       );
     }
 
-    // const updatedPlan = plan.map((day) => ({
-    //   ...day,
-    //   exercises: day.exercises.map((exercise) => ({
-    //     ...exercise,
-    //     priority: selectedGroups[exercise.muscleGroup],
-    //   })),
-    // }));
-    // const daysPerWeek = plan.length;
     const mesocycleData = {
       name: mesocycleName,
       weeks: numberOfWeeks,
