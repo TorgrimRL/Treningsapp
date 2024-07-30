@@ -28,7 +28,20 @@ export default function CurrentWorkout() {
   const [sets, setSets] = useState({});
   const calendarIconRef = useRef(null);
   const [openMenus, setOpenMenus] = useState({});
-  const menuRefs = useRef({});
+  const menuRefs = useRef();
+  const [openSetMenus, setOpenSetMenus] = useState({});
+  const setMenuRefs = useRef();
+
+  const toggleSetMeny = useCallback((id) => {
+    setOpenSetMenus((prevState) => {
+      const newState = {
+        ...prevState,
+        [id]: !prevState[id],
+      };
+
+      return newState;
+    });
+  }, []);
 
   const toggleMenu = useCallback((id) => {
     setOpenMenus((prevState) => ({
@@ -39,19 +52,19 @@ export default function CurrentWorkout() {
 
   useEffect(() => {
     const handleClickOutSide = (event) => {
-      let anyMenuOpen = false;
-      for (const key in menuRefs.current) {
-        if (
-          menuRefs.current[key] &&
-          menuRefs.current[key].contains(event.target)
-        ) {
-          anyMenuOpen = true;
-          break;
-        }
+      console.log("handleClickOutside triggered");
+
+      if (menuRefs.current && menuRefs.current.contains(event.target)) {
+        return;
       }
-      if (!anyMenuOpen) {
-        setOpenMenus({});
+
+      if (setMenuRefs.current && setMenuRefs.current.contains(event.target)) {
+        return;
       }
+
+      console.log("Closing menus");
+      setOpenMenus({});
+      setOpenSetMenus({});
     };
 
     document.addEventListener("mousedown", handleClickOutSide);
@@ -92,6 +105,9 @@ export default function CurrentWorkout() {
   };
 
   const addSet = (dayIndex, exerciseIndex) => {
+    console.log(
+      `addSet called with dayIndex: ${dayIndex}, exerciseIndex: ${exerciseIndex}`
+    );
     setSets((prev) => ({
       ...prev,
       [dayIndex]: {
@@ -276,7 +292,7 @@ export default function CurrentWorkout() {
                 <li key={exIndex} className="p-3 overflow-auto bg-darkGray">
                   <div
                     className="flex justify-between items-center relative"
-                    ref={(el) => (menuRefs.current[exIndex] = el)}
+                    ref={menuRefs}
                   >
                     <div className="flex items-center space-x-2">
                       <span className="text-sm text-white border uppercase border-red-500 bg-darkBackgroundRed inline-block w-auto px-2 py-1">
@@ -307,10 +323,42 @@ export default function CurrentWorkout() {
                       key={setIndex}
                       className="flex flex-row items-stretch items-center space-y-0 mb-4 border-b border-gray-600 pb-2"
                     >
+                      <div className="relative ">
+                        <button
+                          onClick={() => {
+                            toggleSetMeny(`${exIndex}-${setIndex}`);
+                          }}
+                          className="text-white focus:outline-none mt-8 "
+                        >
+                          <FontAwesomeIcon icon={faEllipsisV} />
+                        </button>
+
+                        {openSetMenus[`${exIndex}-${setIndex}`] && (
+                          <div
+                            ref={setMenuRefs}
+                            className="absolute left-full ml-1 top-5 w-48 bg-white rounded-md shadow-lg z-10"
+                          >
+                            <ul className="py-1 bg-hamburgerbackground ">
+                              <li className="block px-4 py-2 text-white hover:bg-darkGray">
+                                <button
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    addSet(currentDayIndex, exIndex);
+                                  }}
+                                  className="text-white focus:outline-none block w-full text-left cursor-pointer"
+                                >
+                                  ADD SET
+                                </button>
+                              </li>
+                            </ul>
+                          </div>
+                        )}
+                      </div>
                       <div className="flex flex-col items-center space-y-1 flex-grow">
                         <label className="text-center h-6 flex items-center justify-center">
                           WEIGHT
                         </label>
+
                         <input
                           type="number"
                           value={set.weight || ""}
@@ -385,12 +433,6 @@ export default function CurrentWorkout() {
                       </div>
                     </div>
                   ))}{" "}
-                  <button
-                    onClick={() => addSet(currentDayIndex, exIndex)}
-                    className="text-white focus:outline-none"
-                  >
-                    ADD SET
-                  </button>
                 </li>
               ))}{" "}
             </ul>
