@@ -51,4 +51,51 @@ db.serialize(() => {
   });
 });
 
+// db.all("SELECT id,plan FROM mesocycles", (err, rows) => {
+//   if (err) {
+//     console.error("Error fetching table info:", err.message);
+//     return;
+//   }
+
+//   rows.forEach((row) => {
+//     const mesocycleId = row.id;
+//     let plan;
+
+//     try {
+//       plan = JSON.parse(row.plan);
+//     } catch (error) {
+//       console.error(
+//         `Error parsing JSON for mesocycle with ${mesocycleId}`,
+//         error
+//       );
+//       return;
+//     }
+
+//     const updatedPlan = plan.map((day) => ({
+//       ...day,
+//       exercises: day.exercises.map((exercise) => ({
+//         ...exercise,
+//         sets: Array(3).fill({ weight: "", reps: "", completed: false }),
+//       })),
+//     }));
+
+//     const updatedPlanJson = JSON.stringify(updatedPlan);
+
+//     db.run(
+//       "UPDATE mesocycles SET plan = ? where id = ?",
+//       [updatedPlanJson, mesocycleId],
+//       (err) => {
+//         if (err) {
+//           console.error(
+//             `Error updating mesoscyle with ${mesosycleID}`,
+//             err.message
+//           );
+//         } else {
+//           console.log(`Successfully updated mesocycle with id ${mesocycleId}`);
+//         }
+//       }
+//     );
+//   });
+// });
+
 export default db;

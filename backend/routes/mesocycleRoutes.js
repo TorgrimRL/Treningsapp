@@ -1,6 +1,7 @@
 import express from "express";
 import db from "../database.js";
 import { authenticateToken, csrfProtection } from "../middleware.js";
+import calculateNewTarget from "../utils/calculateNewTarget.js";
 
 const router = express.Router();
 
@@ -149,13 +150,73 @@ router.get(
         console.log("No current workout found for user:", req.user.id);
         return res.status(404).json({ error: "Current workout not found" });
       }
+      const plan = JSON.parse(row.plan);
+      const daysPerWeek = row.daysPerWeek;
+      const updatedPlan = plan.map((day, dayIndex) => {
+        return {
+          ...day,
+          exercises: day.exercises.map((exercise, exerciseIndex) => {
+            console.log(
+              `Processing exercise at dayIndex: ${dayIndex}, exerciseIndex: ${exerciseIndex}`
+            );
+            if (dayIndex >= daysPerWeek) {
+              // sjekk modulo 7 her kanskje daysperWEEK
+              const firstWeekExercise =
+                plan[dayIndex % daysPerWeek].exercises[exerciseIndex];
+              console.log("First week exercise:", firstWeekExercise);
+              if (!firstWeekExercise) {
+                console.error(
+                  `No firstWeekExercise found for exerciseIndex: ${exerciseIndex} on dayIndex: ${dayIndex}`
+                );
+                return exercise;
+              }
+              if (!Array.isArray(exercise.sets)) {
+                console.error(
+                  `Exercise sets is not an array for exerciseIndex: ${exerciseIndex} on dayIndex: ${dayIndex}`
+                );
+                return exercise;
+              }
+              const updatedSets = exercise.sets.map((set, setIndex) => {
+                const firstWeekSet = firstWeekExercise.sets[setIndex];
+                // Logg firstWeekSet for å sikre at den eksisterer
+                console.log("First week set:", firstWeekSet);
+                if (!firstWeekSet) {
+                  console.error(
+                    `No corresponding set found for setIndex: ${setIndex} in first week exercise`
+                  );
+                  return set; // Returner det originale settet hvis det ikke finnes
+                }
+                //sjekk at exercises faktisk har en type
+                const newTarget = calculateNewTarget(
+                  firstWeekSet.weight,
+                  firstWeekSet.reps,
+                  firstWeekExercise.type
+                );
+                return {
+                  ...set,
+                  targetWeight: newTarget.weight,
+                  targetReps: newTarget.reps,
+                };
+              });
+              return {
+                ...exercise,
+                sets: updatedSets,
+              };
+            }
+            return exercise;
+          }),
+        };
+      });
+
       res.json({
         ...row,
-        plan: JSON.parse(row.plan), // Ensure plan is parsed as JSON
+        plan: updatedPlan,
         isCurrent: !!row.isCurrent,
         completedDate: row.completedDate
           ? new Date(row.completedDate).toISOString()
           : null,
+        totalWeeks: row.weeks,
+        daysPerWeek: row.daysPerWeek,
       });
     });
   }

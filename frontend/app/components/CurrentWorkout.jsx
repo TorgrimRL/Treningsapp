@@ -31,6 +31,7 @@ export default function CurrentWorkout() {
   const menuRefs = useRef();
   const [openSetMenus, setOpenSetMenus] = useState({});
   const setMenuRefs = useRef();
+  console.log("CurrentWorkout component rendered");
 
   const toggleSetMeny = useCallback((id) => {
     setOpenSetMenus((prevState) => {
@@ -105,19 +106,35 @@ export default function CurrentWorkout() {
   };
 
   const addSet = (dayIndex, exerciseIndex) => {
-    console.log(
-      `addSet called with dayIndex: ${dayIndex}, exerciseIndex: ${exerciseIndex}`
-    );
-    setSets((prev) => ({
-      ...prev,
-      [dayIndex]: {
-        ...prev[dayIndex],
-        [exerciseIndex]: [
-          ...(prev[dayIndex]?.[exerciseIndex] || []),
-          { weight: "", reps: "", completed: false },
-        ],
-      },
-    }));
+    const daysPerWeek = currentMesocycle.daysPerWeek;
+    setSets((prev) => {
+      const updatedSets = { ...prev };
+
+      for (let i = dayIndex; i < Object.keys(prev).length; i += daysPerWeek) {
+        updatedSets[i] = {
+          ...updatedSets[i],
+          [exerciseIndex]: [
+            ...(updatedSets[i]?.[exerciseIndex] || []),
+            { weight: "", reps: "", completed: false },
+          ],
+        };
+      }
+      return updatedSets;
+    });
+  };
+
+  const removeSet = (dayIndex, exerciseIndex, setIndex) => {
+    setSets((prev) => {
+      const newSets = [...prev[dayIndex][exerciseIndex]];
+      const updatedSets = newSets.filter((_, index) => index !== setIndex);
+      return {
+        ...prev,
+        [dayIndex]: {
+          ...prev[dayIndex],
+          [exerciseIndex]: updatedSets,
+        },
+      };
+    });
   };
 
   const openCalendarModal = () => setIsCalendarModalOpen(true);
@@ -318,11 +335,18 @@ export default function CurrentWorkout() {
                       </div>
                     )}
                   </div>
+                  <div className="text-white font-semibold">
+                    {exercise.exercise}
+                  </div>
                   {sets[currentDayIndex]?.[exIndex]?.map((set, setIndex) => (
                     <div
                       key={setIndex}
                       className="flex flex-row items-stretch items-center space-y-0 mb-4 border-b border-gray-600 pb-2"
                     >
+                      <div className="flex flex-col items-center space-y-1 flex grow">
+                        <label>Target weight:</label>
+                        <span>{set.targetWeight || "N/A"}</span>
+                      </div>
                       <div className="relative ">
                         <button
                           onClick={() => {
@@ -338,16 +362,34 @@ export default function CurrentWorkout() {
                             ref={setMenuRefs}
                             className="absolute left-full ml-1 top-5 w-48 bg-white rounded-md shadow-lg z-10"
                           >
-                            <ul className="py-1 bg-hamburgerbackground ">
-                              <li className="block px-4 py-2 text-white hover:bg-darkGray">
+                            <ul className="py-1 bg-hamburgerbackground text-white ">
+                              <li className="block px-4 py-2 hover:bg-darkGray ">
                                 <button
                                   onClick={(event) => {
+                                    console.log(
+                                      "Button clicked for adding set"
+                                    );
                                     event.stopPropagation();
                                     addSet(currentDayIndex, exIndex);
                                   }}
-                                  className="text-white focus:outline-none block w-full text-left cursor-pointer"
+                                  className=" focus:outline-none block w-full text-left cursor-pointer"
                                 >
                                   ADD SET
+                                </button>
+                              </li>
+                              <li className="block px-4 py-2 hover:bg-darkGray">
+                                <button
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    removeSet(
+                                      currentDayIndex,
+                                      exIndex,
+                                      setIndex
+                                    );
+                                  }}
+                                  className=" focus:outline-none block w-full text-left cursor-pointer"
+                                >
+                                  REMOVE SET
                                 </button>
                               </li>
                             </ul>
