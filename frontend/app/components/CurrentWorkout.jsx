@@ -3,7 +3,12 @@ import { FaCalendarAlt } from "react-icons/fa";
 import Modal from "react-modal";
 import CalendarModal from "./CalendarModal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEllipsisV } from "@fortawesome/free-solid-svg-icons";
+import {
+  faBullseye,
+  faEllipsisV,
+  faArrowUp,
+  faArrowDown,
+} from "@fortawesome/free-solid-svg-icons";
 
 Modal.setAppElement("#root");
 
@@ -89,18 +94,64 @@ export default function CurrentWorkout() {
     }));
   };
 
-  const handleWeightChange = (dayIndex, exerciseIndex, setIndex, value) => {
+  const handleWeightChange = (
+    dayIndex,
+    exerciseIndex,
+    setIndex,
+    value,
+    exerciseType
+  ) => {
+    console.log(`Current exercise type: ${exerciseType}`); // Ensure this is placed correctly
+
+    const currentWeight = parseFloat(value);
+    const incrementSize = exerciseType === "dumbbell" ? 2 : 2.5;
+
+    // Get the current week using your function
+    const { week } = getWeekAndDay(dayIndex, currentMesocycle.daysPerWeek);
+
     setSets((prev) => ({
       ...prev,
       [dayIndex]: {
         ...prev[dayIndex],
-        [exerciseIndex]: prev[dayIndex][exerciseIndex].map((set, sIndex) =>
-          setIndex === 0
-            ? { ...set, weight: value, completed: false }
-            : sIndex === setIndex
-            ? { ...set, weight: value, completed: false }
-            : set
-        ),
+        [exerciseIndex]: prev[dayIndex][exerciseIndex].map((set, sIndex) => {
+          if (sIndex === setIndex) {
+            const targetWeight = parseFloat(set.targetWeight);
+            const targetReps = parseInt(set.targetReps, 10);
+
+            const incrementDifference =
+              (currentWeight - targetWeight) / incrementSize;
+            let newReps = targetReps - incrementDifference * 2;
+
+            // Check the range of increment difference
+            if (Math.abs(incrementDifference) > 3) {
+              // Determine RIR based on the current week
+              if (week <= 2) {
+                newReps = "3 RIR";
+              } else if (week === 3) {
+                newReps = "2 RIR";
+              } else if (week >= 4) {
+                newReps = "0/1 RIR";
+              }
+            } else {
+              newReps = Math.round(newReps);
+            }
+
+            console.log(
+              `Weight changed: ${currentWeight}, Target weight: ${targetWeight}`
+            );
+            console.log(
+              `Increment difference: ${incrementDifference}, New reps: ${newReps}`
+            );
+
+            return {
+              ...set,
+              weight: currentWeight,
+              reps: newReps,
+              completed: false,
+            };
+          }
+          return set;
+        }),
       },
     }));
   };
@@ -284,6 +335,59 @@ export default function CurrentWorkout() {
     });
   };
 
+  const repRange = [];
+  for (let i = 1; i <= 30; i++) {
+    repRange.push(i);
+  }
+
+  const dumbbellWeights = [];
+  for (let weight = 2; weight < 100; weight += 2) {
+    dumbbellWeights.push(weight);
+  }
+
+  const barbellWeights = [];
+  for (let weight = 2.5; weight <= 400; weight += 2.5) {
+    barbellWeights.push(weight);
+  }
+  const getPerformanceStatus = (
+    set,
+    exerciseType,
+    dayIndex,
+    weekIndex,
+    setIndex,
+    exerciseIndex
+  ) => {
+    if (weekIndex === 1) {
+      return "noEvaluation";
+    }
+    const incrementSize = exerciseType === "dumbbell" ? 2 : 2.5;
+    const targetWeight = parseFloat(set.targetWeight);
+    const targetReps = parseInt(set.targetReps, 10);
+    const currentWeight = parseFloat(set.weight);
+    const currentReps = parseInt(set.reps, 10);
+
+    const weightDifference = currentWeight - targetWeight;
+    const maxIncrementDeviation = 3 * incrementSize;
+
+    // Recalculate target reps based on weight change
+    const incrementDifference = weightDifference / incrementSize;
+    const adjustedReps = targetReps - incrementDifference * 2;
+    const roundedAdjustedReps = Math.round(adjustedReps);
+
+    const isWeightInRange = Math.abs(weightDifference) <= maxIncrementDeviation;
+    const isRepsInRange = currentReps >= roundedAdjustedReps;
+
+    if (isWeightInRange && currentReps === roundedAdjustedReps) {
+      return "target";
+    } else if (isWeightInRange && currentReps > roundedAdjustedReps) {
+      return "above";
+    } else if (!isWeightInRange || currentReps < roundedAdjustedReps) {
+      return "below";
+    } else {
+      return "offTarget";
+    }
+  };
+
   return (
     <div className="pt-6">
       <h1 className="text-sm text-gray-500 bg-darkGray sticky top-12 pl-4 uppercase">
@@ -344,8 +448,10 @@ export default function CurrentWorkout() {
                       className="flex flex-row items-stretch items-center space-y-0 mb-4 border-b border-gray-600 pb-2"
                     >
                       <div className="flex flex-col items-center space-y-1 flex grow">
-                        <label>Target weight:</label>
-                        <span>{set.targetWeight || "N/A"}</span>
+                        <label>Tw tr:</label>
+                        <span>
+                          {set.targetWeight || "N/A"},{set.targetReps}
+                        </span>
                       </div>
                       <div className="relative ">
                         <button
@@ -400,33 +506,45 @@ export default function CurrentWorkout() {
                         <label className="text-center h-6 flex items-center justify-center">
                           WEIGHT
                         </label>
-
-                        <input
-                          type="number"
-                          value={set.weight || ""}
+                        <select
+                          value={set.weight || set.targetWeight || ""}
                           onChange={(e) =>
                             handleWeightChange(
                               currentDayIndex,
                               exIndex,
                               setIndex,
-                              e.target.value
+                              e.target.value,
+                              exercise.type
                             )
                           }
-                          placeholder="KGS"
                           className="bg-inputBGGray text-center border-black w-20 rounded p-1"
-                          style={{
-                            WebkitAppearance: "none",
-                            MozAppearance: "textfield",
-                          }}
-                        ></input>
+                        >
+                          <option value={"Choose weight"} />
+                          {exercise.type === "dumbbell"
+                            ? dumbbellWeights.map((weight) => (
+                                <option key={weight} value={weight}>
+                                  {weight}
+                                </option>
+                              ))
+                            : barbellWeights.map((weight) => (
+                                <option key={weight} value={weight}>
+                                  {weight}
+                                </option>
+                              ))}
+                        </select>
                       </div>
-                      <div className="flex flex-col items-center space-y-1 flex-grow">
+                      <div className="flex flex-col items-center space-y-1 flex-grow relative">
                         <label className="text-center h-6 flex items-center justify-center ">
                           REPS
                         </label>
-                        <input
-                          type="number"
-                          value={set.reps || ""}
+                        <select
+                          value={
+                            typeof set.reps === "string"
+                              ? set.reps
+                              : set.reps ||
+                                (!set.completed && set.targetReps) ||
+                                ""
+                          }
                           onChange={(e) =>
                             handleRepsChange(
                               currentDayIndex,
@@ -435,14 +553,110 @@ export default function CurrentWorkout() {
                               e.target.value
                             )
                           }
-                          placeholder="3 REPS IN RESERVE"
-                          className="bg-inputBGGray text-center border-black w-20 rounded p-1"
-                          style={{
-                            WebkitAppearance: "none",
-                            MozAppearance: "textfield",
-                          }}
-                        ></input>
+                          className="bg-inputBGGray text-center border-black w-full rounded p-1"
+                        >
+                          {/* <option value={"choose reps"} /> */}
+                          {repRange.map((reps) => (
+                            <option key={reps} value={reps}>
+                              {reps}
+                            </option>
+                          ))}
+                          {week <= 2 && (
+                            <option value="3 RIR" disabled>
+                              3 RIR
+                            </option>
+                          )}
+                          {week === 3 && (
+                            <option value="2 RIR" disabled>
+                              2 RIR
+                            </option>
+                          )}
+                          {week >= 4 && (
+                            <option value="0/1 RIR" disabled>
+                              0/1 RIR
+                            </option>
+                          )}
+                        </select>
                       </div>
+                      <div className="flex items-center justify-center ml-2 relative">
+                        {(() => {
+                          const { week: weekIndex } = getWeekAndDay(
+                            currentDayIndex,
+                            currentMesocycle.daysPerWeek
+                          ); // Use your function to get the week index
+                          const status = getPerformanceStatus(
+                            set,
+                            exercise.type,
+                            currentDayIndex,
+                            weekIndex,
+                            setIndex,
+                            exIndex
+                          );
+
+                          // Debug Log for Icons
+                          if (
+                            exIndex === 0 &&
+                            setIndex === 2 &&
+                            weekIndex === 2
+                          ) {
+                            console.log(
+                              `Performance status for exerciseIndex ${exIndex}, setIndex ${setIndex}, dayIndex ${currentDayIndex}, weekIndex ${weekIndex}: ${status}`
+                            );
+                            console.log(`Exercise type: ${exercise.type}`);
+                            console.log(
+                              `Set weight: ${set.weight}, Target weight: ${set.targetWeight}`
+                            );
+                            console.log(
+                              `Set reps: ${set.reps}, Target reps: ${set.targetReps}`
+                            );
+                          }
+                          const iconStyles = {
+                            top: "50%",
+                            transform: "translateY(-10%)",
+                          };
+                          if (status === "noEvaluation") {
+                            return null;
+                          }
+                          if (status === "target") {
+                            return (
+                              <FontAwesomeIcon
+                                icon={faBullseye}
+                                className=" mt-2 ml-0 text-white-500 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+                                style={iconStyles}
+                              />
+                            );
+                          } else if (status === "above") {
+                            return (
+                              <FontAwesomeIcon
+                                icon={faArrowUp}
+                                className=" mt-2 ml-0 text-white-500 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+                                style={iconStyles}
+                              />
+                            );
+                          } else if (status === "below") {
+                            return (
+                              <FontAwesomeIcon
+                                icon={faArrowDown}
+                                className="mt-2 ml-0text-white-500 absolute  top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
+                                style={iconStyles}
+                              />
+                            );
+                          }
+                          return null;
+                        })()}
+                      </div>
+                      {/* <div className="flex items-center justify-center ml-2 relative">
+                        {hasReachedTarget(set) && (
+                          <FontAwesomeIcon
+                            icon={faBullseye}
+                            className="text-green-500 absolute mt-2 ml-1 top-1/2 transform -translate-y-1/2"
+                            style={{
+                              top: "50%",
+                              transform: "translateY(-10%)",
+                            }}
+                          />
+                        )}
+                      </div> */}
                       <div className="flex flex-col items-center space-y-1 flex-grow">
                         <label className="text-center h-6 flex items-center justify-center">
                           LOG

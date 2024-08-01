@@ -74,7 +74,7 @@ router.put("/mesocycles/:id", authenticateToken, (req, res) => {
   const { id } = req.params;
   const { name, weeks, plan, daysPerWeek, isCurrent, completedDate } = req.body;
 
-  console.log("Received mesocycle data:", JSON.stringify(req.body, null, 2));
+  // console.log("Received mesocycle data:", JSON.stringify(req.body, null, 2));
 
   const query = `
     UPDATE mesocycles
@@ -153,6 +153,7 @@ router.get(
       const plan = JSON.parse(row.plan);
       const daysPerWeek = row.daysPerWeek;
       const updatedPlan = plan.map((day, dayIndex) => {
+        const currentWeek = Math.floor(dayIndex / daysPerWeek) + 1;
         return {
           ...day,
           exercises: day.exercises.map((exercise, exerciseIndex) => {
@@ -161,12 +162,12 @@ router.get(
             );
             if (dayIndex >= daysPerWeek) {
               // sjekk modulo 7 her kanskje daysperWEEK
-              const firstWeekExercise =
+              const previousWeekExercise =
                 plan[dayIndex % daysPerWeek].exercises[exerciseIndex];
-              console.log("First week exercise:", firstWeekExercise);
-              if (!firstWeekExercise) {
+              console.log("First week exercise:", previousWeekExercise);
+              if (!previousWeekExercise) {
                 console.error(
-                  `No firstWeekExercise found for exerciseIndex: ${exerciseIndex} on dayIndex: ${dayIndex}`
+                  `No previousWeekExercise found for exerciseIndex: ${exerciseIndex} on dayIndex: ${dayIndex}`
                 );
                 return exercise;
               }
@@ -176,24 +177,32 @@ router.get(
                 );
                 return exercise;
               }
+              const increaseFactor = [1.0, 1.05, 1.075, 1.1, 1.125][
+                currentWeek - 1
+              ];
+
+              console.log(
+                `Increase factor for week ${currentWeek} : ${increaseFactor}`
+              );
               const updatedSets = exercise.sets.map((set, setIndex) => {
-                const firstWeekSet = firstWeekExercise.sets[setIndex];
-                // Logg firstWeekSet for å sikre at den eksisterer
-                console.log("First week set:", firstWeekSet);
-                if (!firstWeekSet) {
+                const prevWeekset = previousWeekExercise.sets[setIndex];
+                if (!prevWeekset) {
                   console.error(
                     `No corresponding set found for setIndex: ${setIndex} in first week exercise`
                   );
-                  return set; // Returner det originale settet hvis det ikke finnes
+                  return set;
                 }
-                //sjekk at exercises faktisk har en type
+
                 const newTarget = calculateNewTarget(
-                  firstWeekSet.weight,
-                  firstWeekSet.reps,
-                  firstWeekExercise.type
+                  prevWeekset.weight,
+                  prevWeekset.reps,
+                  previousWeekExercise.type,
+                  increaseFactor
                 );
                 return {
                   ...set,
+                  weight: prevWeekset.completed ? newTarget.weight : set.weight,
+                  reps: prevWeekset.completed ? newTarget.reps : set.reps,
                   targetWeight: newTarget.weight,
                   targetReps: newTarget.reps,
                 };
