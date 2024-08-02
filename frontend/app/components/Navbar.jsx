@@ -96,30 +96,30 @@ export default function Navbar() {
             className="absolute right-0 top-full w-48 bg-white rounded-md shadow-lg z-10 md:hidden"
             ref={menuRef}
           >
-            <ul className="py-1">
-              <li>
+            <ul className="py-1 bg-hamburgerbackground text-white ">
+              <li className="block px-4 py-2 hover:bg-darkGray ">
                 <a
                   href="/"
-                  className="block px-4 py-2 text-gray-800 hover:bg-gray-200"
+                  className="focus:outline-none block w-full text-left cursor-pointer"
                 >
                   Home
                 </a>
               </li>
               {!isLoggedIn && (
-                <li>
+                <li className="block px-4 py-2 hover:bg-darkGray ">
                   <a
                     href="/login"
-                    className="block px-4 py-2 text-gray-800 hover:bg-gray-200"
+                    className="focus:outline-none block w-full text-left cursor-pointer"
                   >
                     Login
                   </a>
                 </li>
               )}
               {!isLoggedIn && (
-                <li>
+                <li className="block px-4 py-2 hover:bg-darkGray ">
                   <a
                     href="/register"
-                    className="block px-4 py-2 text-gray-800 hover:bg-gray-200"
+                    className="focus:outline-none block w-full text-left cursor-pointer"
                   >
                     Register
                   </a>
@@ -127,33 +127,35 @@ export default function Navbar() {
               )}
               {isLoggedIn && (
                 <>
-                  <li>
+                  <li className="block px-4 py-2 hover:bg-darkGray ">
                     <a
                       href="/currentworkout"
-                      className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-200"
+                      className="focus:outline-none block w-full text-left cursor-pointer"
                     >
                       Current workout
                     </a>
+                  </li>
+                  <li className="block px-4 py-2 hover:bg-darkGray ">
                     <a
                       href="/mesocycles"
-                      className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-200"
+                      className="focus:outline-none block w-full text-left cursor-pointer"
                     >
                       Mesocycles
                     </a>
                   </li>
-                  <li>
+                  <li className="block px-4 py-2 hover:bg-darkGray ">
                     <a
                       href="/mesocycles-new"
-                      className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-200"
+                      className="focus:outline-none block w-full text-left cursor-pointer"
                     >
                       Plan a new mesocycle
                     </a>
                   </li>
-                  <li>
+                  <li className="block px-4 py-2 hover:bg-darkGray ">
                     <form method="post" action="/logout">
                       <button
                         type="submit"
-                        className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-200"
+                        className="focus:outline-none block w-full text-left cursor-pointer"
                       >
                         Logout
                       </button>
