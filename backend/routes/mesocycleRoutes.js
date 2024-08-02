@@ -74,7 +74,7 @@ router.put("/mesocycles/:id", authenticateToken, (req, res) => {
   const { id } = req.params;
   const { name, weeks, plan, daysPerWeek, isCurrent, completedDate } = req.body;
 
-  // console.log("Received mesocycle data:", JSON.stringify(req.body, null, 2));
+  console.log("Received mesocycle data:", JSON.stringify(req.body, null, 2));
 
   const query = `
     UPDATE mesocycles
@@ -110,6 +110,7 @@ router.put("/mesocycles/:id", authenticateToken, (req, res) => {
       if (err) {
         return res.status(500).json({ error: err.message });
       }
+      console.log("Updated mesocycle successfully with changes:", this.changes);
       res.status(200).json({ changes: this.changes });
     }
   );
@@ -133,6 +134,7 @@ router.get("/mesocycles/:id", (req, res) => {
 });
 
 // Endpoint to fetch the current workout
+// Endpoint to fetch the current workout
 router.get(
   "/current-workout",
   authenticateToken,
@@ -152,19 +154,31 @@ router.get(
       }
       const plan = JSON.parse(row.plan);
       const daysPerWeek = row.daysPerWeek;
+
       const updatedPlan = plan.map((day, dayIndex) => {
         const currentWeek = Math.floor(dayIndex / daysPerWeek) + 1;
+
+        // // Only log for weeks 1-5, first exercise, and first set
+        // if (currentWeek <= 5 && exerciseIndex === 0 && setIndex === 0) {
+        //   console.log(`=== Week ${currentWeek} ===`);
+        // }
+
         return {
           ...day,
           exercises: day.exercises.map((exercise, exerciseIndex) => {
-            console.log(
-              `Processing exercise at dayIndex: ${dayIndex}, exerciseIndex: ${exerciseIndex}`
-            );
+            if (exerciseIndex === 0 && dayIndex % daysPerWeek === 0) {
+              console.log(
+                `\n=== Debug Log for Week ${currentWeek}, Monday ===`
+              );
+              console.log(
+                `Processing exercise at dayIndex: ${dayIndex}, exerciseIndex: ${exerciseIndex}`
+              );
+            }
             if (dayIndex >= daysPerWeek) {
-              // sjekk modulo 7 her kanskje daysperWEEK
+              const previousWeekIndex = dayIndex - daysPerWeek;
               const previousWeekExercise =
-                plan[dayIndex % daysPerWeek].exercises[exerciseIndex];
-              console.log("First week exercise:", previousWeekExercise);
+                plan[previousWeekIndex].exercises[exerciseIndex];
+
               if (!previousWeekExercise) {
                 console.error(
                   `No previousWeekExercise found for exerciseIndex: ${exerciseIndex} on dayIndex: ${dayIndex}`
@@ -177,32 +191,65 @@ router.get(
                 );
                 return exercise;
               }
-              const increaseFactor = [1.0, 1.05, 1.075, 1.1, 1.125][
-                currentWeek - 1
-              ];
 
-              console.log(
-                `Increase factor for week ${currentWeek} : ${increaseFactor}`
-              );
               const updatedSets = exercise.sets.map((set, setIndex) => {
                 const prevWeekset = previousWeekExercise.sets[setIndex];
                 if (!prevWeekset) {
                   console.error(
-                    `No corresponding set found for setIndex: ${setIndex} in first week exercise`
+                    `No corresponding set found for setIndex: ${setIndex} in previous week exercise`
                   );
                   return set;
                 }
 
+                if (
+                  exerciseIndex === 0 &&
+                  setIndex === 0 &&
+                  dayIndex % daysPerWeek === 0
+                ) {
+                  // Log data for the first set on Mondays
+                  console.log(
+                    `Accessing previous week set with set index: ${setIndex} for Week ${
+                      currentWeek - 1
+                    }: ${JSON.stringify(prevWeekset)}`
+                  );
+                }
+                const lastWeekWeight = prevWeekset.completed
+                  ? parseFloat(prevWeekset.weight)
+                  : parseFloat(prevWeekset.targetWeight);
+                const lastWeekReps = prevWeekset.completed
+                  ? parseInt(prevWeekset.reps, 10)
+                  : parseInt(prevWeekset.targetReps, 10);
+
+                const previousFactor =
+                  [1.0, 1.05, 1.075, 1.1, 1.125][currentWeek - 2] || 1.0;
+                const currentFactor = [1.0, 1.05, 1.075, 1.1, 1.125][
+                  currentWeek - 1
+                ];
+
                 const newTarget = calculateNewTarget(
-                  prevWeekset.weight,
-                  prevWeekset.reps,
+                  lastWeekWeight,
+                  lastWeekReps,
                   previousWeekExercise.type,
-                  increaseFactor
+                  previousFactor,
+                  currentFactor
                 );
+
+                if (
+                  exerciseIndex === 0 &&
+                  setIndex === 0 &&
+                  dayIndex % daysPerWeek === 0
+                ) {
+                  console.log(`\n--- Debug for Set ---`);
+                  console.log(`  Last Week Weight: ${lastWeekWeight}`);
+                  console.log(`  Last Week Reps: ${lastWeekReps}`);
+                  console.log(`  New Target Weight: ${newTarget.weight}`);
+                  console.log(`  New Target Reps: ${newTarget.reps}`);
+                }
+
                 return {
                   ...set,
-                  weight: prevWeekset.completed ? newTarget.weight : set.weight,
-                  reps: prevWeekset.completed ? newTarget.reps : set.reps,
+                  weight: prevWeekset.completed ? set.weight : newTarget.weight,
+                  reps: prevWeekset.completed ? set.reps : newTarget.reps,
                   targetWeight: newTarget.weight,
                   targetReps: newTarget.reps,
                 };

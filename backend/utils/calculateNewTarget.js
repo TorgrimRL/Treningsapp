@@ -1,8 +1,16 @@
-export default function calculateNewTarget(weight, reps, type, increaseFactor) {
+export default function calculateNewTarget(
+  weight,
+  reps,
+  type,
+  previousFactor,
+  currentFactor
+) {
+  const increaseFactor = currentFactor;
+  const baseWeight = weight / previousFactor;
+
   let roundedWeight;
 
-  // Convert weight to float
-  const weightAsFloat = parseFloat(weight);
+  const weightAsFloat = parseFloat(baseWeight);
 
   if (type === "dumbbell") {
     roundedWeight = Math.round((weightAsFloat * increaseFactor) / 2) * 2;
@@ -10,28 +18,32 @@ export default function calculateNewTarget(weight, reps, type, increaseFactor) {
     roundedWeight = Math.round((weightAsFloat * increaseFactor) / 2.5) * 2.5;
   }
 
-  // Define a small tolerance for floating-point comparisons
   const tolerance = 0.001;
 
-  // console.log("Calculating new target:");
-  // console.log(`  Input weight: ${weightAsFloat}`);
-  // console.log(`  Input reps: ${reps}`);
-  // console.log(`  Exercise type: ${type}`);
-  // console.log(
-  //   `  Calculated ${type || "default"} rounded weight: ${roundedWeight}`
-  // );
+  const incrementedReps = parseInt(reps, 10) + 1;
+  if (weight === 30) {
+    console.log("=== Debug Calculation ===");
+    console.log(`Base Weight: ${baseWeight.toFixed(2)}`);
+    console.log(`Weight as Float: ${weightAsFloat.toFixed(2)}`);
+    console.log(`Increase Factor: ${increaseFactor}`);
+    console.log(`Rounded Weight: ${roundedWeight.toFixed(2)}`);
+    console.log(`Incremented Reps: ${incrementedReps}`);
+  }
 
-  // Calculate the incremented reps
-  const incrementedReps = parseInt(reps) + 1;
-
-  // Compare with tolerance to handle precision issues
-  if (Math.abs(roundedWeight - weightAsFloat) > tolerance) {
-    // console.log(`  Target weight updated to: ${roundedWeight}`);
-    // console.log(`  Reps remain the same: ${reps}`);
+  if (Math.abs(roundedWeight - weight) > tolerance) {
+    // Consider using weight directly instead of weightAsFloat
+    if (weight === 30) {
+      console.log(
+        `Returning new target: Weight = ${roundedWeight}, Reps = ${reps}`
+      );
+    }
     return { weight: roundedWeight, reps };
   } else {
-    // console.log(`  Target weight remains the same: ${weightAsFloat}`);
-    // console.log(`  Reps increase by 1: ${incrementedReps}`);
-    return { weight: weightAsFloat, reps: incrementedReps };
+    if (weight === 30) {
+      console.log(
+        `Returning incremented reps: Weight = ${weight}, Reps = ${incrementedReps}`
+      );
+    }
+    return { weight: weight, reps: incrementedReps };
   }
 }
