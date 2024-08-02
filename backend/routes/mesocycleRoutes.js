@@ -2,6 +2,7 @@ import express from "express";
 import db from "../database.js";
 import { authenticateToken, csrfProtection } from "../middleware.js";
 import calculateNewTarget from "../utils/calculateNewTarget.js";
+import createDeloadWeek from "../utils/createDeloadWeek.js";
 
 const router = express.Router();
 
@@ -134,7 +135,6 @@ router.get("/mesocycles/:id", (req, res) => {
 });
 
 // Endpoint to fetch the current workout
-// Endpoint to fetch the current workout
 router.get(
   "/current-workout",
   authenticateToken,
@@ -154,7 +154,12 @@ router.get(
       }
       const plan = JSON.parse(row.plan);
       const daysPerWeek = row.daysPerWeek;
-
+      const totalWeeks = row.weeks;
+      const firstWeekExercises = plan[0].exercises;
+      console.log(
+        "First Week Exercises:",
+        JSON.stringify(firstWeekExercises, null, 2)
+      );
       const updatedPlan = plan.map((day, dayIndex) => {
         const currentWeek = Math.floor(dayIndex / daysPerWeek) + 1;
 
@@ -190,6 +195,24 @@ router.get(
                   `Exercise sets is not an array for exerciseIndex: ${exerciseIndex} on dayIndex: ${dayIndex}`
                 );
                 return exercise;
+              }
+              const isDeloadWeek = currentWeek === totalWeeks;
+              if (isDeloadWeek) {
+                console.log(
+                  `Creating deload week for Week ${currentWeek} at dayIndex: ${dayIndex}`
+                );
+                // Log the exercise data before creating deload week
+                console.log(
+                  `Current week's exercises before creating deload: ${JSON.stringify(
+                    plan[dayIndex].exercises,
+                    null,
+                    2
+                  )}`
+                );
+                return createDeloadWeek(
+                  firstWeekExercises,
+                  plan[dayIndex].exercises
+                )[exerciseIndex];
               }
 
               const updatedSets = exercise.sets.map((set, setIndex) => {

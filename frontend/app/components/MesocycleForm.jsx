@@ -17,6 +17,7 @@ const MesocycleForm = ({ onSubmit }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [mesocycleName, setMesocycleName] = useState("");
   const [numberOfWeeks, setNumberOfWeeks] = useState("");
+  const [selectedGroups, setSelectedGroups] = useState({});
 
   const navigate = useNavigate();
 
@@ -83,6 +84,8 @@ const MesocycleForm = ({ onSubmit }) => {
   };
 
   const handleModalSave = (selectedGroups) => {
+    setSelectedGroups(selectedGroups); // Oppdaterer tilstanden
+
     const firstWeekPlan = [...plan];
     const totalDays = numberOfWeeks * firstWeekPlan.length;
     const filledPlan = [];
@@ -121,27 +124,36 @@ const MesocycleForm = ({ onSubmit }) => {
           alignItems: "center",
         }}
       >
-        <label>
-          Mesocycle Name:
-          <input
-            type="text"
-            value={mesocycleName}
-            onChange={(e) => setMesocycleName(e.target.value)}
-            required
-          />
-          <label>
-            Number of weeks:
+        {" "}
+        <div className="text-center border-black mb-10 p-4 border border-black border-thick">
+          <label className="mb-4 block">
+            Mesocycle Name:
             <input
-              type="number"
-              value={numberOfWeeks}
-              onChange={(e) => setNumberOfWeeks(e.target.value)}
+              type="text"
+              value={mesocycleName}
+              onChange={(e) => setMesocycleName(e.target.value)}
               required
+              className="bg-inputBGGray text-center border-black w-full p-1"
             />
+            <label className=" mb-4 block">
+              Number of weeks:
+              <input
+                type="number"
+                value={numberOfWeeks}
+                onChange={(e) => setNumberOfWeeks(e.target.value)}
+                required
+                className="bg-inputBGGray text-center border-black w-full p-1"
+              />
+            </label>
           </label>
-        </label>
-        <button type="submit" style={{ marginTop: "20px" }}>
-          Save Plan
-        </button>
+          <button
+            type="submit"
+            style={{ marginTop: "20px" }}
+            className="bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-lg rounded"
+          >
+            Save Plan
+          </button>
+        </div>
         <div
           style={{
             display: "flex",
@@ -151,13 +163,17 @@ const MesocycleForm = ({ onSubmit }) => {
           }}
         >
           {plan.map((day, dayIndex) => (
-            <div key={dayIndex} style={{ margin: "0 10px", flex: 1 }}>
-              <label>
-                Label:
+            <div
+              key={dayIndex}
+              style={{ margin: "0 5px", flex: 1 }}
+              className="bg-darkestGray border-gray-700 shadow-lg p-1 mb-6 w-60 "
+            >
+              <label className="flex items-center justify-between mb-2">
                 <select
                   value={day.label}
                   onChange={(e) => handleLabelChange(dayIndex, e.target.value)}
                   required
+                  className="bg-darkestGray text-center border border-gray-400 w-40 p-1 flex flex-col"
                 >
                   <option value="">Add a Label</option>
                   {days.map((dayLabel) => (
@@ -171,74 +187,93 @@ const MesocycleForm = ({ onSubmit }) => {
                 </button>
               </label>
               {day.exercises.map((exercise, exerciseIndex) => (
-                <div key={exerciseIndex} style={{ marginBottom: "10px" }}>
-                  <label>
-                    Muscle Group:
-                    <select
-                      value={exercise.muscleGroup}
-                      onChange={(e) =>
-                        handleChange(
-                          dayIndex,
-                          exerciseIndex,
-                          "muscleGroup",
-                          e.target.value
-                        )
+                <div
+                  key={exerciseIndex}
+                  className="flex justify-between flex-col bg-darkGray border border-gray-700  p-3 mb-3"
+                >
+                  <div className="flex justify-between items-center mb-2">
+                    <div className="flex flex-col">
+                      <label>
+                        Muscle Group:
+                        <select
+                          value={exercise.muscleGroup}
+                          onChange={(e) =>
+                            handleChange(
+                              dayIndex,
+                              exerciseIndex,
+                              "muscleGroup",
+                              e.target.value
+                            )
+                          }
+                          className="bg-darkestGray text-center border border-gray-400 w-50 rounded p-1 flex flex-col"
+                          required
+                        >
+                          <option value="">Select a muscle group</option>
+                          {muscleGroups.map((group) => (
+                            <option key={group} value={group}>
+                              {group}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        handleRemoveExercise(dayIndex, exerciseIndex)
                       }
-                      required
+                      className="text-white hover:text-red-800 ml-2"
+                      style={{ position: "relative", top: "-1.1rem" }}
                     >
-                      <option value="">Select a muscle group</option>
-                      {muscleGroups.map((group) => (
-                        <option key={group} value={group}>
-                          {group}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
-                    Exercise:
-                    <select
-                      value={exercise.exercise}
-                      onChange={(e) =>
-                        handleChange(
-                          dayIndex,
-                          exerciseIndex,
-                          "exercise",
-                          e.target.value
-                        )
-                      }
-                      required
-                    >
-                      <option value="">Select an exercise</option>
-                      {exercises[exercise.muscleGroup]?.map((ex) => (
-                        <option key={ex} value={ex}>
-                          {ex}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <span style={{ marginLeft: "10px" }}>
+                      <FontAwesomeIcon icon={faTrash} />
+                    </button>
+                  </div>
+                  <div className="flex  mb-2">
+                    <label className="flex flex-col w-full">
+                      Exercise:
+                      <select
+                        value={exercise.exercise}
+                        onChange={(e) =>
+                          handleChange(
+                            dayIndex,
+                            exerciseIndex,
+                            "exercise",
+                            e.target.value
+                          )
+                        }
+                        required
+                        className="bg-darkestGray text-center border border-gray-400 w-full rounded p-1 flex flex-grow"
+                      >
+                        <option value="">Select an exercise</option>
+                        {exercises[exercise.muscleGroup]?.map((ex) => (
+                          <option key={ex} value={ex}>
+                            {ex}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    {/* <span style={{ marginLeft: "10px" }}>
                     Priority: {exercise.priority || "None"}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      handleRemoveExercise(dayIndex, exerciseIndex)
-                    }
-                  >
-                    <FontAwesomeIcon icon={faTrash} />
-                  </button>
+                  </span> */}
+                  </div>
                 </div>
               ))}
-              <button type="button" onClick={() => handleAddExercise(dayIndex)}>
-                Add Muscle Group
+              <button
+                type="button"
+                onClick={() => handleAddExercise(dayIndex)}
+                className="flex w-full justify-between items-center bg-darkGray border border-gray-700 w-55 p-3 mb-3"
+              >
+                + ADD MUSCLE GROUP
               </button>
             </div>
           ))}
-          <div style={{ alignSelf: "flex-start", marginLeft: "20px" }}>
+          <div style={{ flex: "0 0 200px", alignSelf: "flex-start" }}>
             <button
               type="button"
               onClick={handleAddDay}
-              style={{ height: "fit-content", marginTop: "15px" }}
+              className="flex w-full justify-between items-center h-10 bg-darkestGray border border-gray-700 w-55 p-3 mb-3"
+              style={{ height: "", marginTop: "" }}
             >
               + Add a day
             </button>

@@ -294,66 +294,6 @@ export default function CurrentWorkout() {
     currentMesocycle.daysPerWeek
   );
 
-  // const handleSetCompletionChange = (
-  //   dayIndex,
-  //   exerciseIndex,
-  //   setIndex,
-  //   value,
-  //   weightValue,
-  //   repsValue
-  // ) => {
-  //   // Update state locally
-  //   setSets((prev) => {
-  //     const updatedSets = {
-  //       ...prev,
-  //       [dayIndex]: {
-  //         ...prev[dayIndex],
-  //         [exerciseIndex]: prev[dayIndex][exerciseIndex].map((set, sIndex) =>
-  //           sIndex === setIndex
-  //             ? {
-  //                 ...set,
-  //                 completed: value,
-  //                 weight: weightValue,
-  //                 reps: repsValue,
-  //               }
-  //             : set
-  //         ),
-  //       },
-  //     };
-
-  //     // Send updated sets to the backend
-  //     updateMesocycleOnBackend(currentMesocycle.id, updatedSets);
-  //     return updatedSets;
-  //   });
-  // };
-
-  // // Example API call to update mesocycle
-  // const updateMesocycleOnBackend = async (mesocycleId, updatedSets) => {
-  //   try {
-  //     const response = await fetch(
-  //       `http://localhost:3000/api/mesocycles/${mesocycleId}`,
-  //       {
-  //         method: "PUT",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //         },
-  //         body: JSON.stringify({
-  //           ...currentMesocycle,
-  //           plan: updatedSets,
-  //         }),
-  //       }
-  //     );
-
-  //     if (!response.ok) {
-  //       const errorText = await response.text();
-  //       throw new Error(`Failed to update mesocycle: ${errorText}`);
-  //     }
-  //     console.log("Successfully updated mesocycle");
-  //   } catch (error) {
-  //     console.error("Error updating mesocycle:", error);
-  //   }
-  // };
-
   const handleSetCompletionChange = async (
     dayIndex,
     exerciseIndex,
@@ -444,7 +384,6 @@ export default function CurrentWorkout() {
     });
   };
 
-  // Function to get the changes between the current and updated mesocycles
   function getChanges(currentPlan, updatedPlan) {
     const changes = [];
 
@@ -538,7 +477,9 @@ export default function CurrentWorkout() {
           <div className="p-1 text-white bg-darkGray mb-1 flex items-center justify-between sticky top-16 ">
             <div className="space-x-2 pl-3 mr-auto">
               <span className="font-semibold uppercase">
-                Week {week} Day {dayNumber} {getDayLabel(currentDay)}
+                {week === currentMesocycle.weeks
+                  ? "DELOAD WEEK"
+                  : `Week ${week} Day ${dayNumber} ${getDayLabel(currentDay)}`}
               </span>{" "}
             </div>
             <FaCalendarAlt
@@ -587,12 +528,6 @@ export default function CurrentWorkout() {
                       key={setIndex}
                       className="flex flex-row items-stretch items-center space-y-0 mb-4 border-b border-gray-600 pb-2"
                     >
-                      {/* <div className="flex flex-col items-center space-y-1 flex grow">
-                        <label>Tw tr:</label>
-                        <span>
-                          {set.targetWeight || "N/A"},{set.targetReps}
-                        </span>
-                      </div> */}
                       <div className="relative ">
                         <button
                           onClick={() => {
@@ -695,7 +630,6 @@ export default function CurrentWorkout() {
                           }
                           className="bg-inputBGGray text-center border-black w-full rounded p-1"
                         >
-                          {/* <option value={"choose reps"} /> */}
                           {repRange.map((reps) => (
                             <option key={reps} value={reps}>
                               {reps}
@@ -733,23 +667,6 @@ export default function CurrentWorkout() {
                             exIndex
                           );
 
-                          // Debug Log for Icons
-                          if (
-                            exIndex === 0 &&
-                            setIndex === 2 &&
-                            weekIndex === 2
-                          ) {
-                            console.log(
-                              `Performance status for exerciseIndex ${exIndex}, setIndex ${setIndex}, dayIndex ${currentDayIndex}, weekIndex ${weekIndex}: ${status}`
-                            );
-                            console.log(`Exercise type: ${exercise.type}`);
-                            console.log(
-                              `Set weight: ${set.weight}, Target weight: ${set.targetWeight}`
-                            );
-                            console.log(
-                              `Set reps: ${set.reps}, Target reps: ${set.targetReps}`
-                            );
-                          }
                           const iconStyles = {
                             top: "50%",
                             transform: "translateY(-10%)",
@@ -785,18 +702,6 @@ export default function CurrentWorkout() {
                           return null;
                         })()}
                       </div>
-                      {/* <div className="flex items-center justify-center ml-2 relative">
-                        {hasReachedTarget(set) && (
-                          <FontAwesomeIcon
-                            icon={faBullseye}
-                            className="text-green-500 absolute mt-2 ml-1 top-1/2 transform -translate-y-1/2"
-                            style={{
-                              top: "50%",
-                              transform: "translateY(-10%)",
-                            }}
-                          />
-                        )}
-                      </div> */}
                       <div className="flex flex-col items-center space-y-1 flex-grow">
                         <label className="text-center h-6 flex items-center justify-center">
                           LOG
