@@ -15,14 +15,19 @@ Modal.setAppElement("#root");
 const getFirstIncompleteDay = (plan) => {
   for (let i = 0; i < plan.length; i++) {
     const day = plan[i];
-    const allExercisesCompleted = day.exercises.every(
-      (exercise) => exercise.completed
-    );
+    const allExercisesCompleted = day.exercises.every((exercise) => {
+      if (!exercise.sets) {
+        return false;
+      }
+      return exercise.sets.every((set) => set.completed);
+    });
+
     if (!allExercisesCompleted) {
       return i;
     }
-    return plan.length - 1;
   }
+
+  return plan.length - 1;
 };
 
 export default function CurrentWorkout() {
@@ -228,10 +233,42 @@ export default function CurrentWorkout() {
     return <div>Loading...</div>;
   }
 
-  const handleDayClick = (index) => {
-    setCurrentDayIndex(index);
-    setIsCalendarModalOpen(false);
+  const handleDayClick = async (index) => {
+    try {
+      // Fetch updated workout data for the selected day
+      const response = await fetch(
+        "http://localhost:3000/api/current-workout",
+        {
+          method: "GET",
+          credentials: "include",
+        }
+      );
+
+      const data = await response.json();
+      console.log("Updated Mesocycle Data:", data);
+
+      // Update state with fetched data
+      setCurrentMesocycle(data);
+      setCurrentDayIndex(index);
+
+      // Update sets data based on the new mesocycle plan
+      const setsData = {}; // Declare setsData with const
+      data.plan.forEach((day, dayIndex) => {
+        setsData[dayIndex] = {};
+        day.exercises.forEach((exercise, exerciseIndex) => {
+          setsData[dayIndex][exerciseIndex] = exercise.sets || [];
+        });
+      });
+      setSets(setsData);
+
+      // Close the calendar modal
+      setIsCalendarModalOpen(false);
+    } catch (error) {
+      console.error("Error fetching workout data:", error);
+    }
   };
+  // setCurrentDayIndex(index);
+  // setIsCalendarModalOpen(false);
 
   const getDayLabel = (day) => {
     const daysOfWeek = [
@@ -333,14 +370,6 @@ export default function CurrentWorkout() {
           ...prev[dayIndex],
           [exerciseIndex]: prev[dayIndex][exerciseIndex].map((set, sIndex) => {
             if (sIndex === setIndex) {
-              // ? {
-              //     ...set,
-              //     completed: value,
-              //     weight: weightValue,
-              //     reps: repsValue,
-              //   }
-              // : set
-              // If completed is set to false, reset weight and reps
               if (!value) {
                 return {
                   ...set,
@@ -481,7 +510,6 @@ export default function CurrentWorkout() {
     const weightDifference = currentWeight - targetWeight;
     const maxIncrementDeviation = 3 * incrementSize;
 
-    // Recalculate target reps based on weight change
     const incrementDifference = weightDifference / incrementSize;
     const adjustedReps = targetReps - incrementDifference * 2;
     const roundedAdjustedReps = Math.round(adjustedReps);
@@ -559,12 +587,12 @@ export default function CurrentWorkout() {
                       key={setIndex}
                       className="flex flex-row items-stretch items-center space-y-0 mb-4 border-b border-gray-600 pb-2"
                     >
-                      <div className="flex flex-col items-center space-y-1 flex grow">
+                      {/* <div className="flex flex-col items-center space-y-1 flex grow">
                         <label>Tw tr:</label>
                         <span>
                           {set.targetWeight || "N/A"},{set.targetReps}
                         </span>
-                      </div>
+                      </div> */}
                       <div className="relative ">
                         <button
                           onClick={() => {

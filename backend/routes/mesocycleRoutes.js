@@ -234,22 +234,19 @@ router.get(
                   currentFactor
                 );
 
-                if (
-                  exerciseIndex === 0 &&
-                  setIndex === 0 &&
-                  dayIndex % daysPerWeek === 0
-                ) {
-                  console.log(`\n--- Debug for Set ---`);
-                  console.log(`  Last Week Weight: ${lastWeekWeight}`);
-                  console.log(`  Last Week Reps: ${lastWeekReps}`);
-                  console.log(`  New Target Weight: ${newTarget.weight}`);
-                  console.log(`  New Target Reps: ${newTarget.reps}`);
-                }
+                const weightToUse =
+                  !prevWeekset.completed || set.completed
+                    ? set.weight
+                    : newTarget.weight;
+                const repsToUse =
+                  !prevWeekset.completed || set.completed
+                    ? set.reps
+                    : newTarget.reps;
 
                 return {
                   ...set,
-                  weight: prevWeekset.completed ? set.weight : newTarget.weight,
-                  reps: prevWeekset.completed ? set.reps : newTarget.reps,
+                  weight: weightToUse,
+                  reps: repsToUse,
                   targetWeight: newTarget.weight,
                   targetReps: newTarget.reps,
                 };
