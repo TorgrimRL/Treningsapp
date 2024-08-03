@@ -152,6 +152,14 @@ export default function Navbar() {
                     </a>
                   </li>
                   <li className="block px-4 py-2 hover:bg-darkGray ">
+                    <a
+                      href="/templates"
+                      className="focus:outline-none block w-full text-left cursor-pointer"
+                    >
+                      Templates
+                    </a>
+                  </li>
+                  <li className="block px-4 py-2 hover:bg-darkGray ">
                     <form method="post" action="/logout">
                       <button
                         type="submit"

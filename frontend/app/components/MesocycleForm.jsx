@@ -1,10 +1,15 @@
-import React, { useState } from "react";
-import { muscleGroups, exercises, days } from "../constants/constants";
+import React, { useState, useEffect } from "react";
+import {
+  muscleGroups as AllMuscleGroups,
+  exercises,
+  days,
+} from "../constants/constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import Modal from "react-modal";
 import MuscleGroupModal from "./MuscleGroupModal";
 import { useNavigate } from "@remix-run/react";
+import { useLocation } from "@remix-run/react";
 
 Modal.setAppElement("#root");
 
@@ -18,8 +23,38 @@ const MesocycleForm = ({ onSubmit }) => {
   const [mesocycleName, setMesocycleName] = useState("");
   const [numberOfWeeks, setNumberOfWeeks] = useState("");
   const [selectedGroups, setSelectedGroups] = useState({});
+  const location = useLocation();
+  const { template, weeks, daysPerWeek, muscleGroups } = location.state || {};
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (template) {
+      setNumberOfWeeks(weeks || numberOfWeeks);
+      console.log("Mottatt template data:", {
+        template,
+        weeks,
+        daysPerWeek,
+        muscleGroups,
+      });
+      const initialPlan = Array.from(
+        { length: daysPerWeek },
+        (_, dayIndex) => ({
+          label: `Day ${dayIndex + 1}`,
+          exercises:
+            muscleGroups[dayIndex]?.map((group) => ({
+              muscleGroup: group,
+              exercise: "",
+              weight: 0,
+              set: 0,
+              reps: 0,
+            })) || [],
+        })
+      );
+      console.log("Initial Plan:", initialPlan);
+      setPlan(initialPlan);
+    }
+  }, [template, daysPerWeek, muscleGroups]);
 
   const handleChange = (dayIndex, exerciseIndex, field, value) => {
     const updatedPlan = [...plan];
@@ -43,9 +78,7 @@ const MesocycleForm = ({ onSubmit }) => {
     updatedPlan[dayIndex].exercises.push({
       muscleGroup: "",
       exercise: "",
-      weight: 0,
       sets: 0,
-      reps: 0,
     });
     setPlan(updatedPlan);
   };
@@ -209,7 +242,7 @@ const MesocycleForm = ({ onSubmit }) => {
                           required
                         >
                           <option value="">Select a muscle group</option>
-                          {muscleGroups.map((group) => (
+                          {AllMuscleGroups.map((group) => (
                             <option key={group} value={group}>
                               {group}
                             </option>
@@ -283,7 +316,7 @@ const MesocycleForm = ({ onSubmit }) => {
       <MuscleGroupModal
         isOpen={isModalOpen}
         onRequestClose={() => setIsModalOpen(false)}
-        muscleGroups={muscleGroups}
+        muscleGroups={AllMuscleGroups}
         onSave={handleModalSave}
         href="current-workout"
       />
