@@ -24,7 +24,8 @@ const MesocycleForm = ({ onSubmit }) => {
   const [numberOfWeeks, setNumberOfWeeks] = useState("");
   const [selectedGroups, setSelectedGroups] = useState({});
   const location = useLocation();
-  const { template, weeks, daysPerWeek, muscleGroups } = location.state || {};
+  const { template, weeks, daysPerWeek, muscleGroups, dayLabels } =
+    location.state || {};
 
   const navigate = useNavigate();
 
@@ -36,11 +37,12 @@ const MesocycleForm = ({ onSubmit }) => {
         weeks,
         daysPerWeek,
         muscleGroups,
+        dayLabels,
       });
       const initialPlan = Array.from(
         { length: daysPerWeek },
         (_, dayIndex) => ({
-          label: `Day ${dayIndex + 1}`,
+          label: dayLabels[dayIndex],
           exercises:
             muscleGroups[dayIndex]?.map((group) => ({
               muscleGroup: group,
@@ -117,7 +119,7 @@ const MesocycleForm = ({ onSubmit }) => {
   };
 
   const handleModalSave = (selectedGroups) => {
-    setSelectedGroups(selectedGroups); // Oppdaterer tilstanden
+    setSelectedGroups(selectedGroups);
 
     const firstWeekPlan = [...plan];
     const totalDays = numberOfWeeks * firstWeekPlan.length;
@@ -146,6 +148,23 @@ const MesocycleForm = ({ onSubmit }) => {
     onSubmit(mesocycleData);
     setIsModalOpen(false);
     navigate("currentworkout");
+  };
+  const handleAutofillExercises = () => {
+    const filledPlan = plan.map((day) => ({
+      ...day,
+      exercises: day.exercises.map((exercise) => ({
+        ...exercise,
+        exercise: exercise.exercise || getRandomExercise(exercise.muscleGroup),
+      })),
+    }));
+    setPlan(filledPlan);
+  };
+
+  const getRandomExercise = (muscleGroup) => {
+    const exerciseList = exercises[muscleGroup];
+    return exerciseList && exerciseList.length > 0
+      ? exerciseList[Math.floor(Math.random() * exerciseList.length)].name
+      : "";
   };
 
   return (
@@ -182,9 +201,17 @@ const MesocycleForm = ({ onSubmit }) => {
           <button
             type="submit"
             style={{ marginTop: "20px" }}
-            className="bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-lg rounded"
+            className="bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-lg rounded mr-4"
           >
             Save Plan
+          </button>
+          <button
+            style={{ marginTop: "20px" }}
+            className="bg-red-600 text-white border-none py-2 px-4
+            cursor-pointer text-lg rounded"
+            onClick={handleAutofillExercises}
+          >
+            Auto Fill Exercises
           </button>
         </div>
         <div
@@ -280,8 +307,8 @@ const MesocycleForm = ({ onSubmit }) => {
                       >
                         <option value="">Select an exercise</option>
                         {exercises[exercise.muscleGroup]?.map((ex) => (
-                          <option key={ex} value={ex}>
-                            {ex}
+                          <option key={ex.name} value={ex.name}>
+                            {ex.name}
                           </option>
                         ))}
                       </select>

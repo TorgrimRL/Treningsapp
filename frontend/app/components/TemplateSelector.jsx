@@ -1,29 +1,27 @@
-import React from "react";
-const templates = [
-  {
-    name: "Strength Training",
-    days: 3,
-    muscleGroups: [
-      ["Chest", "Back", "Legs"],
-      ["Arms", "Shoulders", "Abs"],
-      ["Legs", "Back", "Calves"],
-    ],
-  },
-  {
-    name: "Hypertrophy Training",
-    days: 4,
-    muscleGroups: [
-      ["Chest", "Triceps"],
-      ["Back", "Biceps"],
-      ["Legs", "Shoulders"],
-      ["Abs", "Calves"],
-    ],
-  },
-];
+import React, { useState } from "react";
+import Modal from "react-modal";
+import TemplateOverviewModal from "./TemplatePreviewModal";
+import { templates } from "../constants/constants";
+
+Modal.setAppElement("#root");
 
 const TemplateSelector = ({ onSelectTemplate }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+
   const handleSelect = (template) => {
-    onSelectTemplate(template);
+    setSelectedTemplate(template);
+    setIsModalOpen(true);
+
+    // onSelectTemplate(template);
+  };
+
+  const handleModalSave = () => {
+    if (onSelectTemplate && typeof onSelectTemplate === "function") {
+      onSelectTemplate(selectedTemplate);
+    }
+    // onSelectTemplate(template);
+    setIsModalOpen(false);
   };
 
   return (
@@ -31,12 +29,12 @@ const TemplateSelector = ({ onSelectTemplate }) => {
       <div>
         <header className=" flex justify-between items-center mb-5 p-5">
           <h1 className="text-2xl m-0">Templates</h1>
-          <button
+          {/* <button
             //   onClick={}
             className="bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-lg"
           >
             + NEW
-          </button>
+          </button> */}
         </header>
       </div>
       <div>
@@ -47,12 +45,18 @@ const TemplateSelector = ({ onSelectTemplate }) => {
                 onClick={() => handleSelect(template)}
                 className="bg-darkGray text-white py-2 px-4 w-full hover:bg-gray-700"
               >
-                {template.name} - {template.days} Days
+                {template.name} - {template.days}/week
               </button>
             </li>
           ))}
         </ul>
       </div>
+      <TemplateOverviewModal
+        isOpen={isModalOpen}
+        onRequestClose={() => setIsModalOpen(false)}
+        template={selectedTemplate}
+        onSave={handleModalSave}
+      />
     </div>
   );
 };
