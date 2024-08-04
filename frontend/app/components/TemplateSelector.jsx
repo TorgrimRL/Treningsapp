@@ -23,12 +23,7 @@ const templates = [
 
 const TemplateSelector = ({ onSelectTemplate }) => {
   const handleSelect = (template) => {
-    if (typeof onSelectTemplate === "function") {
-      console.log("Kaller onSelectTemplate med:", template);
-      onSelectTemplate(template);
-    } else {
-      console.error("onSelectTemplate er ikke definert eller ikke en funksjon");
-    }
+    onSelectTemplate(template);
   };
 
   return (

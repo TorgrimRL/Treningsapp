@@ -41,7 +41,7 @@ export default function Navbar() {
       }}
     >
       <div
-        className="container mx-auto flex justify-between items-center px-4 py-3 text-white bg-darkGray"
+        className=" mx-auto flex justify-between items-center px-4 py-3 text-white bg-darkGray"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="text-white bg-darkGray text-xl font-bold">My App</div>
@@ -58,32 +58,57 @@ export default function Navbar() {
             ☰
           </button>
         </div>
-        <div className="hidden md:flex md:space-x-4">
-          <a href="/" className="text-white">
+        <div className="hidden md:flex md:space-x-4 h-full items-center ">
+          <a
+            href="/"
+            className="text-white h-full flex items-center hover:bg-gray-700"
+          >
             Home
           </a>
           {!isLoggedIn && (
-            <a href="/login" className="text-white">
+            <a
+              href="/login"
+              className="text-white h-full flex items-center hover:bg-gray-700"
+            >
               Login
             </a>
           )}
           {!isLoggedIn && (
-            <a href="/register" className="text-white">
+            <a
+              href="/register"
+              className="text-white h-full flex items-center hover:bg-gray-700"
+            >
               Register
             </a>
           )}
           {isLoggedIn && (
             <>
-              <a href="/currentworkout" className="text-white">
+              <a
+                href="/currentworkout"
+                className="text-white h-full flex items-center hover:bg-gray-700"
+              >
                 Current workout
               </a>
-              <a href="/mesocycles/new" className="text-white">
+              <a
+                href="/mesocycles-new"
+                className="text-white h-full flex items-center hover:bg-gray-700"
+              >
                 Plan a new mesocycle
               </a>
-              <form method="post" action="/logout">
+              <a
+                href="/templates"
+                className="text-white h-full flex items-center hover:bg-gray-700"
+              >
+                Templates
+              </a>
+              <form
+                method="post"
+                action="/logout"
+                className="h-full flex items-center"
+              >
                 <button
                   type="submit"
-                  className="block w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-200"
+                  className="text-white h-full flex items-center hover:bg-gray-700"
                 >
                   Logout
                 </button>

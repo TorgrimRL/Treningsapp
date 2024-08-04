@@ -190,7 +190,7 @@ const MesocycleForm = ({ onSubmit }) => {
         <div
           style={{
             display: "flex",
-            justifyContent: "space-between",
+            justifyContent: "start",
             width: "100%",
             overflow: "auto",
           }}
@@ -199,7 +199,7 @@ const MesocycleForm = ({ onSubmit }) => {
             <div
               key={dayIndex}
               style={{ margin: "0 5px", flex: 1 }}
-              className="bg-darkestGray border-gray-700 shadow-lg p-1 mb-6 w-60 "
+              className="bg-darkestGray border-gray-700 shadow-lg p-1 mb-6  max-w-sm"
             >
               <label className="flex items-center justify-between mb-2">
                 <select
