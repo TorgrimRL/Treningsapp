@@ -5,7 +5,23 @@ import { faEllipsisV } from "@fortawesome/free-solid-svg-icons";
 const MesocycleOverview = () => {
   const [mesocycles, setMesocycles] = useState([]);
   const [openMenus, setOpenMenus] = useState({});
+  const [sortedPlans, setSortedPlans] = useState([]);
   const menuRef = useRef(null);
+
+  const sortPlansByCurrent = (plans) => {
+    const currentPlans = plans.filter((plan) => plan.isCurrent);
+    const nonCurrentPlans = plans.filter(
+      (plan) => !plan.isCurrent && plan.completedDate === null
+    );
+    const finnishedPlans = plans.filter((plan) => plan.completedDate !== null);
+
+    return currentPlans.concat(nonCurrentPlans, finnishedPlans);
+  };
+
+  useEffect(() => {
+    const sorted = sortPlansByCurrent(mesocycles);
+    setSortedPlans(sorted);
+  }, [mesocycles]);
 
   useEffect(() => {
     const handleClickOutSide = (event) => {
@@ -47,7 +63,7 @@ const MesocycleOverview = () => {
     );
     if (allDaysCompleted && !mesocycle.completedDate) {
       // Uncomment when exercisestatus per day is implemented
-      // mesocycle.completedDate = new Date().toISOString();
+      mesocycle.completedDate = new Date().toISOString();
     }
     return mesocycle;
   };
@@ -71,15 +87,17 @@ const MesocycleOverview = () => {
         </a>
       </header>
       <ul className="list-none p-0 m-0">
-        {mesocycles.map((mesocycle) => (
+        {sortedPlans.map((mesocycle) => (
           <li
             key={mesocycle.id}
-            className={`flex justify-between items-center bg-gray-800 p-4 rounded mb-2 ${
+            className={`flex justify-between items-center max-w-sm bg-darkestGray p-4 rounded mb-2 ${
               mesocycle.isCurrent ? "border-l-4 border-red-600" : ""
             }`}
           >
             <div>
-              <h2 className="text-lg m-0 mb-1">{mesocycle.name}</h2>
+              <h2 className="text-lg m-0 max-w-sm mb-1 truncate max-w-[200px]">
+                {mesocycle.name}
+              </h2>
               <p className="text-sm text-gray-400 m-0">
                 {mesocycle.weeks} WEEKS - {mesocycle.daysPerWeek} DAYS/WEEK
               </p>

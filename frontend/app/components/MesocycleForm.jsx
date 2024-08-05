@@ -249,7 +249,7 @@ const MesocycleForm = ({ onSubmit }) => {
               {day.exercises.map((exercise, exerciseIndex) => (
                 <div
                   key={exerciseIndex}
-                  className="flex justify-between flex-col bg-darkGray border border-gray-700  p-3 mb-3"
+                  className="flex justify-between flex-col bg-darkGray border max-w-sm border-gray-700 max-w p-3 mb-3"
                 >
                   <div className="flex justify-between items-center mb-2">
                     <div className="flex flex-col">
