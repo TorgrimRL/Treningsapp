@@ -68,7 +68,25 @@ const MesocycleForm = ({ onSubmit }) => {
   }, [template, daysPerWeek, muscleGroups]);
 
   const handleChange = (dayIndex, exerciseIndex, field, value) => {
+    console.log(
+      `Handling change for dayIndex: ${dayIndex}, exerciseIndex: ${exerciseIndex}, field: ${field}, value: ${value}`
+    );
     const updatedPlan = [...plan];
+    const muscleGroup =
+      updatedPlan[dayIndex].exercises[exerciseIndex].muscleGroup;
+    console.log(`Current muscle group: ${muscleGroup}`);
+
+    // Finn den valgte øvelsen basert på muskelgruppen og navnet (value)
+    const selectedExercise = exercises[muscleGroup]?.find(
+      (ex) => ex.name === value
+    );
+
+    // Logg funnet øvelse og dens type
+    console.log(
+      `Selected exercise: ${
+        selectedExercise ? selectedExercise.name : "None"
+      }, Type: ${selectedExercise ? selectedExercise.type : "Unknown"}`
+    );
     updatedPlan[dayIndex] = {
       ...updatedPlan[dayIndex],
       exercises: [...updatedPlan[dayIndex].exercises],
@@ -76,11 +94,19 @@ const MesocycleForm = ({ onSubmit }) => {
     updatedPlan[dayIndex].exercises[exerciseIndex] = {
       ...updatedPlan[dayIndex].exercises[exerciseIndex],
       [field]: value,
+      type:
+        field === "exercise" && selectedExercise
+          ? selectedExercise.type
+          : updatedPlan[dayIndex].exercises[exerciseIndex].type,
       priority:
         field === "muscleGroup"
           ? selectedGroups[value]
           : updatedPlan[dayIndex].exercises[exerciseIndex].priority,
     };
+    console.log(
+      `Updated exercise at day ${dayIndex}, index ${exerciseIndex}:`,
+      updatedPlan[dayIndex].exercises[exerciseIndex]
+    );
     setPlan(updatedPlan);
   };
 
@@ -172,10 +198,19 @@ const MesocycleForm = ({ onSubmit }) => {
   const handleAutofillExercises = () => {
     const filledPlan = plan.map((day) => ({
       ...day,
-      exercises: day.exercises.map((exercise) => ({
-        ...exercise,
-        exercise: exercise.exercise || getRandomExercise(exercise.muscleGroup),
-      })),
+      exercises: day.exercises.map((exercise) => {
+        const randomExercise =
+          exercise.exercise || getRandomExercise(exercise.muscleGroup);
+        const exerciseType = exercises[exercise.muscleGroup]?.find(
+          (ex) => ex.name === randomExercise
+        )?.type;
+        // exercise: exercise.exercise || getRandomExercise(exercise.muscleGroup),
+        return {
+          ...exercise,
+          exercise: randomExercise,
+          type: exerciseType,
+        };
+      }),
     }));
     setPlan(filledPlan);
   };

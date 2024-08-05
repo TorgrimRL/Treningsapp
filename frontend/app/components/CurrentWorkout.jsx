@@ -252,7 +252,7 @@ export default function CurrentWorkout() {
       setCurrentDayIndex(index);
 
       // Update sets data based on the new mesocycle plan
-      const setsData = {}; // Declare setsData with const
+      const setsData = {};
       data.plan.forEach((day, dayIndex) => {
         setsData[dayIndex] = {};
         day.exercises.forEach((exercise, exerciseIndex) => {
@@ -514,7 +514,11 @@ export default function CurrentWorkout() {
                       <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-md shadow-lg z-10">
                         <ul className="py-1 bg-hamburgerbackground ">
                           <li className="block px-4 py-2 text-white hover:bg-darkGray">
-                            Placeholder
+                            <button
+                            // onClick={handleAddNote(exIndex)}
+                            >
+                              Add note
+                            </button>
                           </li>
                         </ul>
                       </div>
@@ -583,15 +587,18 @@ export default function CurrentWorkout() {
                         </label>
                         <select
                           value={set.weight || set.targetWeight || ""}
-                          onChange={(e) =>
+                          onChange={(e) => {
+                            console.log(
+                              `Exercise type before change: ${exercise.type}`
+                            ); // Log exercise type before handling weight change
                             handleWeightChange(
                               currentDayIndex,
                               exIndex,
                               setIndex,
                               e.target.value,
                               exercise.type
-                            )
-                          }
+                            );
+                          }}
                           className="bg-inputBGGray text-center border-black w-20 rounded p-1"
                         >
                           <option value={"Choose weight"} />
