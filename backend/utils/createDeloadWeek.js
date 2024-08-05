@@ -38,7 +38,7 @@ export default function createDeloadWeek(
           reps: deloadReps,
           targetWeight: deloadWeight,
           targetReps: deloadReps,
-          completed: false,
+          // completed: false,
         };
       })
       .filter(Boolean);

@@ -657,7 +657,7 @@ export default function CurrentWorkout() {
                           const { week: weekIndex } = getWeekAndDay(
                             currentDayIndex,
                             currentMesocycle.daysPerWeek
-                          ); // Use your function to get the week index
+                          );
                           const status = getPerformanceStatus(
                             set,
                             exercise.type,

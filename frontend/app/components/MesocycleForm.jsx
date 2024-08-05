@@ -17,7 +17,16 @@ const MesocycleForm = ({ onSubmit }) => {
   const [plan, setPlan] = useState(
     Array(1)
       .fill()
-      .map(() => ({ label: "", exercises: [] }))
+      .map(() => ({
+        label: "",
+        exercises: [
+          {
+            muscleGroup: "",
+            exercise: "",
+            sets: [{}, {}],
+          },
+        ],
+      }))
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [mesocycleName, setMesocycleName] = useState("");
@@ -48,7 +57,7 @@ const MesocycleForm = ({ onSubmit }) => {
               muscleGroup: group,
               exercise: "",
               weight: 0,
-              set: 0,
+              sets: [{}, {}],
               reps: 0,
             })) || [],
         })
@@ -80,7 +89,18 @@ const MesocycleForm = ({ onSubmit }) => {
     updatedPlan[dayIndex].exercises.push({
       muscleGroup: "",
       exercise: "",
-      sets: 0,
+      sets: [
+        {
+          completed: false,
+          targetWeight: 0,
+          targetReps: 0,
+        },
+        {
+          completed: false,
+          targetWeight: 0,
+          targetReps: 0,
+        },
+      ],
     });
     setPlan(updatedPlan);
   };
@@ -147,7 +167,7 @@ const MesocycleForm = ({ onSubmit }) => {
     };
     onSubmit(mesocycleData);
     setIsModalOpen(false);
-    navigate("currentworkout");
+    navigate("../currentworkout");
   };
   const handleAutofillExercises = () => {
     const filledPlan = plan.map((day) => ({
@@ -249,7 +269,7 @@ const MesocycleForm = ({ onSubmit }) => {
               {day.exercises.map((exercise, exerciseIndex) => (
                 <div
                   key={exerciseIndex}
-                  className="flex justify-between flex-col bg-darkGray border max-w-sm border-gray-700 max-w p-3 mb-3"
+                  className="flex justify-between flex-col bg-darkGray border  border-gray-700 max-w p-3 mb-3"
                 >
                   <div className="flex justify-between items-center mb-2">
                     <div className="flex flex-col">
@@ -345,7 +365,7 @@ const MesocycleForm = ({ onSubmit }) => {
         onRequestClose={() => setIsModalOpen(false)}
         muscleGroups={AllMuscleGroups}
         onSave={handleModalSave}
-        href="current-workout"
+        href="../current-workout"
       />
     </form>
   );
