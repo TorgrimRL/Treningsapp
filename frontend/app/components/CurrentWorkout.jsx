@@ -39,7 +39,7 @@ export default function CurrentWorkout() {
   const [sets, setSets] = useState({});
   const calendarIconRef = useRef(null);
   const [openMenus, setOpenMenus] = useState({});
-  const menuRefs = useRef();
+  const menuRefs = useRef([]);
   const [openSetMenus, setOpenSetMenus] = useState({});
   const setMenuRefs = useRef();
   const [notes, setNotes] = useState({});
@@ -53,14 +53,34 @@ export default function CurrentWorkout() {
   const handleSaveNote = () => {
     if (currentExercise) {
       const { dayIndex, exerciseIndex } = currentExercise;
-      setNotes((prevNotes) => ({
-        ...prevNotes,
-        [dayIndex]: {
-          ...prevNotes[dayIndex],
-          [exerciseIndex]: currentNote,
-        },
-      }));
+
+      // Log the current exercise and note details
+      console.log("Saving note for:", { dayIndex, exerciseIndex });
+      console.log("Current note before saving:", currentNote);
+
+      // Log the notes state before updating
+      console.log("Notes state before update:", notes);
+
+      setNotes((prevNotes) => {
+        const updatedNotes = {
+          ...prevNotes,
+          [dayIndex]: {
+            ...prevNotes[dayIndex],
+            [exerciseIndex]: currentNote,
+          },
+        };
+
+        // Log the updated notes state
+        console.log("Notes state after update:", updatedNotes);
+
+        return updatedNotes;
+      });
+
+      // Log the closing of the note modal
+      console.log("Closing note modal");
       setIsNoteModalOpen(false);
+    } else {
+      console.log("No current exercise selected for note saving.");
     }
   };
 
@@ -76,37 +96,41 @@ export default function CurrentWorkout() {
   }, []);
 
   const toggleMenu = useCallback((id) => {
-    setOpenMenus((prevState) => ({
-      ...prevState,
-      [id]: !prevState[id],
-    }));
+    setOpenMenus((prevState) => {
+      const newState = {
+        ...prevState,
+        [id]: !prevState[id], // Toggle the specific menu, preserve others
+      };
+      console.log("Toggling menu for exercise index:", id);
+      console.log("Updated openMenus state:", newState);
+      return newState;
+    });
   }, []);
 
   useEffect(() => {
-    const handleClickOutSide = (event) => {
-      console.log("handleClickOutside triggered");
+    const handleClickOutside = (event) => {
+      // Check if click happened outside all menus
+      let clickedOutside = true;
+      menuRefs.current.forEach((ref) => {
+        if (ref && ref.contains(event.target)) {
+          clickedOutside = false;
+        }
+      });
 
-      if (menuRefs.current && menuRefs.current.contains(event.target)) {
-        return;
+      if (clickedOutside) {
+        console.log("Closing all menus");
+        setOpenMenus({}); // Close all menus if click happened outside
       }
-
-      if (setMenuRefs.current && setMenuRefs.current.contains(event.target)) {
-        return;
-      }
-
-      console.log("Closing menus");
-      setOpenMenus({});
-      setOpenSetMenus({});
     };
 
-    document.addEventListener("mousedown", handleClickOutSide);
-    document.addEventListener("touchstart", handleClickOutSide);
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutSide);
-      document.removeEventListener("touchstart", handleClickOutSide);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
     };
-  }, []);
+  }, [menuRefs]);
 
   const handleRepsChange = (dayIndex, exerciseIndex, setIndex, value) => {
     setSets((prev) => ({
@@ -509,7 +533,7 @@ export default function CurrentWorkout() {
                 <li key={exIndex} className="p-3 overflow-auto bg-darkGray">
                   <div
                     className="flex justify-between items-center relative"
-                    ref={menuRefs}
+                    ref={(el) => (menuRefs.current[exIndex] = el)}
                   >
                     <div className="flex items-center space-x-2">
                       <span className="text-sm text-white border uppercase border-red-500 bg-darkBackgroundRed inline-block w-auto px-2 py-1">
@@ -520,7 +544,12 @@ export default function CurrentWorkout() {
                       </span>
                     </div>
                     <button
-                      onClick={() => toggleMenu(exIndex)}
+                      onClick={() => {
+                        console.log(
+                          `Menu toggle button clicked for exercise index: ${exIndex}`
+                        );
+                        toggleMenu(exIndex);
+                      }}
                       className="text-white focus:outline-none"
                     >
                       <FontAwesomeIcon icon={faEllipsisV} />
@@ -532,17 +561,23 @@ export default function CurrentWorkout() {
                             <button
                               onClick={(event) => {
                                 event.stopPropagation();
-
+                                console.log(
+                                  `"Add note" button clicked for exercise index: ${exIndex}`
+                                );
                                 setCurrentExercise({
                                   dayIndex: currentDayIndex,
                                   exerciseIndex: exIndex,
                                 });
-
                                 const currentNoteText =
                                   notes[currentDayIndex]?.[exIndex] || "";
                                 setCurrentNote(currentNoteText);
-
+                                console.log("Current Exercise Set:", {
+                                  dayIndex: currentDayIndex,
+                                  exerciseIndex: exIndex,
+                                });
+                                console.log("Current Note:", currentNoteText);
                                 setIsNoteModalOpen(true);
+                                console.log("Note modal should be opening");
                               }}
                               className="text-white focus:outline-none"
                             >
@@ -557,7 +592,7 @@ export default function CurrentWorkout() {
                     {exercise.exercise}
                   </div>
                   {notes[currentDayIndex]?.[exIndex] && (
-                    <div className="mt-2 bg-yellow-500 text-white p-1">
+                    <div className="mt-2 bg-yellow-500 text-white p-2">
                       <strong>Note:</strong>
                       {notes[currentDayIndex][exIndex]}
                     </div>
