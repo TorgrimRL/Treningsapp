@@ -9,6 +9,7 @@ import {
   faArrowUp,
   faArrowDown,
 } from "@fortawesome/free-solid-svg-icons";
+import NoteModal from "./NoteModal";
 
 Modal.setAppElement("#root");
 
@@ -41,7 +42,27 @@ export default function CurrentWorkout() {
   const menuRefs = useRef();
   const [openSetMenus, setOpenSetMenus] = useState({});
   const setMenuRefs = useRef();
-  console.log("CurrentWorkout component rendered");
+  const [notes, setNotes] = useState({});
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+  const [currentNote, setCurrentNote] = useState("");
+  const [currentExercise, setCurrentExercise] = useState(null);
+
+  const handleNoteChange = (newNote) => {
+    setCurrentNote(newNote);
+  };
+  const handleSaveNote = () => {
+    if (currentExercise) {
+      const { dayIndex, exerciseIndex } = currentExercise;
+      setNotes((prevNotes) => ({
+        ...prevNotes,
+        [dayIndex]: {
+          ...prevNotes[dayIndex],
+          [exerciseIndex]: currentNote,
+        },
+      }));
+      setIsNoteModalOpen(false);
+    }
+  };
 
   const toggleSetMeny = useCallback((id) => {
     setOpenSetMenus((prevState) => {
@@ -49,7 +70,7 @@ export default function CurrentWorkout() {
         ...prevState,
         [id]: !prevState[id],
       };
-
+      console.log(`Menu state for exercise index ${id}:`, newState[id]);
       return newState;
     });
   }, []);
@@ -119,7 +140,10 @@ export default function CurrentWorkout() {
       [dayIndex]: {
         ...prev[dayIndex],
         [exerciseIndex]: prev[dayIndex][exerciseIndex].map((set, sIndex) => {
-          if (sIndex === setIndex) {
+          const applyCurrentWeight =
+            sIndex === setIndex || (setIndex === 0 && !set.completed);
+
+          if (applyCurrentWeight) {
             const targetWeight = parseFloat(set.targetWeight);
             const targetReps = parseInt(set.targetReps, 10);
 
@@ -127,9 +151,7 @@ export default function CurrentWorkout() {
               (currentWeight - targetWeight) / incrementSize;
             let newReps = targetReps - incrementDifference * 2;
 
-            // Check the range of increment difference
             if (Math.abs(incrementDifference) > 3) {
-              // Determine RIR based on the current week
               if (week <= 2) {
                 newReps = "3 RIR";
               } else if (week === 3) {
@@ -140,13 +162,6 @@ export default function CurrentWorkout() {
             } else {
               newReps = Math.round(newReps);
             }
-
-            console.log(
-              `Weight changed: ${currentWeight}, Target weight: ${targetWeight}`
-            );
-            console.log(
-              `Increment difference: ${incrementDifference}, New reps: ${newReps}`
-            );
 
             return {
               ...set,
@@ -251,7 +266,7 @@ export default function CurrentWorkout() {
       setCurrentMesocycle(data);
       setCurrentDayIndex(index);
 
-      // Update sets data based on the new mesocycle plan
+      // Update sets data based on the new mesocycle planr
       const setsData = {};
       data.plan.forEach((day, dayIndex) => {
         setsData[dayIndex] = {};
@@ -314,11 +329,11 @@ export default function CurrentWorkout() {
                 return {
                   ...set,
                   completed: false,
-                  weight: set.targetWeight, // Reset to target weight
-                  reps: set.targetReps, // Reset to target reps
+                  weight: set.targetWeight,
+                  reps: set.targetReps,
                 };
               }
-              // Otherwise, update with provided values
+
               return {
                 ...set,
                 completed: value,
@@ -515,7 +530,21 @@ export default function CurrentWorkout() {
                         <ul className="py-1 bg-hamburgerbackground ">
                           <li className="block px-4 py-2 text-white hover:bg-darkGray">
                             <button
-                            // onClick={handleAddNote(exIndex)}
+                              onClick={(event) => {
+                                event.stopPropagation();
+
+                                setCurrentExercise({
+                                  dayIndex: currentDayIndex,
+                                  exerciseIndex: exIndex,
+                                });
+
+                                const currentNoteText =
+                                  notes[currentDayIndex]?.[exIndex] || "";
+                                setCurrentNote(currentNoteText);
+
+                                setIsNoteModalOpen(true);
+                              }}
+                              className="text-white focus:outline-none"
                             >
                               Add note
                             </button>
@@ -527,6 +556,12 @@ export default function CurrentWorkout() {
                   <div className="text-white font-semibold">
                     {exercise.exercise}
                   </div>
+                  {notes[currentDayIndex]?.[exIndex] && (
+                    <div className="mt-2 bg-yellow-500 text-white p-1">
+                      <strong>Note:</strong>
+                      {notes[currentDayIndex][exIndex]}
+                    </div>
+                  )}
                   {sets[currentDayIndex]?.[exIndex]?.map((set, setIndex) => (
                     <div
                       key={setIndex}
@@ -759,6 +794,13 @@ export default function CurrentWorkout() {
       >
         <h2>Mesocycle Overview</h2>
       </CalendarModal>
+      <NoteModal
+        isOpen={isNoteModalOpen}
+        onRequestClose={() => setIsNoteModalOpen(false)}
+        note={currentNote}
+        onNoteChange={handleNoteChange}
+        onSave={handleSaveNote}
+      />
     </div>
   );
 }

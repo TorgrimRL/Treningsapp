@@ -2,7 +2,7 @@ import React from "react";
 import Modal from "react-modal";
 import { useEffect, useRef } from "react";
 
-Modal.setAppElement("#root");
+// Modal.setAppElement("#root");
 
 export default function CalendarModal({
   isOpen,
