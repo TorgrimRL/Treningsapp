@@ -41,13 +41,6 @@ const MesocycleForm = ({ onSubmit }) => {
   useEffect(() => {
     if (template) {
       setNumberOfWeeks(weeks || numberOfWeeks);
-      console.log("Mottatt template data:", {
-        template,
-        weeks,
-        daysPerWeek,
-        muscleGroups,
-        dayLabels,
-      });
       const initialPlan = Array.from(
         { length: daysPerWeek },
         (_, dayIndex) => ({
@@ -56,37 +49,23 @@ const MesocycleForm = ({ onSubmit }) => {
             muscleGroups[dayIndex]?.map((group) => ({
               muscleGroup: group,
               exercise: "",
-              weight: 0,
               sets: [{}, {}],
-              reps: 0,
             })) || [],
         })
       );
-      console.log("Initial Plan:", initialPlan);
       setPlan(initialPlan);
     }
   }, [template, daysPerWeek, muscleGroups]);
 
   const handleChange = (dayIndex, exerciseIndex, field, value) => {
-    console.log(
-      `Handling change for dayIndex: ${dayIndex}, exerciseIndex: ${exerciseIndex}, field: ${field}, value: ${value}`
-    );
     const updatedPlan = [...plan];
     const muscleGroup =
       updatedPlan[dayIndex].exercises[exerciseIndex].muscleGroup;
-    console.log(`Current muscle group: ${muscleGroup}`);
 
-    // Finn den valgte øvelsen basert på muskelgruppen og navnet (value)
     const selectedExercise = exercises[muscleGroup]?.find(
       (ex) => ex.name === value
     );
 
-    // Logg funnet øvelse og dens type
-    console.log(
-      `Selected exercise: ${
-        selectedExercise ? selectedExercise.name : "None"
-      }, Type: ${selectedExercise ? selectedExercise.type : "Unknown"}`
-    );
     updatedPlan[dayIndex] = {
       ...updatedPlan[dayIndex],
       exercises: [...updatedPlan[dayIndex].exercises],
@@ -103,10 +82,7 @@ const MesocycleForm = ({ onSubmit }) => {
           ? selectedGroups[value]
           : updatedPlan[dayIndex].exercises[exerciseIndex].priority,
     };
-    console.log(
-      `Updated exercise at day ${dayIndex}, index ${exerciseIndex}:`,
-      updatedPlan[dayIndex].exercises[exerciseIndex]
-    );
+
     setPlan(updatedPlan);
   };
 

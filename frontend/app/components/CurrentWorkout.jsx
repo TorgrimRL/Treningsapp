@@ -8,6 +8,7 @@ import {
   faEllipsisV,
   faArrowUp,
   faArrowDown,
+  faThumbtack,
 } from "@fortawesome/free-solid-svg-icons";
 import NoteModal from "./NoteModal";
 
@@ -41,7 +42,7 @@ export default function CurrentWorkout() {
   const [openMenus, setOpenMenus] = useState({});
   const menuRefs = useRef([]);
   const [openSetMenus, setOpenSetMenus] = useState({});
-  const setMenuRefs = useRef();
+  const setMenuRefs = useRef([]);
   const [notes, setNotes] = useState({});
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [currentNote, setCurrentNote] = useState("");
@@ -50,16 +51,9 @@ export default function CurrentWorkout() {
   const handleNoteChange = (newNote) => {
     setCurrentNote(newNote);
   };
-  const handleSaveNote = () => {
+  const handleSaveNote = async () => {
     if (currentExercise) {
       const { dayIndex, exerciseIndex } = currentExercise;
-
-      // Log the current exercise and note details
-      console.log("Saving note for:", { dayIndex, exerciseIndex });
-      console.log("Current note before saving:", currentNote);
-
-      // Log the notes state before updating
-      console.log("Notes state before update:", notes);
 
       setNotes((prevNotes) => {
         const updatedNotes = {
@@ -70,17 +64,49 @@ export default function CurrentWorkout() {
           },
         };
 
-        // Log the updated notes state
-        console.log("Notes state after update:", updatedNotes);
-
         return updatedNotes;
       });
 
-      // Log the closing of the note modal
-      console.log("Closing note modal");
+      const updatedMesocycle = {
+        ...currentMesocycle,
+        plan: currentMesocycle.plan.map((day, dIndex) =>
+          dIndex === dayIndex
+            ? {
+                ...day,
+                exercises: day.exercises.map((exercise, eIndex) =>
+                  eIndex === exerciseIndex
+                    ? {
+                        ...exercise,
+                        note: currentNote,
+                      }
+                    : exercise
+                ),
+              }
+            : day
+        ),
+      };
+      const changes = getChanges(currentMesocycle.plan, updatedMesocycle.plan);
       setIsNoteModalOpen(false);
-    } else {
-      console.log("No current exercise selected for note saving.");
+      // async () => {
+      try {
+        const response = await fetch(
+          `http://localhost:3000/api/mesocycles/${currentMesocycle.id}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+            body: JSON.stringify(updatedMesocycle),
+          }
+        );
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Failed to update mesocycle: ${errorText}`);
+        }
+      } catch (error) {
+        console.error("Error updating mesocycle:", error);
+      }
     }
   };
 
@@ -90,7 +116,6 @@ export default function CurrentWorkout() {
         ...prevState,
         [id]: !prevState[id],
       };
-      console.log(`Menu state for exercise index ${id}:`, newState[id]);
       return newState;
     });
   }, []);
@@ -99,27 +124,29 @@ export default function CurrentWorkout() {
     setOpenMenus((prevState) => {
       const newState = {
         ...prevState,
-        [id]: !prevState[id], // Toggle the specific menu, preserve others
+        [id]: !prevState[id],
       };
-      console.log("Toggling menu for exercise index:", id);
-      console.log("Updated openMenus state:", newState);
       return newState;
     });
   }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // Check if click happened outside all menus
       let clickedOutside = true;
       menuRefs.current.forEach((ref) => {
         if (ref && ref.contains(event.target)) {
           clickedOutside = false;
         }
       });
+      Object.values(setMenuRefs.current).forEach((ref) => {
+        if (ref && ref.contains(event.target)) {
+          clickedOutside = false;
+        }
+      });
 
       if (clickedOutside) {
-        console.log("Closing all menus");
-        setOpenMenus({}); // Close all menus if click happened outside
+        setOpenMenus({});
+        setOpenSetMenus({});
       }
     };
 
@@ -151,12 +178,9 @@ export default function CurrentWorkout() {
     value,
     exerciseType
   ) => {
-    console.log(`Current exercise type: ${exerciseType}`); // Ensure this is placed correctly
-
     const currentWeight = parseFloat(value);
     const incrementSize = exerciseType === "dumbbell" ? 2 : 2.5;
 
-    // Get the current week using your function
     const { week } = getWeekAndDay(dayIndex, currentMesocycle.daysPerWeek);
 
     setSets((prev) => ({
@@ -250,17 +274,20 @@ export default function CurrentWorkout() {
 
         const firstIncompleteDayIndex = getFirstIncompleteDay(data.plan);
         setCurrentDayIndex(firstIncompleteDayIndex);
-
+        const notesData = {};
         const setsData = {};
         data.plan.forEach((day, dayIndex) => {
           setsData[dayIndex] = {};
+          notesData[dayIndex] = {};
           day.exercises.forEach((exercise, exerciseIndex) => {
             setsData[dayIndex][exerciseIndex] = exercise.sets || [];
+            notesData[dayIndex][exerciseIndex] = exercise.note || "";
           });
         });
+        setNotes(notesData);
         setSets(setsData);
       } catch (error) {
-        console.error("Error fetchign mesocycles", error);
+        console.error("Error fetching mesocycles", error);
       } finally {
         setLoading(false);
       }
@@ -274,7 +301,6 @@ export default function CurrentWorkout() {
 
   const handleDayClick = async (index) => {
     try {
-      // Fetch updated workout data for the selected day
       const response = await fetch(
         "http://localhost:3000/api/current-workout",
         {
@@ -286,11 +312,9 @@ export default function CurrentWorkout() {
       const data = await response.json();
       console.log("Updated Mesocycle Data:", data);
 
-      // Update state with fetched data
       setCurrentMesocycle(data);
       setCurrentDayIndex(index);
 
-      // Update sets data based on the new mesocycle planr
       const setsData = {};
       data.plan.forEach((day, dayIndex) => {
         setsData[dayIndex] = {};
@@ -300,14 +324,11 @@ export default function CurrentWorkout() {
       });
       setSets(setsData);
 
-      // Close the calendar modal
       setIsCalendarModalOpen(false);
     } catch (error) {
       console.error("Error fetching workout data:", error);
     }
   };
-  // setCurrentDayIndex(index);
-  // setIsCalendarModalOpen(false);
 
   const getDayLabel = (day) => {
     const daysOfWeek = [
@@ -389,11 +410,8 @@ export default function CurrentWorkout() {
         ),
       };
 
-      // Compare changes
       const changes = getChanges(currentMesocycle.plan, updatedMesocycle.plan);
-      console.log("Changes being sent to the server:", changes);
 
-      // Sending updated mesocycle to backend
       (async () => {
         try {
           const response = await fetch(
@@ -545,25 +563,20 @@ export default function CurrentWorkout() {
                     </div>
                     <button
                       onClick={() => {
-                        console.log(
-                          `Menu toggle button clicked for exercise index: ${exIndex}`
-                        );
                         toggleMenu(exIndex);
                       }}
-                      className="text-white focus:outline-none"
+                      className="text-white focus:outline-none "
                     >
                       <FontAwesomeIcon icon={faEllipsisV} />
                     </button>
                     {openMenus[exIndex] && (
-                      <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-md shadow-lg z-10">
+                      <div className="absolute right-0 top-full mt-1 w-48 rounded-md shadow-lg z-10">
                         <ul className="py-1 bg-hamburgerbackground ">
-                          <li className="block px-4 py-2 text-white hover:bg-darkGray">
+                          <li className="block px-4 py-2 hover:!bg-darkestGray">
                             <button
                               onClick={(event) => {
                                 event.stopPropagation();
-                                console.log(
-                                  `"Add note" button clicked for exercise index: ${exIndex}`
-                                );
+
                                 setCurrentExercise({
                                   dayIndex: currentDayIndex,
                                   exerciseIndex: exIndex,
@@ -571,15 +584,10 @@ export default function CurrentWorkout() {
                                 const currentNoteText =
                                   notes[currentDayIndex]?.[exIndex] || "";
                                 setCurrentNote(currentNoteText);
-                                console.log("Current Exercise Set:", {
-                                  dayIndex: currentDayIndex,
-                                  exerciseIndex: exIndex,
-                                });
-                                console.log("Current Note:", currentNoteText);
+
                                 setIsNoteModalOpen(true);
-                                console.log("Note modal should be opening");
                               }}
-                              className="text-white focus:outline-none"
+                              className=" block text-white focus:outline-none "
                             >
                               Add note
                             </button>
@@ -593,7 +601,10 @@ export default function CurrentWorkout() {
                   </div>
                   {notes[currentDayIndex]?.[exIndex] && (
                     <div className="mt-2 bg-yellow-500 text-white p-2">
-                      <strong>Note:</strong>
+                      <FontAwesomeIcon
+                        icon={faThumbtack}
+                        style={{ marginRight: "10px" }}
+                      />
                       {notes[currentDayIndex][exIndex]}
                     </div>
                   )}
@@ -614,11 +625,14 @@ export default function CurrentWorkout() {
 
                         {openSetMenus[`${exIndex}-${setIndex}`] && (
                           <div
-                            ref={setMenuRefs}
+                            ref={(el) =>
+                              (setMenuRefs.current[`${exIndex}-${setIndex}`] =
+                                el)
+                            }
                             className="absolute left-full ml-1 top-5 w-48 bg-white rounded-md shadow-lg z-10"
                           >
                             <ul className="py-1 bg-hamburgerbackground text-white ">
-                              <li className="block px-4 py-2 hover:bg-darkGray ">
+                              <li className="block px-4 py-2 hover:!bg-darkestGray z-20">
                                 <button
                                   onClick={(event) => {
                                     console.log(

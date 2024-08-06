@@ -3,7 +3,6 @@ export default function createDeloadWeek(
   currentWeeksExercises
 ) {
   if (!firstWeekExercises || firstWeekExercises.length === 0) {
-    console.error("No valid exercises found for the first week.");
     return currentWeeksExercises;
   }
 
@@ -11,9 +10,6 @@ export default function createDeloadWeek(
     const firstWeekExercise = firstWeekExercises[exerciseIndex];
 
     if (!firstWeekExercise || !Array.isArray(firstWeekExercise.sets)) {
-      console.error(
-        `No valid firstWeekExercise found for exerciseIndex: ${exerciseIndex}`
-      );
       return {
         ...exercise,
         sets: [],
@@ -24,9 +20,6 @@ export default function createDeloadWeek(
       .slice(0, 2)
       .map((baseWeekset, setIndex) => {
         if (!baseWeekset) {
-          console.error(
-            `No corresponding set found for setIndex: ${setIndex} in first week exercise`
-          );
           return null;
         }
 

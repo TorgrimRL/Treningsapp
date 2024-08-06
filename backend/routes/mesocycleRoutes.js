@@ -156,29 +156,13 @@ router.get(
       const daysPerWeek = row.daysPerWeek;
       const totalWeeks = row.weeks;
       const firstWeekExercises = plan[0].exercises;
-      console.log(
-        "First Week Exercises:",
-        JSON.stringify(firstWeekExercises, null, 2)
-      );
+
       const updatedPlan = plan.map((day, dayIndex) => {
         const currentWeek = Math.floor(dayIndex / daysPerWeek) + 1;
-
-        // // Only log for weeks 1-5, first exercise, and first set
-        // if (currentWeek <= 5 && exerciseIndex === 0 && setIndex === 0) {
-        //   console.log(`=== Week ${currentWeek} ===`);
-        // }
 
         return {
           ...day,
           exercises: day.exercises.map((exercise, exerciseIndex) => {
-            if (exerciseIndex === 0 && dayIndex % daysPerWeek === 0) {
-              console.log(
-                `\n=== Debug Log for Week ${currentWeek}, Monday ===`
-              );
-              console.log(
-                `Processing exercise at dayIndex: ${dayIndex}, exerciseIndex: ${exerciseIndex}`
-              );
-            }
             if (dayIndex >= daysPerWeek) {
               const previousWeekIndex = dayIndex - daysPerWeek;
               const previousWeekExercise =
@@ -198,17 +182,6 @@ router.get(
               }
               const isDeloadWeek = currentWeek === totalWeeks;
               if (isDeloadWeek) {
-                console.log(
-                  `Creating deload week for Week ${currentWeek} at dayIndex: ${dayIndex}`
-                );
-                // Log the exercise data before creating deload week
-                console.log(
-                  `Current week's exercises before creating deload: ${JSON.stringify(
-                    plan[dayIndex].exercises,
-                    null,
-                    2
-                  )}`
-                );
                 return createDeloadWeek(
                   firstWeekExercises,
                   plan[dayIndex].exercises
@@ -224,18 +197,18 @@ router.get(
                   return set;
                 }
 
-                if (
-                  exerciseIndex === 0 &&
-                  setIndex === 0 &&
-                  dayIndex % daysPerWeek === 0
-                ) {
-                  // Log data for the first set on Mondays
-                  console.log(
-                    `Accessing previous week set with set index: ${setIndex} for Week ${
-                      currentWeek - 1
-                    }: ${JSON.stringify(prevWeekset)}`
-                  );
-                }
+                // if (
+                //   exerciseIndex === 0 &&
+                //   setIndex === 0 &&
+                //   dayIndex % daysPerWeek === 0
+                // ) {
+                //   // Log data for the first set on Mondays
+                //   console.log(
+                //     `Accessing previous week set with set index: ${setIndex} for Week ${
+                //       currentWeek - 1
+                //     }: ${JSON.stringify(prevWeekset)}`
+                //   );
+                // }
                 const lastWeekWeight = prevWeekset.completed
                   ? parseFloat(prevWeekset.weight)
                   : parseFloat(prevWeekset.targetWeight);
