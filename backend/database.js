@@ -26,7 +26,7 @@ db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS exercises (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT,
-    type, TEXT
+    type TEXT,
     musclegroup TEXT,
     videolink TEXT,
     user_id INTERGER,

@@ -10,6 +10,7 @@ import cookieParser from "cookie-parser";
 import csurf from "csurf";
 import cors from "cors";
 import mesocycleRoutes from "./routes/mesocycleRoutes.js";
+import exerciseRoutes from "./routes/exerciseRoutes.js";
 import {
   authenticateToken,
   csrfProtection,
@@ -35,6 +36,8 @@ app.use((req, res, next) => {
 });
 
 const secretKey = "secretkey";
+
+app.use("/api", exerciseRoutes);
 
 app.use("/api", mesocycleRoutes);
 csrfTokenRoute(app);

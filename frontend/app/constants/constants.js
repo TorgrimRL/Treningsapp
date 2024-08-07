@@ -20,6 +20,13 @@ export const exerciseTemplate = {
   videoLink: "",
   muscleGroup: muscleGroups[0],
 };
+export const exerciseTypes = [
+  "barbell",
+  "machine",
+  "dumbbell",
+  "bodyweight",
+  "cable",
+];
 
 export const exercises = {
   Abs: [
