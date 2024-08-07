@@ -14,24 +14,6 @@ import NoteModal from "./NoteModal";
 
 Modal.setAppElement("#root");
 
-const getFirstIncompleteDay = (plan) => {
-  for (let i = 0; i < plan.length; i++) {
-    const day = plan[i];
-    const allExercisesCompleted = day.exercises.every((exercise) => {
-      if (!exercise.sets) {
-        return false;
-      }
-      return exercise.sets.every((set) => set.completed);
-    });
-
-    if (!allExercisesCompleted) {
-      return i;
-    }
-  }
-
-  return plan.length - 1;
-};
-
 export default function CurrentWorkout() {
   const [currentMesocycle, setCurrentMesocycle] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -48,29 +30,75 @@ export default function CurrentWorkout() {
   const [currentNote, setCurrentNote] = useState("");
   const [currentExercise, setCurrentExercise] = useState(null);
 
+  const getFirstIncompleteDay = (plan) => {
+    for (let i = 0; i < plan.length; i++) {
+      const day = plan[i];
+      const allExercisesCompleted = day.exercises.every((exercise) => {
+        if (!exercise.sets) {
+          return false;
+        }
+        return exercise.sets.every((set) => set.completed);
+      });
+
+      if (!allExercisesCompleted) {
+        return i;
+      }
+    }
+
+    return plan.length - 1;
+  };
   const handleNoteChange = (newNote) => {
     setCurrentNote(newNote);
   };
-  const handleSaveNote = async () => {
+  const handleSaveNote = async (applyToFutureWeeks) => {
     if (currentExercise) {
       const { dayIndex, exerciseIndex } = currentExercise;
+      const daysPerWeek = currentMesocycle.daysPerWeek;
 
       setNotes((prevNotes) => {
-        const updatedNotes = {
-          ...prevNotes,
-          [dayIndex]: {
-            ...prevNotes[dayIndex],
+        const updatedNotes = { ...prevNotes };
+
+        if (applyToFutureWeeks) {
+          const currentWeekDay = dayIndex % daysPerWeek;
+          for (
+            let i = dayIndex;
+            i < currentMesocycle.plan.length;
+            i += daysPerWeek
+          ) {
+            if (i % daysPerWeek === currentWeekDay) {
+              updatedNotes[i] = updatedNotes[i] || {};
+              updatedNotes[i][exerciseIndex] = currentNote;
+            }
+          }
+        } else {
+          updatedNotes[dayIndex] = {
+            ...updatedNotes[dayIndex],
             [exerciseIndex]: currentNote,
-          },
-        };
+          };
+        }
 
         return updatedNotes;
       });
 
+      // Oppdater mesocyklus med den nye planen
       const updatedMesocycle = {
         ...currentMesocycle,
         plan: currentMesocycle.plan.map((day, dIndex) =>
-          dIndex === dayIndex
+          applyToFutureWeeks
+            ? dIndex % daysPerWeek === dayIndex % daysPerWeek
+              ? {
+                  ...day,
+                  exercises: day.exercises.map((exercise, eIndex) =>
+                    eIndex === exerciseIndex
+                      ? {
+                          ...exercise,
+                          note: currentNote,
+                        }
+                      : exercise
+                  ),
+                }
+              : day
+            : dIndex === dayIndex
             ? {
                 ...day,
                 exercises: day.exercises.map((exercise, eIndex) =>
@@ -85,9 +113,8 @@ export default function CurrentWorkout() {
             : day
         ),
       };
-      const changes = getChanges(currentMesocycle.plan, updatedMesocycle.plan);
-      setIsNoteModalOpen(false);
-      // async () => {
+
+      // Send de oppdaterte dataene til backend
       try {
         const response = await fetch(
           `http://localhost:3000/api/mesocycles/${currentMesocycle.id}`,
@@ -107,6 +134,8 @@ export default function CurrentWorkout() {
       } catch (error) {
         console.error("Error updating mesocycle:", error);
       }
+
+      setIsNoteModalOpen(false);
     }
   };
 

@@ -32,18 +32,27 @@ const TemplateSelector = ({ onSelectTemplate }) => {
           {/* <button
             //   onClick={}
             className="bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-lg"
-          >
+            >
             + NEW
-          </button> */}
+            </button> */}
         </header>
+        <a
+          className="flex justify-between items-center m-6 text-center mb-10  bg-red-600 text-white text-lg border-none py-2 px-4 cursor pointer"
+          href="/mesocycles-new"
+        >
+          Build a training block from scratch
+        </a>
+        <label className=" block mx-auto text-center">
+          or select a template
+        </label>
       </div>
       <div>
-        <ul className="list-none p-0">
+        <ul className="list-none p-6">
           {templates.map((template) => (
             <li key={template.name} className="mb-2">
               <button
                 onClick={() => handleSelect(template)}
-                className="bg-darkGray text-white py-2 px-4 w-full hover:bg-gray-700"
+                className="bg-darkGray text-white py-2 px-8 w-full hover:bg-gray-700"
               >
                 {template.name} - {template.days}/week
               </button>

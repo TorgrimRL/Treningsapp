@@ -25,7 +25,7 @@ export default function Login() {
       if (response.ok) {
         setMessage("Login successfull");
         setAuthStatus(true);
-        navigate("/");
+        navigate("/templates");
       } else {
         setMessage(`Login Failed: ${data.message}`);
       }

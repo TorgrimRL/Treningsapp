@@ -131,7 +131,7 @@ const MesocycleForm = ({ onSubmit }) => {
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    console.log("Mesocycle Name: ", mesocycleName);
+    console.log("Training Block Name: ", mesocycleName);
     console.log("Weeks:", numberOfWeeks);
     setIsModalOpen(true);
   };
@@ -210,23 +210,30 @@ const MesocycleForm = ({ onSubmit }) => {
         {" "}
         <div className="text-center border-black mb-10 p-4 border border-black border-thick">
           <label className="mb-4 block">
-            Mesocycle Name:
+            Training Block Name:
             <input
               type="text"
               value={mesocycleName}
+              placeholder="Enter name of training block here"
               onChange={(e) => setMesocycleName(e.target.value)}
               required
               className="bg-inputBGGray text-center border-black w-full p-1"
             />
             <label className=" mb-4 block">
               Number of weeks:
-              <input
-                type="number"
+              <select
                 value={numberOfWeeks}
                 onChange={(e) => setNumberOfWeeks(e.target.value)}
                 required
                 className="bg-inputBGGray text-center border-black w-full p-1"
-              />
+              >
+                <option value={""} disabled>
+                  Select Weeks
+                </option>
+                <option value={4}>4</option>
+                <option value={5}>5</option>
+                <option value={6}>6</option>
+              </select>
             </label>
           </label>
           <button

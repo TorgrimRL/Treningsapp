@@ -93,7 +93,7 @@ export default function Navbar() {
                 href="/mesocycles-new"
                 className="text-white h-full flex items-center hover:bg-gray-700"
               >
-                Plan a new mesocycle
+                Plan a new training block
               </a>
               <a
                 href="/templates"
@@ -162,18 +162,10 @@ export default function Navbar() {
                   </li>
                   <li className="block px-4 py-2 hover:bg-darkGray ">
                     <a
-                      href="/mesocycles"
-                      className="focus:outline-none block w-full text-left cursor-pointer"
-                    >
-                      Mesocycles
-                    </a>
-                  </li>
-                  <li className="block px-4 py-2 hover:bg-darkGray ">
-                    <a
                       href="/mesocycles-new"
                       className="focus:outline-none block w-full text-left cursor-pointer"
                     >
-                      Plan a new mesocycle
+                      New training block
                     </a>
                   </li>
                   <li className="block px-4 py-2 hover:bg-darkGray ">
@@ -182,6 +174,14 @@ export default function Navbar() {
                       className="focus:outline-none block w-full text-left cursor-pointer"
                     >
                       Templates
+                    </a>
+                  </li>
+                  <li className="block px-4 py-2 hover:bg-darkGray ">
+                    <a
+                      href="/mesocycles"
+                      className="focus:outline-none block w-full text-left cursor-pointer"
+                    >
+                      History
                     </a>
                   </li>
                   <li className="block px-4 py-2 hover:bg-darkGray ">

@@ -8,10 +8,9 @@ const router = express.Router();
 
 // Endpoint to add a new mesocycle
 router.post("/mesocycles", authenticateToken, (req, res) => {
-  const userId = req.user.id; // Assuming req.user contains the authenticated user's information
+  const userId = req.user.id;
   const { name, weeks, daysPerWeek, plan, completedDate, isCurrent } = req.body;
 
-  // Update all existing mesocycles to set isCurrent to false
   const updateQuery = "UPDATE mesocycles SET isCurrent = 0 WHERE user_id = ?";
   db.run(updateQuery, [userId], function (err) {
     if (err) {
@@ -19,7 +18,6 @@ router.post("/mesocycles", authenticateToken, (req, res) => {
       return res.status(500).json({ error: "Failed to update mesocycles" });
     }
 
-    // Insert the new mesocycle with isCurrent = true
     const insertQuery = `
       INSERT INTO mesocycles (name, weeks, daysPerWeek, plan, user_id, completedDate, isCurrent)
       VALUES (?, ?, ?, ?, ?, ?, 1)
@@ -197,18 +195,6 @@ router.get(
                   return set;
                 }
 
-                // if (
-                //   exerciseIndex === 0 &&
-                //   setIndex === 0 &&
-                //   dayIndex % daysPerWeek === 0
-                // ) {
-                //   // Log data for the first set on Mondays
-                //   console.log(
-                //     `Accessing previous week set with set index: ${setIndex} for Week ${
-                //       currentWeek - 1
-                //     }: ${JSON.stringify(prevWeekset)}`
-                //   );
-                // }
                 const lastWeekWeight = prevWeekset.completed
                   ? parseFloat(prevWeekset.weight)
                   : parseFloat(prevWeekset.targetWeight);

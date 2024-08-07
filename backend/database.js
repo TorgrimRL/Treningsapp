@@ -20,8 +20,18 @@ db.serialize(() => {
         name TEXT,
         weeks INTEGER,
         plan TEXT,
-        user_id INTERGER,
+        user_id INTEGER,
         FOREIGN KEY(user_id) REFERENCES users(id)
+    )`);
+  db.run(`CREATE TABLE IF NOT EXISTS exercises (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    type, TEXT
+    musclegroup TEXT,
+    videolink TEXT,
+    user_id INTERGER,
+    FOREIGN KEY(user_id) REFERENCES users(id)
+
     )`);
 
   db.all("PRAGMA table_info(mesocycles)", (err, columns) => {
@@ -50,52 +60,5 @@ db.serialize(() => {
     addColumn("isCurrent", "INTEGER");
   });
 });
-
-// db.all("SELECT id,plan FROM mesocycles", (err, rows) => {
-//   if (err) {
-//     console.error("Error fetching table info:", err.message);
-//     return;
-//   }
-
-//   rows.forEach((row) => {
-//     const mesocycleId = row.id;
-//     let plan;
-
-//     try {
-//       plan = JSON.parse(row.plan);
-//     } catch (error) {
-//       console.error(
-//         `Error parsing JSON for mesocycle with ${mesocycleId}`,
-//         error
-//       );
-//       return;
-//     }
-
-//     const updatedPlan = plan.map((day) => ({
-//       ...day,
-//       exercises: day.exercises.map((exercise) => ({
-//         ...exercise,
-//         sets: Array(3).fill({ weight: "", reps: "", completed: false }),
-//       })),
-//     }));
-
-//     const updatedPlanJson = JSON.stringify(updatedPlan);
-
-//     db.run(
-//       "UPDATE mesocycles SET plan = ? where id = ?",
-//       [updatedPlanJson, mesocycleId],
-//       (err) => {
-//         if (err) {
-//           console.error(
-//             `Error updating mesoscyle with ${mesosycleID}`,
-//             err.message
-//           );
-//         } else {
-//           console.log(`Successfully updated mesocycle with id ${mesocycleId}`);
-//         }
-//       }
-//     );
-//   });
-// });
 
 export default db;
