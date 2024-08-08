@@ -10,6 +10,7 @@ import Modal from "react-modal";
 import MuscleGroupModal from "./MuscleGroupModal";
 import { useNavigate } from "@remix-run/react";
 import { useLocation } from "@remix-run/react";
+import AddExerciseModal from "./AddExerciseModal";
 
 Modal.setAppElement("#root");
 
@@ -35,6 +36,81 @@ const MesocycleForm = ({ onSubmit }) => {
   const location = useLocation();
   const { template, weeks, daysPerWeek, muscleGroups, dayLabels } =
     location.state || {};
+  const [isExerciseModalOpen, setIsExerciseModalOpen] = useState(false);
+  const [customExercises, setCustomExercises] = useState({});
+
+  useEffect(() => {
+    const fetchCustomExercises = async () => {
+      try {
+        const response = await fetch("http://localhost:3000/api/exercises", {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setCustomExercises(
+            data.reduce((acc, exercise) => {
+              if (!acc[exercise.muscleGroup]) {
+                acc[exercise.muscleGroup] = [];
+              }
+              acc[exercise.muscleGroup].push(exercise.name);
+              return acc;
+            }, {})
+          );
+        } else {
+          const errorText = await response.text();
+          throw new Error(`Failed to fetch exercises: ${errorText}`);
+        }
+      } catch (error) {
+        console.error("Error fetching exercises", error);
+      }
+    };
+    fetchCustomExercises();
+  }, []);
+
+  const handleOpenAddExerciseModal = () => {
+    setIsExerciseModalOpen(true);
+  };
+  const handleSaveCustomExercise = async (newExercise) => {
+    if (newExercise) {
+      const { name, muscleGroup } = newExercise;
+      console.log("New exercise to add:", newExercise);
+      setCustomExercises((prevCustomExercises) => {
+        console.log("Previous custom exercises:", prevCustomExercises);
+        const updatedCustomExercises = { ...prevCustomExercises };
+        if (updatedCustomExercises[muscleGroup]) {
+          updatedCustomExercises[muscleGroup] = [
+            ...updatedCustomExercises[muscleGroup],
+            name,
+          ];
+        } else {
+          updatedCustomExercises[muscleGroup] = [name];
+        }
+        console.log("Updated custom exercises:", updatedCustomExercises);
+        return updatedCustomExercises;
+      });
+
+      try {
+        const response = await fetch("http://localhost:3000/api/exercises", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify(newExercise),
+        });
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Failed to update customexercises: ${errorText}`);
+        }
+      } catch (error) {
+        console.error("Error trying to send exercise to backend");
+      }
+    }
+  };
 
   const navigate = useNavigate();
 
@@ -136,15 +212,10 @@ const MesocycleForm = ({ onSubmit }) => {
     setIsModalOpen(true);
   };
 
-  const handleOpenModal = () => {
-    setIsModalOpen(true);
-  };
-
   const handleModalSave = (selectedGroups) => {
     setSelectedGroups(selectedGroups);
 
     const firstWeekPlan = [...plan];
-    const totalDays = numberOfWeeks * firstWeekPlan.length;
     const filledPlan = [];
 
     for (let i = 0; i < numberOfWeeks; i++) {
@@ -349,12 +420,24 @@ const MesocycleForm = ({ onSubmit }) => {
                             {ex.name}
                           </option>
                         ))}
+                        {customExercises[exercise.muscleGroup]?.map((ex) => (
+                          <option key={ex} value={ex}>
+                            {ex}
+                          </option>
+                        ))}
                       </select>
                     </label>
                     {/* <span style={{ marginLeft: "10px" }}>
                     Priority: {exercise.priority || "None"}
-                  </span> */}
+                    </span> */}
                   </div>
+                  <button
+                    type="button"
+                    onClick={handleOpenAddExerciseModal}
+                    className="text-sm"
+                  >
+                    Add custom exercise
+                  </button>
                 </div>
               ))}
               <button
@@ -384,6 +467,11 @@ const MesocycleForm = ({ onSubmit }) => {
         muscleGroups={AllMuscleGroups}
         onSave={handleModalSave}
         href="../current-workout"
+      />
+      <AddExerciseModal
+        isOpen={isExerciseModalOpen}
+        onRequestClose={() => setIsExerciseModalOpen(false)}
+        onSave={handleSaveCustomExercise}
       />
     </form>
   );

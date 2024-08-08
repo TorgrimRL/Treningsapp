@@ -27,13 +27,53 @@ db.serialize(() => {
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT,
     type TEXT,
-    musclegroup TEXT,
+    muscleGroup TEXT,
     videolink TEXT,
     user_id INTERGER,
     FOREIGN KEY(user_id) REFERENCES users(id)
 
     )`);
 
+  // db.all("PRAGMA table_info(mesocycles)", (err, columns) => {
+  //   if (err) {
+  //     console.error("Error fetching table info:", err.message);
+  //     return;
+  //   }
+  //   const columnNames = columns.map((col) => col.name);
+  //   const addColumn = (column, type) => {
+  //     if (!columnNames.includes(column)) {
+  //       db.run(
+  //         `ALTER TABLE Mesocycles ADD COLUMN ${column} ${type}`,
+  //         [],
+  //         function (err) {
+  //           if (err) {
+  //             console.error(`Error adding '${column}' column:`, err.message);
+  //           } else {
+  //             console.log(`Added '${column}' column to 'Mesocycles' table`);
+  //           }
+  //         }
+  //       );
+  //     }
+  //   };
+  //   addColumn("daysPerWeek", "INTEGER");
+  //   addColumn("completedDate", "TEXT");
+  //   addColumn("isCurrent", "INTEGER");
+  // });
+});
+db.serialize(() => {
+  db.run(`DROP TABLE IF EXISTS exercises`);
+
+  db.run(`CREATE TABLE IF NOT EXISTS exercises (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT,
+    type TEXT,
+    muscleGroup TEXT,
+    videolink TEXT,
+    user_id INTEGER,
+    FOREIGN KEY(user_id) REFERENCES users(id)
+  )`);
+
+  // Kontroller at de andre tabellene har de nødvendige kolonnene
   db.all("PRAGMA table_info(mesocycles)", (err, columns) => {
     if (err) {
       console.error("Error fetching table info:", err.message);

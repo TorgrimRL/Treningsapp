@@ -9,13 +9,17 @@ export default router;
 // Endpoint to adda a new exercise
 router.post("/exercises", authenticateToken, (req, res) => {
   const userID = req.user.id;
-  const { name, type, musclegroup, videolink } = req.body;
+  const { name, type, muscleGroup, videolink } = req.body;
 
-  const insertQuery = `INSERT INTO exercises (name, type, musclegroup, videolink) VALUES (?, ?, ?,?)`;
+  if (!muscleGroup) {
+    return res.status(400).json({ error: "muscleGroup cannot be null" });
+  }
+
+  const insertQuery = `INSERT INTO exercises (name, type, muscleGroup, videolink, user_id) VALUES (?, ?, ?, ?, ?)`;
 
   db.run(
     insertQuery,
-    [name, type, musclegroup, videolink, userID],
+    [name, type, muscleGroup, videolink, userID],
     function (err) {
       if (err) {
         console.error("Error creating new exercise:", err.message);
@@ -29,4 +33,18 @@ router.post("/exercises", authenticateToken, (req, res) => {
       });
     }
   );
+});
+
+router.get("/exercises", authenticateToken, (req, res) => {
+  const userID = req.user.id;
+
+  const query = "SELECT * FROM exercises WHERE user_id = ?";
+
+  db.all(query, [userID], (err, rows) => {
+    if (err) {
+      console.log("Error fetching mesocycles:", err);
+      return res.status(500).json({ error: err.message });
+    }
+    res.json(rows);
+  });
 });
