@@ -310,14 +310,14 @@ const MesocycleForm = ({ onSubmit }) => {
           <button
             type="submit"
             style={{ marginTop: "20px" }}
-            className="bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-lg rounded mr-4"
+            className="bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-lg  mr-4"
           >
             Save Plan
           </button>
           <button
             style={{ marginTop: "20px" }}
             className="bg-red-600 text-white border-none py-2 px-4
-            cursor-pointer text-lg rounded"
+            cursor-pointer text-lg "
             onClick={handleAutofillExercises}
           >
             Auto Fill Exercises

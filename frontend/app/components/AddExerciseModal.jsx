@@ -25,10 +25,20 @@ const AddExerciseModal = ({ isOpen, onRequestClose, onSave }) => {
       isOpen={isOpen}
       onRequestClose={onRequestClose}
       contentlabel="Custom exercises"
-      className=" relative bg-darkGray text-white rounded focus:outline-none shadow-lg  p-0 max-w-3xl mx-auto mt-20 text-2sm "
+      className=" relative mx-4 md:mx-auto  bg-darkGray text-white rounded focus:outline-none shadow-lg  p-0 max-w-3xl mx-auto mt-20 text-2sm "
       overlayClassName="fixed inset-0 flex items-start justify-center bg-black bg-opacity-50 z-50"
     >
-      <div>
+      <button
+        onClick={onRequestClose}
+        className="absolute top-0 right-2 text-3xl hover:text-gray-800"
+      >
+        &times;
+      </button>
+
+      <div className="flex flex-col p-4 ">
+        <header className="bold text-2xl mb-4 mt-2 ">
+          Add a custom exercise
+        </header>
         <form>
           <label className="mb-4 block">
             <input
@@ -86,12 +96,14 @@ const AddExerciseModal = ({ isOpen, onRequestClose, onSave }) => {
               className="bg-inputBGGray text-center w-full p-1"
             ></input>
           </label>
-          <button
-            onClick={handleSave}
-            className="bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-large"
-          >
-            Save exercise
-          </button>
+          <div className="p-4 flex justify-center">
+            <button
+              onClick={handleSave}
+              className="bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-large flex justify center"
+            >
+              Save exercise
+            </button>
+          </div>
         </form>
       </div>
     </Modal>

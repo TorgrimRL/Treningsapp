@@ -39,7 +39,6 @@ export default function TemplateOverviewModal({
       {template ? (
         <div className="flex flex-col h-[80vh]">
           {" "}
-          {/* Bruk Flexbox for layout */}
           <header className="bold text-2xl mb-4 mt-2 border-b-1 border-inputBGGray p-2">
             {template.name}
           </header>
@@ -91,7 +90,6 @@ export default function TemplateOverviewModal({
           </div>
           <div className="p-4 flex justify-center">
             {" "}
-            {/* Plasser knappen i bunnen */}
             <button
               className="flex items-center justify-center bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-lg"
               onClick={handleSave}
