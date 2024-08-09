@@ -4,7 +4,6 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-  LiveReload,
 } from "@remix-run/react";
 import Navbar from "./components/Navbar";
 import "./tailwind.css";
@@ -31,7 +30,7 @@ export default function Root() {
         </AuthProvider>
         <ScrollRestoration />
         <Scripts />
-        {process.env.NODE_ENV === "development" && <LiveReload />}
+        {process.env.NODE_ENV === "development"}
       </body>
     </html>
   );

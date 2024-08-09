@@ -1,13 +1,12 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "../utils/AuthContext";
 
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
-  const navigate = useNavigate();
-  const { setAuthStatus } = useAuth();
+
+  const { setAuthStatus, isLoggedIn, isAuthChecked } = useAuth();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -23,28 +22,41 @@ export default function Login() {
       });
       const data = await response.json();
       if (response.ok) {
-        setMessage("Login successfull");
+        setMessage("Login successful");
         setAuthStatus(true);
-        navigate("/templates");
       } else {
+        console.log("Login failed:", data.message);
         setMessage(`Login Failed: ${data.message}`);
       }
     } catch (error) {
       console.error("Error during login", error);
-      setMessage("An error occured during login");
+      setMessage("An error occurred during login");
     }
   };
+
+  useEffect(() => {
+    if (isAuthChecked && isLoggedIn) {
+      window.location.href = "/templates";
+    }
+  }, [isLoggedIn, isAuthChecked]);
 
   return (
     <form
       onSubmit={handleSubmit}
-      style={{ maxWidth: "400px", margin: "0 auto", padding: "20px" }}
+      style={{
+        maxWidth: "400px",
+        margin: "0 auto",
+        padding: "25px",
+        marginTop: "15px",
+      }}
     >
-      <label>
+      <label className="text-white">
         Username:
         <input
           type="text"
           name="Username"
+          placeholder="Enter your username here"
+          className="bg-inputBGGray"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           style={{
@@ -55,12 +67,14 @@ export default function Login() {
           }}
         />
       </label>
-      <label>
+      <label className="text-white">
         Password:
         <input
           type="password"
           name="Password"
           value={password}
+          placeholder="Enter your password here"
+          className="bg-inputBGGray"
           onChange={(e) => setPassword(e.target.value)}
           style={{
             display: "block",
@@ -72,13 +86,7 @@ export default function Login() {
       </label>
       <button
         type="submit"
-        style={{
-          padding: "10px 20px",
-          backgroundColor: "#007bff",
-          color: "white",
-          border: "none",
-          cursor: "pointer",
-        }}
+        className="bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-lg"
       >
         Login
       </button>

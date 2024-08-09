@@ -3,11 +3,12 @@ import React, { createContext, useState, useContext, useEffect } from "react";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [isLoggedIn, setIsLoggedInn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  const login = () => setIsLoggedInn(true);
-  const logout = () => setIsLoggedInn(false);
-  const setAuthStatus = (status) => setIsLoggedInn(status);
+  const login = () => setIsLoggedIn(true);
+  const logout = () => setIsLoggedIn(false);
+  const setAuthStatus = (status) => setIsLoggedIn(status);
+  const [isAuthChecked, setIsAuthChecked] = useState(false);
 
   useEffect(() => {
     const checkAuthStatus = async () => {
@@ -16,18 +17,22 @@ export const AuthProvider = ({ children }) => {
           credentials: "include",
         });
         const data = await response.json();
-        setIsLoggedInn(data.isLoggedIn);
+        setIsLoggedIn(data.isLoggedIn);
         console.log("Auth status checked:", data.isLoggedIn);
       } catch (error) {
         console.error("Failed to check auth status:", error);
-        setIsLoggedInn(false);
+        setIsLoggedIn(false);
+      } finally {
+        setIsAuthChecked(true);
+        console.log("isAuthChecked set to true");
       }
     };
     checkAuthStatus();
   }, []);
-
   return (
-    <AuthContext.Provider value={{ isLoggedIn, login, logout, setAuthStatus }}>
+    <AuthContext.Provider
+      value={{ isLoggedIn, login, logout, setAuthStatus, isAuthChecked }}
+    >
       {children}
     </AuthContext.Provider>
   );

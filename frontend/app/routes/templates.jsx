@@ -6,8 +6,6 @@ export default function Templates() {
   const navigate = useNavigate();
 
   const handleSelectTemplate = (selectedTemplate) => {
-    console.log("Valgt template:", selectedTemplate);
-
     navigate("/mesocycles-new", {
       state: {
         template: selectedTemplate.name,

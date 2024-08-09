@@ -1,13 +1,12 @@
 import express from "express";
 import pkg from "body-parser";
 const { json } = pkg;
-
 import db from "./database.js";
 import Joi from "joi";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import cookieParser from "cookie-parser";
-import csurf from "csurf";
+
 import cors from "cors";
 import mesocycleRoutes from "./routes/mesocycleRoutes.js";
 import exerciseRoutes from "./routes/exerciseRoutes.js";
@@ -97,6 +96,7 @@ app.post("/login", async (req, res) => {
       res.cookie("token", token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
       });
 
       res.json({ token });
