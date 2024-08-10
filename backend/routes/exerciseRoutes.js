@@ -11,10 +11,6 @@ router.post("/exercises", authenticateToken, (req, res) => {
   const userID = req.user.id;
   const { name, type, muscleGroup, videolink } = req.body;
 
-  if (!muscleGroup) {
-    return res.status(400).json({ error: "muscleGroup cannot be null" });
-  }
-
   const insertQuery = `INSERT INTO exercises (name, type, muscleGroup, videolink, user_id) VALUES (?, ?, ?, ?, ?)`;
 
   db.run(

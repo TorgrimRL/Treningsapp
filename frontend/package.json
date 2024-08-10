@@ -1,13 +1,13 @@
 {
-  "name": "",
+  "name": "treningsapp",
   "private": true,
   "sideEffects": false,
   "type": "module",
   "scripts": {
-    "build": "remix vite:build",
-    "dev": "remix vite:dev",
+    "build": "vite build && remix build",
+    "dev": "vite && remix dev",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
-    "start": "remix-serve ./build/server/index.js"
+    "start": "remix-serve build"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^6.5.2",
