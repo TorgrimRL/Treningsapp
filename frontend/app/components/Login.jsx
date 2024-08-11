@@ -7,7 +7,7 @@ export default function Login() {
   const [message, setMessage] = useState("");
 
   const { setAuthStatus, isLoggedIn, isAuthChecked } = useAuth();
-  const baseUrl = process.env.REACT_APP_API_URL;
+  const baseUrl = import.meta.env.VITE_API_URL;
   const handleSubmit = async (event) => {
     event.preventDefault();
 

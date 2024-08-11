@@ -5,7 +5,7 @@ import { useAuth } from "../utils/AuthContext";
 export default function Logout() {
   const navigate = useNavigate();
   const { setAuthStatus } = useAuth();
-  const baseUrl = process.env.REACT_APP_API_URL;
+  const baseUrl = import.meta.env.VITE_API_URL;
   useEffect(() => {
     const logout = async () => {
       try {

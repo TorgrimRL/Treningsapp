@@ -7,7 +7,7 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
-  const baseUrl = process.env.REACT_APP_API_URL;
+  const baseUrl = import.meta.env.VITE_API_URL;
   const handleSubmit = async (event) => {
     event.preventDefault();
 

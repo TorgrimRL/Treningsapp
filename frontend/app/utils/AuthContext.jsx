@@ -9,7 +9,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => setIsLoggedIn(false);
   const setAuthStatus = (status) => setIsLoggedIn(status);
   const [isAuthChecked, setIsAuthChecked] = useState(false);
-  const baseUrl = process.env.REACT_APP_API_URL;
+  const baseUrl = import.meta.env.VITE_API_URL;
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {

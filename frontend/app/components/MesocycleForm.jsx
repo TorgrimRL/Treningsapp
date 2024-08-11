@@ -38,7 +38,7 @@ const MesocycleForm = ({ onSubmit }) => {
     location.state || {};
   const [isExerciseModalOpen, setIsExerciseModalOpen] = useState(false);
   const [customExercises, setCustomExercises] = useState({});
-  const baseUrl = process.env.REACT_APP_API_URL;
+  const baseUrl = import.meta.env.VITE_API_URL;
   useEffect(() => {
     const fetchCustomExercises = async () => {
       try {

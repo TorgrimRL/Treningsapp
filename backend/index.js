@@ -53,14 +53,12 @@ app.get("/register", (req, res) => {
     "This is the register page. Use a POST request to register a new user."
   );
 });
-// Rute for brukerregistrering (uten CSRF-beskyttelse)
+
 app.post("/register", async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    const user = await db.sql(
-      `SELECT * FROM users WHERE username = ${username}`
-    );
+    const user = await db.sql`SELECT * FROM users WHERE username = ${username}`;
 
     if (user.length > 0) {
       return res.status(400).json({ message: "Username already exists" });

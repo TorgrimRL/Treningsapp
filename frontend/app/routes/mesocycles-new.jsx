@@ -4,7 +4,7 @@ import { getCookie } from "../utils/cookies";
 
 export default function NewMesocycle() {
   const [csrfToken, setCSRFToken] = useState("");
-  const baseUrl = process.env.REACT_APP_API_URL;
+  const baseUrl = import.meta.env.VITE_API_URL;
   useEffect(() => {
     const fetchCsrfToken = async () => {
       const response = await fetch(`${baseUrl}/csrf-token`, {

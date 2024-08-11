@@ -7,7 +7,7 @@ const MesocycleOverview = () => {
   const [openMenus, setOpenMenus] = useState({});
   const [sortedPlans, setSortedPlans] = useState([]);
   const menuRef = useRef(null);
-  const baseUrl = process.env.REACT_APP_API_URL;
+  const baseUrl = import.meta.env.VITE_API_URL;
 
   const sortPlansByCurrent = (plans) => {
     const currentPlans = plans.filter((plan) => plan.isCurrent);

@@ -29,7 +29,7 @@ export default function CurrentWorkout() {
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [currentNote, setCurrentNote] = useState("");
   const [currentExercise, setCurrentExercise] = useState(null);
-  const baseUrl = process.env.REACT_APP_API_URL;
+  const baseUrl = import.meta.env.VITE_API_URL;
 
   const getFirstIncompleteDay = (plan) => {
     for (let i = 0; i < plan.length; i++) {
