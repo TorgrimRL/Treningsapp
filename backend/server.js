@@ -17,7 +17,7 @@ import {
 } from "./middleware.js";
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 app.use(json());
 app.use(cookieParser());
@@ -41,6 +41,16 @@ app.use("/api", exerciseRoutes);
 app.use("/api", mesocycleRoutes);
 csrfTokenRoute(app);
 
+app.use((req, res, next) => {
+  console.log(`Request URL: ${req.url}`);
+  next();
+});
+
+app.get("/register", (req, res) => {
+  res.send(
+    "This is the register page. Use a POST request to register a new user."
+  );
+});
 // Rute for brukerregistrering (uten CSRF-beskyttelse)
 app.post("/register", async (req, res) => {
   console.log("Received body:", req.body);
