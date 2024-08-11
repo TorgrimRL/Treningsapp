@@ -1,6 +1,14 @@
 import { Database } from "@sqlitecloud/drivers";
+import dotenv from "dotenv";
+
+// Load environment variables (useful for local development)
+dotenv.config();
 
 const db = new Database(process.env.DB_URI);
+
+db.sql`SELECT 1`
+  .then(() => console.log("Connected to SQLite Cloud"))
+  .catch((err) => console.error("Connection failed:", err));
 
 const createUserTable = async () =>
   await db.sql`CREATE TABLE IF NOT EXISTS users (
