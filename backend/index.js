@@ -2,7 +2,6 @@ import express from "express";
 import pkg from "body-parser";
 const { json } = pkg;
 import db from "./remoteDatabase.js";
-import Joi from "joi";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import cookieParser from "cookie-parser";
@@ -23,12 +22,12 @@ app.use(json());
 app.use(cookieParser());
 
 // Cross Origin Resource Sharing
-app.use(
-  cors({
-    origin: "http://localhost:5173",
-    credentials: true,
-  })
-);
+const corsOptions = {
+  origin: process.env.NODE_ENV === "production" ? "*" : "http://localhost:5173",
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
 
 app.use((req, res, next) => {
   next();
@@ -45,6 +44,9 @@ app.use((req, res, next) => {
   console.log(`Request URL: ${req.url}`);
   next();
 });
+app.get("/api/", (req, res) => {
+  res.send("Welcome to the API");
+});
 
 app.get("/register", (req, res) => {
   res.send(
@@ -53,26 +55,26 @@ app.get("/register", (req, res) => {
 });
 // Rute for brukerregistrering (uten CSRF-beskyttelse)
 app.post("/register", async (req, res) => {
-  console.log("Received body:", req.body);
-  const { username, password } = req.body;
+  try {
+    const { username, password } = req.body;
 
-  const user = await db.sql(`SELECT * FROM users WHERE username = ${username}`);
+    const user = await db.sql(
+      `SELECT * FROM users WHERE username = ${username}`
+    );
 
-  if (err) return res.status(500).json({ message: err.message });
-  if (user.length > 0)
-    return res.status(400).json({ message: "Username already exists" });
+    if (user.length > 0) {
+      return res.status(400).json({ message: "Username already exists" });
+    }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-  db.sql`INSERT INTO users (username, password) VALUES (${username}, ${hashedPassword})`
-    .then(() => {
-      res.status(201).json({ message: "User registered" });
-    })
-    .catch((err) => {
-      res.status(500).json({ message: err.message });
-    });
+    await db.sql`INSERT INTO users (username, password) VALUES (${username}, ${hashedPassword})`;
+
+    res.status(201).json({ message: "User registered" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 });
-
 // Rute for brukerpålogging
 app.post("/login", async (req, res) => {
   try {
