@@ -6,9 +6,8 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config({
-  path: path.resolve(__dirname, "../.vercel/.env.development.local"),
-});
+// Laste inn miljøvariabler fra .env-filen
+dotenv.config({ path: path.resolve(__dirname, ".env") });
 
 const dbUri = process.env.DB_URI;
 console.log("DB_URI:", dbUri);
