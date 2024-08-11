@@ -1,10 +1,22 @@
 import { Database } from "@sqlitecloud/drivers";
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 
-// Load environment variables (useful for local development)
-dotenv.config();
+// Opprett __dirname ekvivalent for ES-moduler
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
+dotenv.config({
+  path: path.resolve(__dirname, "../.vercel/.env.development.local"),
+});
+
+const dbUri = process.env.DB_URI;
+console.log("DB_URI:", dbUri);
 const db = new Database(process.env.DB_URI);
+db.sql`USE database.sqlite`
+  .then(() => console.log("Database selected"))
+  .catch((err) => console.error("Failed to select database:", err));
 
 db.sql`SELECT 1`
   .then(() => console.log("Connected to SQLite Cloud"))
