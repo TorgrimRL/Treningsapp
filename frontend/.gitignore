@@ -1,5 +1,17 @@
-node_modules
+# Ignore node_modules
+node_modules/
 
-/.cache
-/build
+# Ignore build artifacts
+build/
+dist/
+
+# Ignore environment variables
 .env
+.env.local
+.env.production
+.env.development
+
+# Ignore logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
