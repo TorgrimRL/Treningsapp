@@ -6,7 +6,7 @@ const router = express.Router();
 
 export default router;
 
-// Endpoint to adda a new exercise
+// Endpoint to ada a new exercise
 router.post("/exercises", authenticateToken, (req, res) => {
   const userID = req.user.id;
   const { name, type, muscleGroup, videolink } = req.body;
