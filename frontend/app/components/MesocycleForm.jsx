@@ -38,11 +38,11 @@ const MesocycleForm = ({ onSubmit }) => {
     location.state || {};
   const [isExerciseModalOpen, setIsExerciseModalOpen] = useState(false);
   const [customExercises, setCustomExercises] = useState({});
-
+  const baseUrl = process.env.REACT_APP_API_URL;
   useEffect(() => {
     const fetchCustomExercises = async () => {
       try {
-        const response = await fetch("http://localhost:3000/api/exercises", {
+        const response = await fetch(`${baseUrl}/api/exercises`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -94,7 +94,7 @@ const MesocycleForm = ({ onSubmit }) => {
       });
 
       try {
-        const response = await fetch("http://localhost:3000/api/exercises", {
+        const response = await fetch(`${baseUrl}/api/exercises`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

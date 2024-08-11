@@ -4,10 +4,10 @@ import { getCookie } from "../utils/cookies";
 
 export default function NewMesocycle() {
   const [csrfToken, setCSRFToken] = useState("");
-
+  const baseUrl = process.env.REACT_APP_API_URL;
   useEffect(() => {
     const fetchCsrfToken = async () => {
-      const response = await fetch("http://localhost:3000/csrf-token", {
+      const response = await fetch(`${baseUrl}/csrf-token`, {
         method: "GET",
         credentials: "include",
       });
@@ -21,7 +21,7 @@ export default function NewMesocycle() {
     try {
       const token = getCookie("token");
       console.log("Retrieved token:", token);
-      const response = await fetch("http://localhost:3000/api/mesocycles", {
+      const response = await fetch(`${baseUrl}/api/mesocycles`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

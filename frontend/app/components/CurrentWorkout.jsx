@@ -29,6 +29,7 @@ export default function CurrentWorkout() {
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [currentNote, setCurrentNote] = useState("");
   const [currentExercise, setCurrentExercise] = useState(null);
+  const baseUrl = process.env.REACT_APP_API_URL;
 
   const getFirstIncompleteDay = (plan) => {
     for (let i = 0; i < plan.length; i++) {
@@ -80,7 +81,6 @@ export default function CurrentWorkout() {
         return updatedNotes;
       });
 
-      // Oppdater mesocyklus med den nye planen
       const updatedMesocycle = {
         ...currentMesocycle,
         plan: currentMesocycle.plan.map((day, dIndex) =>
@@ -114,10 +114,9 @@ export default function CurrentWorkout() {
         ),
       };
 
-      // Send de oppdaterte dataene til backend
       try {
         const response = await fetch(
-          `http://localhost:3000/api/mesocycles/${currentMesocycle.id}`,
+          `${baseUrl}/api/mesocycles/${currentMesocycle.id}`,
           {
             method: "PUT",
             headers: {
@@ -290,13 +289,10 @@ export default function CurrentWorkout() {
   useEffect(() => {
     const fetchMesocycle = async () => {
       try {
-        const response = await fetch(
-          "http://localhost:3000/api/current-workout",
-          {
-            method: "GET",
-            credentials: "include",
-          }
-        );
+        const response = await fetch(`${baseUrl}/api/current-workout`, {
+          method: "GET",
+          credentials: "include",
+        });
         const data = await response.json();
         console.log("Mesocycle Data:", data);
         setCurrentMesocycle(data);
@@ -330,13 +326,10 @@ export default function CurrentWorkout() {
 
   const handleDayClick = async (index) => {
     try {
-      const response = await fetch(
-        "http://localhost:3000/api/current-workout",
-        {
-          method: "GET",
-          credentials: "include",
-        }
-      );
+      const response = await fetch(`${baseUrl}/api/current-workout`, {
+        method: "GET",
+        credentials: "include",
+      });
 
       const data = await response.json();
       console.log("Updated Mesocycle Data:", data);
@@ -444,7 +437,7 @@ export default function CurrentWorkout() {
       (async () => {
         try {
           const response = await fetch(
-            `http://localhost:3000/api/mesocycles/${currentMesocycle.id}`,
+            `${baseUrl}/api/mesocycles/${currentMesocycle.id}`,
             {
               method: "PUT",
               headers: {

@@ -7,6 +7,7 @@ const MesocycleOverview = () => {
   const [openMenus, setOpenMenus] = useState({});
   const [sortedPlans, setSortedPlans] = useState([]);
   const menuRef = useRef(null);
+  const baseUrl = process.env.REACT_APP_API_URL;
 
   const sortPlansByCurrent = (plans) => {
     const currentPlans = plans.filter((plan) => plan.isCurrent);
@@ -42,7 +43,7 @@ const MesocycleOverview = () => {
   useEffect(() => {
     const fetchMesocycles = async () => {
       try {
-        const response = await fetch("http://localhost:3000/api/mesocycles", {
+        const response = await fetch(`${baseUrl}/api/mesocycles`, {
           method: "GET",
           credentials: "include",
         });

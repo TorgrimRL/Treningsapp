@@ -7,7 +7,7 @@ export default function Register() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
-
+  const baseUrl = process.env.REACT_APP_API_URL;
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -17,7 +17,7 @@ export default function Register() {
     }
 
     try {
-      const response = await fetch("http://localhost:3000/register", {
+      const response = await fetch(`${baseUrl}/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

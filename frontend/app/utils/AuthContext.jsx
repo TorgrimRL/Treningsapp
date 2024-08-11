@@ -9,11 +9,11 @@ export const AuthProvider = ({ children }) => {
   const logout = () => setIsLoggedIn(false);
   const setAuthStatus = (status) => setIsLoggedIn(status);
   const [isAuthChecked, setIsAuthChecked] = useState(false);
-
+  const baseUrl = process.env.REACT_APP_API_URL;
   useEffect(() => {
     const checkAuthStatus = async () => {
       try {
-        const response = await fetch("http://localhost:3000/check-auth", {
+        const response = await fetch(`${baseUrl}/check-auth`, {
           credentials: "include",
         });
         const data = await response.json();

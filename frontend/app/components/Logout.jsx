@@ -5,11 +5,11 @@ import { useAuth } from "../utils/AuthContext";
 export default function Logout() {
   const navigate = useNavigate();
   const { setAuthStatus } = useAuth();
-
+  const baseUrl = process.env.REACT_APP_API_URL;
   useEffect(() => {
     const logout = async () => {
       try {
-        const response = await fetch("http://localhost:3000/logout", {
+        const response = await fetch(`${baseUrl}/logout`, {
           method: "POST",
           credentials: "include",
         });

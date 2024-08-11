@@ -7,12 +7,12 @@ export default function Login() {
   const [message, setMessage] = useState("");
 
   const { setAuthStatus, isLoggedIn, isAuthChecked } = useAuth();
-
+  const baseUrl = process.env.REACT_APP_API_URL;
   const handleSubmit = async (event) => {
     event.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:3000/login", {
+      const response = await fetch(`${baseUrl}/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
