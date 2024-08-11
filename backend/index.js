@@ -5,7 +5,7 @@ import db from "./remoteDatabase.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import cookieParser from "cookie-parser";
-
+import bodyParser from "body-parser";
 import cors from "cors";
 import mesocycleRoutes from "./routes/mesocycleRoutes.js";
 import exerciseRoutes from "./routes/exerciseRoutes.js";
@@ -18,7 +18,9 @@ import {
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(json());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
 app.use(cookieParser());
 
 // Cross Origin Resource Sharing
