@@ -17,13 +17,6 @@ import {
 
 const app = express();
 const port = process.env.PORT || 3000;
-app.use(cors(corsOptions));
-
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-
-app.use(cookieParser());
-
 const corsOptions = {
   origin:
     process.env.NODE_ENV === "production"
@@ -31,6 +24,12 @@ const corsOptions = {
       : "http://localhost:5173",
   credentials: true,
 };
+app.use(cors(corsOptions));
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+
+app.use(cookieParser());
 
 app.use((req, res, next) => {
   next();
