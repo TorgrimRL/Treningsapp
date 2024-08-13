@@ -17,6 +17,7 @@ import {
 
 const app = express();
 const port = process.env.PORT || 3000;
+app.use(cors(corsOptions));
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -30,8 +31,6 @@ const corsOptions = {
       : "http://localhost:5173",
   credentials: true,
 };
-
-app.use(cors(corsOptions));
 
 app.use((req, res, next) => {
   next();
