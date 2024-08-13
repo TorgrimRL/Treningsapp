@@ -16,6 +16,10 @@ export const AuthProvider = ({ children }) => {
         const response = await fetch(`${baseUrl}/check-auth`, {
           credentials: "include",
         });
+        if (response.status === 401 || response.status === 403) {
+          setIsLoggedIn(false);
+          throw new Error("User not authenticated");
+        }
         const data = await response.json();
         setIsLoggedIn(data.isLoggedIn);
         console.log("Auth status checked:", data.isLoggedIn);

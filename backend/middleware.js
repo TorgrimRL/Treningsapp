@@ -18,7 +18,7 @@ export const authenticateToken = (req, res, next) => {
     next();
   } catch (error) {
     console.log("Token verification error:", error.message);
-    res.status(400).send("Invalid Token");
+    res.status(403).send("Invalid Token");
   }
 };
 
