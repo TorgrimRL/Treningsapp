@@ -52,13 +52,13 @@ app.get("/api/", (req, res) => {
   res.send("Welcome to the API");
 });
 
-app.get("/register", (req, res) => {
+app.get("/api/register", (req, res) => {
   res.send(
     "This is the register page. Use a POST request to register a new user."
   );
 });
 
-app.post("/register", async (req, res) => {
+app.post("/api/register", async (req, res) => {
   try {
     const { username, password } = req.body;
 
@@ -78,7 +78,7 @@ app.post("/register", async (req, res) => {
   }
 });
 // Rute for brukerpålogging
-app.post("/login", async (req, res) => {
+app.post("/api/login", async (req, res) => {
   try {
     const { username, password } = req.body;
     const userResult =
@@ -111,7 +111,7 @@ app.post("/login", async (req, res) => {
 });
 
 //Endepunkt for å sjekke autentiseringsstatus
-app.get("/check-auth", authenticateToken, (req, res) => {
+app.get("/api/check-auth", authenticateToken, (req, res) => {
   const token = req.cookies.token;
   if (!token) {
     return res.json({ isLoggedIn: false });
@@ -126,7 +126,7 @@ app.get("/check-auth", authenticateToken, (req, res) => {
 });
 
 // Endepunkt for å logge ut en bruker
-app.post("/logout", async (req, res) => {
+app.post("/api/logout", async (req, res) => {
   console.log("Logout request received");
   console.log("Cookies before clearing:", req.cookies);
 
@@ -143,7 +143,7 @@ app.post("/logout", async (req, res) => {
 
 //Endepunkt for å slette en bruker
 app.delete(
-  "/users/:username",
+  "/api/users/:username",
   authenticateToken,
   csrfProtection,
   async (req, res) => {
