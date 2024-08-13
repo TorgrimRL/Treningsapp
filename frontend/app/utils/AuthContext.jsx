@@ -11,6 +11,8 @@ export const AuthProvider = ({ children }) => {
   const [isAuthChecked, setIsAuthChecked] = useState(false);
   const baseUrl = import.meta.env.VITE_API_URL;
   useEffect(() => {
+    if (!isLoggedIn) return;
+
     const checkAuthStatus = async () => {
       try {
         const response = await fetch(`${baseUrl}/check-auth`, {
@@ -32,7 +34,7 @@ export const AuthProvider = ({ children }) => {
       }
     };
     checkAuthStatus();
-  }, []);
+  }, [isLoggedIn]);
   return (
     <AuthContext.Provider
       value={{ isLoggedIn, login, logout, setAuthStatus, isAuthChecked }}
