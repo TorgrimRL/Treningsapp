@@ -43,7 +43,7 @@ const MesocycleOverview = () => {
   useEffect(() => {
     const fetchMesocycles = async () => {
       try {
-        const response = await fetch(`${baseUrl}/api/mesocycles`, {
+        const response = await fetch(`${baseUrl}/mesocycles`, {
           method: "GET",
           credentials: "include",
         });

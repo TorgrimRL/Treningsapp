@@ -42,7 +42,7 @@ const MesocycleForm = ({ onSubmit }) => {
   useEffect(() => {
     const fetchCustomExercises = async () => {
       try {
-        const response = await fetch(`${baseUrl}/api/exercises`, {
+        const response = await fetch(`${baseUrl}/exercises`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -94,7 +94,7 @@ const MesocycleForm = ({ onSubmit }) => {
       });
 
       try {
-        const response = await fetch(`${baseUrl}/api/exercises`, {
+        const response = await fetch(`${baseUrl}/exercises`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

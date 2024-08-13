@@ -116,7 +116,7 @@ export default function CurrentWorkout() {
 
       try {
         const response = await fetch(
-          `${baseUrl}/api/mesocycles/${currentMesocycle.id}`,
+          `${baseUrl}/mesocycles/${currentMesocycle.id}`,
           {
             method: "PUT",
             headers: {
@@ -289,7 +289,7 @@ export default function CurrentWorkout() {
   useEffect(() => {
     const fetchMesocycle = async () => {
       try {
-        const response = await fetch(`${baseUrl}/api/current-workout`, {
+        const response = await fetch(`${baseUrl}/current-workout`, {
           method: "GET",
           credentials: "include",
         });
@@ -326,7 +326,7 @@ export default function CurrentWorkout() {
 
   const handleDayClick = async (index) => {
     try {
-      const response = await fetch(`${baseUrl}/api/current-workout`, {
+      const response = await fetch(`${baseUrl}/current-workout`, {
         method: "GET",
         credentials: "include",
       });
@@ -437,7 +437,7 @@ export default function CurrentWorkout() {
       (async () => {
         try {
           const response = await fetch(
-            `${baseUrl}/api/mesocycles/${currentMesocycle.id}`,
+            `${baseUrl}/mesocycles/${currentMesocycle.id}`,
             {
               method: "PUT",
               headers: {
