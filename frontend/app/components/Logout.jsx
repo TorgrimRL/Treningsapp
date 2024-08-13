@@ -6,6 +6,7 @@ export default function Logout() {
   const navigate = useNavigate();
   const { setAuthStatus } = useAuth();
   const baseUrl = import.meta.env.VITE_API_URL;
+
   useEffect(() => {
     const logout = async () => {
       try {
@@ -14,23 +15,25 @@ export default function Logout() {
           credentials: "include",
         });
         if (response.ok) {
-          console.log("Logout successful");
+          // Fjern token fra lokal lagring
+          localStorage.removeItem("token");
+          sessionStorage.removeItem("token");
+
+          // Fjern cookies (hvis tokenen er lagret i cookies)
+          document.cookie =
+            "token=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=None";
+
+          // Oppdater autentiseringsstatus
           setAuthStatus(false);
-          console.log("Navigating to /login");
           navigate("/login");
-        } else {
-          console.log("Logout failed");
-          throw new Error("Failed to logout");
         }
       } catch (error) {
         console.error("Logout error:", error);
-        console.log("Navigating to /login due to error");
         navigate("/login");
       }
     };
 
     logout();
   }, [navigate, setAuthStatus]);
-
   return null;
 }
