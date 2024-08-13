@@ -37,8 +37,12 @@ export default function Login() {
   useEffect(() => {
     if (isAuthChecked && isLoggedIn) {
       window.location.href = "/templates";
-    } else if (isAuthChecked && !isLoggedIn) {
-      window.location.href = "/login"; // Omdiriger til login-side etter utlogging hvis nødvendig
+    } else if (
+      isAuthChecked &&
+      !isLoggedIn &&
+      window.location.pathname !== "/login"
+    ) {
+      window.location.href = "/login";
     }
   }, [isLoggedIn, isAuthChecked]);
 
