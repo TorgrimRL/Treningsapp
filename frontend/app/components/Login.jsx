@@ -55,6 +55,7 @@ export default function Login() {
         padding: "25px",
         marginTop: "15px",
       }}
+      className="text-white"
     >
       <label className="text-white">
         Username:

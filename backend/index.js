@@ -17,6 +17,7 @@ import {
 
 const app = express();
 const port = process.env.PORT || 3000;
+
 const corsOptions = {
   origin:
     process.env.NODE_ENV === "production"
@@ -24,11 +25,12 @@ const corsOptions = {
       : "http://localhost:5173",
   credentials: true,
 };
+
+// Bruk cors middleware etter at corsOptions er definert
 app.use(cors(corsOptions));
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-
 app.use(cookieParser());
 
 app.use((req, res, next) => {
@@ -36,9 +38,9 @@ app.use((req, res, next) => {
 });
 
 const secretKey = "secretkey";
+app.get("/favicon.ico", (req, res) => res.status(204));
 
 app.use("/api", exerciseRoutes);
-
 app.use("/api", mesocycleRoutes);
 csrfTokenRoute(app);
 
@@ -46,6 +48,7 @@ app.use((req, res, next) => {
   console.log(`Request URL: ${req.url}`);
   next();
 });
+
 app.get("/api/", (req, res) => {
   res.send("Welcome to the API");
 });
@@ -75,7 +78,7 @@ app.post("/api/register", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
-// Rute for brukerpålogging
+
 app.post("/api/login", async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -108,22 +111,26 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-//Endepunkt for å sjekke autentiseringsstatus
 app.get("/api/check-auth", authenticateToken, (req, res) => {
   const token = req.cookies.token;
+
+  console.log("Received token for /api/check-auth:", token); // Logging av token
+
   if (!token) {
+    console.log("No token found in cookies."); // Logging hvis token mangler
     return res.json({ isLoggedIn: false });
   }
 
   try {
     const verified = jwt.verify(token, secretKey);
+    console.log("Token verification successful:", verified); // Logging av verifisert token
     res.json({ isLoggedIn: true });
   } catch (error) {
+    console.log("Token verification failed:", error.message); // Logging ved feil i verifisering
     res.json({ isLoggedIn: false });
   }
 });
 
-// Endepunkt for å logge ut en bruker
 app.post("/api/logout", async (req, res) => {
   console.log("Logout request received");
   console.log("Cookies before clearing:", req.cookies);
@@ -131,7 +138,7 @@ app.post("/api/logout", async (req, res) => {
   res.clearCookie("token", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "None",
     path: "/",
   });
 
@@ -139,7 +146,6 @@ app.post("/api/logout", async (req, res) => {
   res.status(200).send("Logged out successfully");
 });
 
-//Endepunkt for å slette en bruker
 app.delete(
   "/api/users/:username",
   authenticateToken,
@@ -156,7 +162,6 @@ app.delete(
   }
 );
 
-// Rute for å håndtere GET-forespørsler til roten
 app.get("/", (req, res) => {
   res.send("Welcome to the Workout App API!");
 });
@@ -166,5 +171,3 @@ if (process.env.NODE_ENV !== "test") {
     console.log(`Server running on http://localhost:${port}`);
   });
 }
-
-export default app;
