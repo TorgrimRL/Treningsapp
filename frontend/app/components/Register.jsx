@@ -57,6 +57,8 @@ export default function Register() {
         padding: "20px",
         marginTop: "15px",
       }}
+      className="
+      text-white"
     >
       <label className="text-white">
         Username:
