@@ -132,25 +132,25 @@ app.get("/api/check-auth", authenticateToken, (req, res) => {
     res.json({ isLoggedIn: false });
   }
 });
-app.post("/api/logout", authenticateToken, async (req, res) => {
-  console.log("Logout request received");
-  res.status(200).send("Logged out successfully");
-});
 // app.post("/api/logout", authenticateToken, async (req, res) => {
 //   console.log("Logout request received");
-//   console.log("Cookies before clearing:", req.cookies);
-
-//   // Fjern cookien med de samme alternativene som den ble satt med
-//   res.clearCookie("token", {
-//     httpOnly: true,
-//     secure: process.env.NODE_ENV === "production",
-//     sameSite: "None",
-//     path: "/", // Sørg for at dette matcher med hva som ble brukt i login-endepunktet
-//   });
-
-//   console.log("Cookies after clearing:", req.cookies);
 //   res.status(200).send("Logged out successfully");
 // });
+app.post("/api/logout", authenticateToken, async (req, res) => {
+  console.log("Logout request received");
+  console.log("Cookies before clearing:", req.cookies);
+
+  // Fjern cookien med de samme alternativene som den ble satt med
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "None",
+    path: "/", // Sørg for at dette matcher med hva som ble brukt i login-endepunktet
+  });
+
+  console.log("Cookies after clearing:", req.cookies);
+  res.status(200).send("Logged out successfully");
+});
 app.delete(
   "/api/users/:username",
   authenticateToken,
