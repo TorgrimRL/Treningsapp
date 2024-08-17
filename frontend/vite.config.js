@@ -32,11 +32,12 @@ export default defineConfig({
       "/react_devtools_backend_compact.js.map": "http://localhost:3000", // Dummy route to avoid errors
 
       "/api": {
-        target: "http://localhost:3000", // Proxy API requests to your backend server
-
+        target: "http://localhost:3000", // Sørg for at dette peker på backend-serveren
         changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, "/api"),
+        // rewrite: (path) => path.replace(/^\/api/, "/api"),
 
-        rewrite: (path) => path.replace(/^\/api/, ""),
+        // // rewrite: (path) => path.replace(/^\/api/, ""),
       },
     },
   },

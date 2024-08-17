@@ -27,6 +27,7 @@ export default function Register() {
       });
 
       console.log("Response:", response);
+      console.log(import.meta.env.VITE_API_URL);
 
       if (!response.ok) {
         const text = await response.text();
