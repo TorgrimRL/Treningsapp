@@ -132,10 +132,7 @@ app.get("/api/check-auth", authenticateToken, (req, res) => {
     res.json({ isLoggedIn: false });
   }
 });
-// app.post("/api/logout", authenticateToken, async (req, res) => {
-//   console.log("Logout request received");
-//   res.status(200).send("Logged out successfully");
-// });
+
 app.post("/api/logout", authenticateToken, async (req, res) => {
   console.log("Logout request received");
   console.log("Cookies before clearing:", req.cookies);
