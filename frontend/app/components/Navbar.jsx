@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../utils/AuthContext";
 import { useNavigate } from "@remix-run/react";
+import Logout from "./Logout";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -8,29 +9,13 @@ export default function Navbar() {
   const menuRef = useRef(null);
   const navigate = useNavigate();
   const baseUrl = import.meta.env.VITE_API_URL;
-  const handleLogout = async () => {
-    try {
-      const response = await fetch(`${baseUrl}/logout`, {
-        method: "POST",
-        credentials: "include",
-      });
-
-      if (response.ok) {
-        localStorage.removeItem("token");
-        sessionStorage.removeItem("token");
-        document.cookie =
-          "token=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=None";
-        setAuthStatus(false);
-        await checkAuthStatus();
-        // navigate("/login");
-      } else {
-        console.error("Logout failed:", response.status);
-      }
-    } catch (error) {
-      console.error("Logout error:", error);
+  const [showLogout, setShowLogout] = useState(false);
+  const handleLogout = (e) => {
+    e.stopPropagation();
+    if (!showLogout) {
+      setShowLogout(true);
     }
   };
-
   const toggleMenu = () => {
     setIsOpen(!isOpen);
   };
@@ -55,6 +40,7 @@ export default function Navbar() {
 
   return (
     <nav
+      onClick={(e) => e.stopPropagation()}
       style={{
         position: "fixed",
         top: 0,
@@ -126,18 +112,15 @@ export default function Navbar() {
               >
                 Templates
               </a>
-              <form
-                method="post"
-                action="/logout"
-                className="h-full flex items-center"
-              >
+
+              <li className="block px-4 py-2 hover:bg-darkGray">
                 <button
                   onClick={handleLogout}
                   className="text-white h-full flex items-center hover:bg-gray-700"
                 >
                   Logout
                 </button>
-              </form>
+              </li>
             </>
           )}
         </div>
@@ -210,14 +193,12 @@ export default function Navbar() {
                     </a>
                   </li>
                   <li className="block px-4 py-2 hover:bg-darkGray ">
-                    <form method="post" action="/logout">
-                      <button
-                        onClick={handleLogout}
-                        className="text-white h-full flex items-center hover:bg-gray-700"
-                      >
-                        Logout
-                      </button>
-                    </form>
+                    <button
+                      onClick={handleLogout}
+                      className="text-white h-full flex items-center hover:bg-gray-700"
+                    >
+                      Logout
+                    </button>
                   </li>
                 </>
               )}
@@ -225,6 +206,7 @@ export default function Navbar() {
           </div>
         )}
       </div>
+      {showLogout && <Logout />}
     </nav>
   );
 }

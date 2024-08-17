@@ -6,7 +6,6 @@ export default function Logout() {
   const navigate = useNavigate();
   const { setAuthStatus, checkAuthStatus } = useAuth();
   const baseUrl = import.meta.env.VITE_API_URL;
-  console.log("Logout component rendered");
 
   useEffect(() => {
     const logout = async () => {
@@ -16,6 +15,7 @@ export default function Logout() {
           method: "POST",
           credentials: "include",
         });
+
         if (response.ok) {
           console.log("Logout successful."); // Logging for debugging
           localStorage.removeItem("token");
@@ -24,13 +24,13 @@ export default function Logout() {
             "token=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=None";
           setAuthStatus(false);
           await checkAuthStatus();
-          // navigate("/");
+          navigate("/login"); // Naviger til login-siden etter logout
         } else {
           console.error("Logout failed:", response.status); // Logging for debugging
         }
       } catch (error) {
         console.error("Logout error:", error);
-        navigate("/login");
+        navigate("/login"); // Naviger til login-siden ved feil
       }
     };
 
