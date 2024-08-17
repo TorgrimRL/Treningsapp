@@ -4,28 +4,29 @@ import { useAuth } from "../utils/AuthContext";
 
 export default function Logout() {
   const navigate = useNavigate();
-  const { setAuthStatus } = useAuth();
+  const { setAuthStatus, checkAuthStatus } = useAuth();
   const baseUrl = import.meta.env.VITE_API_URL;
+  console.log("Logout component rendered");
 
   useEffect(() => {
     const logout = async () => {
       try {
+        console.log("Starting logout process..."); // Logging for debugging
         const response = await fetch(`${baseUrl}/logout`, {
           method: "POST",
           credentials: "include",
         });
         if (response.ok) {
-          // Fjern token fra lokal lagring
+          console.log("Logout successful."); // Logging for debugging
           localStorage.removeItem("token");
           sessionStorage.removeItem("token");
-
-          // Fjern cookies (hvis tokenen er lagret i cookies)
           document.cookie =
             "token=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=None";
-
-          // Oppdater autentiseringsstatus
           setAuthStatus(false);
-          navigate("/login");
+          await checkAuthStatus();
+          // navigate("/");
+        } else {
+          console.error("Logout failed:", response.status); // Logging for debugging
         }
       } catch (error) {
         console.error("Logout error:", error);
@@ -34,6 +35,7 @@ export default function Logout() {
     };
 
     logout();
-  }, [navigate, setAuthStatus]);
+  }, [navigate, setAuthStatus, checkAuthStatus]);
+
   return null;
 }

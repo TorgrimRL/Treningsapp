@@ -8,24 +8,28 @@ export const AuthProvider = ({ children }) => {
   const logout = () => setIsLoggedInn(false);
   const setAuthStatus = (status) => setIsLoggedInn(status);
   const baseUrl = import.meta.env.VITE_API_URL;
+
+  const checkAuthStatus = async () => {
+    try {
+      const response = await fetch(`${baseUrl}/check-auth`, {
+        credentials: "include",
+      });
+      const data = await response.json();
+      setIsLoggedInn(data.isLoggedIn);
+      console.log("Auth status checked:", data.isLoggedIn);
+    } catch (error) {
+      console.error("Failed to check auth status:", error);
+      setIsLoggedInn(false);
+    }
+  };
+
   useEffect(() => {
-    const checkAuthStatus = async () => {
-      try {
-        const response = await fetch(`${baseUrl}/check-auth`, {
-          credentials: "include",
-        });
-        const data = await response.json();
-        setIsLoggedInn(data.isLoggedIn);
-        console.log("Auth status checked:", data.isLoggedIn);
-      } catch (error) {
-        console.error("Failed to check auth status:", error);
-        setIsLoggedInn(false);
-      }
-    };
     checkAuthStatus();
   }, []);
   return (
-    <AuthContext.Provider value={{ isLoggedIn, login, logout, setAuthStatus }}>
+    <AuthContext.Provider
+      value={{ isLoggedIn, login, logout, setAuthStatus, checkAuthStatus }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -1,10 +1,35 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../utils/AuthContext";
+import { useNavigate } from "@remix-run/react";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, setAuthStatus, checkAuthStatus } = useAuth();
   const menuRef = useRef(null);
+  const navigate = useNavigate();
+  const baseUrl = import.meta.env.VITE_API_URL;
+  const handleLogout = async () => {
+    try {
+      const response = await fetch(`${baseUrl}/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        localStorage.removeItem("token");
+        sessionStorage.removeItem("token");
+        document.cookie =
+          "token=; Path=/; Max-Age=0; Secure; HttpOnly; SameSite=None";
+        setAuthStatus(false);
+        await checkAuthStatus();
+        // navigate("/login");
+      } else {
+        console.error("Logout failed:", response.status);
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -107,7 +132,7 @@ export default function Navbar() {
                 className="h-full flex items-center"
               >
                 <button
-                  type="submit"
+                  onClick={handleLogout}
                   className="text-white h-full flex items-center hover:bg-gray-700"
                 >
                   Logout
@@ -187,8 +212,8 @@ export default function Navbar() {
                   <li className="block px-4 py-2 hover:bg-darkGray ">
                     <form method="post" action="/logout">
                       <button
-                        type="submit"
-                        className="focus:outline-none block w-full text-left cursor-pointer"
+                        onClick={handleLogout}
+                        className="text-white h-full flex items-center hover:bg-gray-700"
                       >
                         Logout
                       </button>
