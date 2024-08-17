@@ -24,6 +24,7 @@ export default function Login() {
       if (response.ok) {
         setMessage("Login successful");
         setAuthStatus(true);
+        window.location.href = "/templates";
       } else {
         console.log("Login failed:", data.message);
         setMessage(`Login Failed: ${data.message}`);
@@ -34,17 +35,17 @@ export default function Login() {
     }
   };
 
-  useEffect(() => {
-    if (isAuthChecked && isLoggedIn) {
-      window.location.href = "/templates";
-    } else if (
-      isAuthChecked &&
-      !isLoggedIn &&
-      window.location.pathname !== "/login"
-    ) {
-      window.location.href = "/login";
-    }
-  }, [isLoggedIn, isAuthChecked]);
+  // useEffect(() => {
+  //   if (isAuthChecked) {
+  //     if (isLoggedIn && window.location.pathname === "/login") {
+  //       // Hvis brukeren er logget inn, men er på login-siden, omdiriger til templates
+  //       window.location.href = "/templates";
+  //     } else if (!isLoggedIn && window.location.pathname !== "/login") {
+  //       // Hvis brukeren ikke er logget inn og ikke er på login-siden, omdiriger til login
+  //       window.location.href = "/login";
+  //     }
+  //   }
+  // }, [isLoggedIn, isAuthChecked]);
 
   return (
     <form

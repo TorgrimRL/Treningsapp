@@ -253,19 +253,23 @@ export default function CurrentWorkout() {
   };
 
   const addSet = (dayIndex, exerciseIndex) => {
-    const daysPerWeek = currentMesocycle.daysPerWeek;
     setSets((prev) => {
       const updatedSets = { ...prev };
-
-      for (let i = dayIndex; i < Object.keys(prev).length; i += daysPerWeek) {
-        updatedSets[i] = {
-          ...updatedSets[i],
-          [exerciseIndex]: [
-            ...(updatedSets[i]?.[exerciseIndex] || []),
-            { weight: "", reps: "", completed: false },
-          ],
-        };
+      // Sørg for at dayIndex og exerciseIndex finnes i tilstanden før du prøver å oppdatere
+      if (!updatedSets[dayIndex]) {
+        updatedSets[dayIndex] = {};
       }
+      if (!updatedSets[dayIndex][exerciseIndex]) {
+        updatedSets[dayIndex][exerciseIndex] = [];
+      }
+
+      // Legg til et nytt sett
+      updatedSets[dayIndex][exerciseIndex].push({
+        weight: "",
+        reps: "",
+        completed: false,
+      });
+
       return updatedSets;
     });
   };
