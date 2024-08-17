@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import MesocycleForm from "../components/MesocycleForm";
 import { getCookie } from "../utils/cookies";
+import { useNavigate } from "@remix-run/react";
 
 export default function NewMesocycle() {
   const [csrfToken, setCSRFToken] = useState("");
   const baseUrl = import.meta.env.VITE_API_URL;
+  const navigate = useNavigate();
   useEffect(() => {
     const fetchCsrfToken = async () => {
       const response = await fetch(`${baseUrl}/csrf-token`, {
@@ -38,6 +40,24 @@ export default function NewMesocycle() {
 
       const result = await response.json();
       console.log("Mesocycle created:", result);
+      // Fetch den nylig opprettede mesocyclen
+      const fetchResponse = await fetch(`${baseUrl}/mesocycles/${result.id}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+      });
+
+      if (!fetchResponse.ok) {
+        throw new Error("Failed to fetch the new mesocycle");
+      }
+
+      const mesocycleData = await fetchResponse.json();
+      console.log("Fetched new mesocycle:", mesocycleData);
+
+      // Naviger til "current workout"
+      navigate("/currentworkout");
     } catch (error) {
       console.error("There was a problem with the fetch operation", error);
     }

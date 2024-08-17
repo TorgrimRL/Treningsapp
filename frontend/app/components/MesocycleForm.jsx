@@ -39,6 +39,7 @@ const MesocycleForm = ({ onSubmit }) => {
   const [isExerciseModalOpen, setIsExerciseModalOpen] = useState(false);
   const [customExercises, setCustomExercises] = useState({});
   const baseUrl = import.meta.env.VITE_API_URL;
+
   useEffect(() => {
     const fetchCustomExercises = async () => {
       try {
@@ -111,8 +112,6 @@ const MesocycleForm = ({ onSubmit }) => {
       }
     }
   };
-
-  const navigate = useNavigate();
 
   useEffect(() => {
     if (template) {
@@ -209,11 +208,12 @@ const MesocycleForm = ({ onSubmit }) => {
     event.preventDefault();
     console.log("Training Block Name: ", mesocycleName);
     console.log("Weeks:", numberOfWeeks);
-    setIsModalOpen(true);
+    handleModalSave();
+    // setIsModalOpen(true);
   };
-
-  const handleModalSave = (selectedGroups) => {
-    setSelectedGroups(selectedGroups);
+  const handleModalSave = () => {
+    // const handleModalSave = (selectedGroups) => {
+    // setSelectedGroups(selectedGroups);
 
     const firstWeekPlan = [...plan];
     const filledPlan = [];
@@ -240,9 +240,10 @@ const MesocycleForm = ({ onSubmit }) => {
     };
     onSubmit(mesocycleData);
     setIsModalOpen(false);
-    navigate("../currentworkout");
   };
-  const handleAutofillExercises = () => {
+  const handleAutofillExercises = (event) => {
+    event.preventDefault(); // Forhindre at skjemaet blir sendt
+
     const filledPlan = plan.map((day) => ({
       ...day,
       exercises: day.exercises.map((exercise) => {
@@ -251,7 +252,6 @@ const MesocycleForm = ({ onSubmit }) => {
         const exerciseType = exercises[exercise.muscleGroup]?.find(
           (ex) => ex.name === randomExercise
         )?.type;
-        // exercise: exercise.exercise || getRandomExercise(exercise.muscleGroup),
         return {
           ...exercise,
           exercise: randomExercise,
@@ -315,10 +315,10 @@ const MesocycleForm = ({ onSubmit }) => {
             Save Plan
           </button>
           <button
+            type="button" // Viktig: Legg til type="button" for å forhindre form submit
             style={{ marginTop: "20px" }}
-            className="bg-red-600 text-white border-none py-2 px-4
-            cursor-pointer text-lg "
-            onClick={handleAutofillExercises}
+            className="bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-lg"
+            onClick={(event) => handleAutofillExercises(event)}
           >
             Auto Fill Exercises
           </button>
