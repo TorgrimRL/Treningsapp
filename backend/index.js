@@ -19,10 +19,18 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 const corsOptions = {
-  origin:
-    process.env.NODE_ENV === "production"
-      ? "https://setoptimizer.com"
-      : "http://localhost:5173",
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      "http://localhost:5173", // Localhost for development
+      "https://setoptimizer.com",
+      "https://www.setoptimizer.com",
+    ];
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true,
 };
 
