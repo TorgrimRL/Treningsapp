@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import {
   Links,
   Meta,
@@ -10,6 +11,8 @@ import "./tailwind.css";
 import { AuthProvider } from "./utils/AuthContext";
 
 export default function Root() {
+  const [isWarningVisible, setIsWarningVisible] = useState(true);
+
   return (
     <html lang="en">
       <head>
@@ -18,7 +21,7 @@ export default function Root() {
         <Meta />
         <Links />
       </head>
-      <body className="bg-darkestGray text white">
+      <body className="bg-darkestGray text-white">
         <AuthProvider>
           <Navbar />
           <main>
@@ -30,7 +33,29 @@ export default function Root() {
         </AuthProvider>
         <ScrollRestoration />
         <Scripts />
-        {process.env.NODE_ENV === "development"}
+
+        {/* Warning div for large screens */}
+        {isWarningVisible && (
+          <div className="hidden lg:flex fixed inset-0 bg-black bg-opacity-80 z-50 flex-col justify-center items-center text-center p-6">
+            <div className="relative bg-darkestGray text-white p-8 rounded-lg shadow-lg max-w-lg">
+              <button
+                className="absolute top-2 right-2 text-gray-400 hover:text-white"
+                onClick={() => setIsWarningVisible(false)}
+              >
+                &#x2715;
+              </button>
+              <h2 className="text-3xl font-bold mb-4">
+                Optimized for Mobile Use
+              </h2>
+              <p className="text-lg">
+                Please access this application on a mobile device for the best
+                experience. To disable this popup, switch to mobile mode: Press
+                Ctrl + Shift + M on Windows or Linux, or Cmd + Shift + M on
+                macOS.
+              </p>
+            </div>
+          </div>
+        )}
       </body>
     </html>
   );

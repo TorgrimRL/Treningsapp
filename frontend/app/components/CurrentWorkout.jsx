@@ -742,7 +742,7 @@ export default function CurrentWorkout() {
               style={{ transform: "translateX(-10px)" }}
             />{" "}
           </div>
-          <div className=" max-h-[calc(100vh-100px)] relative">
+          <div className=" max-h-[calc(100vh-8rem)] overflow-y-auto relative">
             <ul className="list-none list-inside text-white ">
               {currentDay.exercises.map((exercise, exIndex) => (
                 <li key={exIndex} className="p-3 overflow-visible bg-darkGray">
