@@ -755,7 +755,7 @@ export default function CurrentWorkout() {
                         {exercise.muscleGroup}
                       </span>
                       <span className="text-sm text-gray-500 uppercase">
-                        {exercise.priority || "none"}
+                        {exercise.priority || ""}
                       </span>
                     </div>
                     <button
