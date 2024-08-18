@@ -29,6 +29,8 @@ export default function CurrentWorkout() {
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
   const [currentNote, setCurrentNote] = useState("");
   const [currentExercise, setCurrentExercise] = useState(null);
+  const [applyToFutureWeeks, setApplyToFutureWeeks] = useState(false);
+
   const baseUrl = import.meta.env.VITE_API_URL;
 
   const getFirstIncompleteDay = (plan) => {
@@ -177,11 +179,22 @@ export default function CurrentWorkout() {
         setOpenSetMenus({});
       }
     };
-
+    const handleMouseDown = (event) => {
+      if (
+        menuRefs.current.some((ref) => ref?.contains(event.target)) ||
+        Object.values(setMenuRefs.current).some((ref) =>
+          ref?.contains(event.target)
+        )
+      ) {
+        event.stopPropagation(); // Prevent further propagation if inside menu
+      }
+    };
+    document.addEventListener("mousedown", handleMouseDown);
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("touchstart", handleClickOutside);
 
     return () => {
+      document.removeEventListener("mousedown", handleMouseDown);
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("touchstart", handleClickOutside);
     };
@@ -252,40 +265,198 @@ export default function CurrentWorkout() {
     }));
   };
 
-  const addSet = (dayIndex, exerciseIndex) => {
+  const addSet = async (dayIndex, exerciseIndex) => {
+    const daysPerWeek = currentMesocycle.daysPerWeek;
+
+    let updatedSets = {};
+
     setSets((prev) => {
-      const updatedSets = { ...prev };
-      // Sørg for at dayIndex og exerciseIndex finnes i tilstanden før du prøver å oppdatere
+      updatedSets = { ...prev };
+
       if (!updatedSets[dayIndex]) {
         updatedSets[dayIndex] = {};
       }
+
       if (!updatedSets[dayIndex][exerciseIndex]) {
         updatedSets[dayIndex][exerciseIndex] = [];
       }
 
-      // Legg til et nytt sett
-      updatedSets[dayIndex][exerciseIndex].push({
-        weight: "",
-        reps: "",
+      const newSet = {
         completed: false,
-      });
+        targetWeight: 0,
+        targetReps: 0,
+      };
+
+      updatedSets[dayIndex][exerciseIndex] = [
+        ...updatedSets[dayIndex][exerciseIndex],
+        newSet,
+      ];
+
+      console.log(
+        `Updated sets after adding new set for day ${dayIndex}, exercise ${exerciseIndex}:`,
+        JSON.stringify(updatedSets, null, 2)
+      );
+
+      if (applyToFutureWeeks) {
+        const currentWeekDay = dayIndex % daysPerWeek;
+        for (
+          let i = dayIndex + daysPerWeek;
+          i < currentMesocycle.plan.length;
+          i += daysPerWeek
+        ) {
+          if (i % daysPerWeek === currentWeekDay) {
+            if (!updatedSets[i]) {
+              updatedSets[i] = {};
+            }
+            if (!updatedSets[i][exerciseIndex]) {
+              updatedSets[i][exerciseIndex] = [];
+            }
+            updatedSets[i][exerciseIndex] = [
+              ...updatedSets[i][exerciseIndex],
+              newSet,
+            ];
+            console.log(
+              `Added set to future week day ${i} for exercise ${exerciseIndex}`
+            );
+          }
+        }
+      }
 
       return updatedSets;
     });
+
+    setTimeout(async () => {
+      const updatedMesocycle = {
+        ...currentMesocycle,
+        plan: currentMesocycle.plan.map((day, dIndex) => ({
+          ...day,
+          exercises: day.exercises.map((exercise, eIndex) => {
+            const setsForDayExercise = updatedSets[dIndex]?.[eIndex];
+            return {
+              ...exercise,
+              sets: setsForDayExercise || exercise.sets,
+            };
+          }),
+        })),
+      };
+
+      console.log(
+        "Updated Mesocycle being sent to the server:",
+        JSON.stringify(updatedMesocycle, null, 2)
+      );
+
+      try {
+        const response = await fetch(
+          `${baseUrl}/mesocycles/${currentMesocycle.id}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+            body: JSON.stringify(updatedMesocycle),
+          }
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Error response from server:", errorText);
+          throw new Error(`Failed to update mesocycle: ${errorText}`);
+        }
+
+        console.log("Successfully updated mesocycle with new sets");
+      } catch (error) {
+        console.error("Error updating mesocycle:", error);
+      }
+    }, 100);
   };
 
-  const removeSet = (dayIndex, exerciseIndex, setIndex) => {
+  const removeSet = async (
+    dayIndex,
+    exerciseIndex,
+    setIndex,
+    applyToFutureWeeks
+  ) => {
+    const daysPerWeek = currentMesocycle.daysPerWeek;
+
+    let updatedSets = {};
+
     setSets((prev) => {
-      const newSets = [...prev[dayIndex][exerciseIndex]];
-      const updatedSets = newSets.filter((_, index) => index !== setIndex);
-      return {
-        ...prev,
-        [dayIndex]: {
-          ...prev[dayIndex],
-          [exerciseIndex]: updatedSets,
-        },
-      };
+      updatedSets = { ...prev };
+
+      if (updatedSets[dayIndex] && updatedSets[dayIndex][exerciseIndex]) {
+        updatedSets[dayIndex][exerciseIndex] = updatedSets[dayIndex][
+          exerciseIndex
+        ].filter((_, index) => index !== setIndex);
+      }
+
+      if (applyToFutureWeeks) {
+        const currentWeekDay = dayIndex % daysPerWeek;
+        for (
+          let i = dayIndex + daysPerWeek;
+          i < currentMesocycle.plan.length;
+          i += daysPerWeek
+        ) {
+          if (i % daysPerWeek === currentWeekDay) {
+            if (updatedSets[i] && updatedSets[i][exerciseIndex]) {
+              updatedSets[i][exerciseIndex] = updatedSets[i][
+                exerciseIndex
+              ].filter((_, index) => index !== setIndex);
+              console.log(
+                `Removed set from future week day ${i} for exercise ${exerciseIndex}`
+              );
+            }
+          }
+        }
+      }
+
+      return updatedSets;
     });
+
+    setTimeout(async () => {
+      const updatedMesocycle = {
+        ...currentMesocycle,
+        plan: currentMesocycle.plan.map((day, dIndex) => ({
+          ...day,
+          exercises: day.exercises.map((exercise, eIndex) => {
+            const setsForDayExercise = updatedSets[dIndex]?.[eIndex];
+            return {
+              ...exercise,
+              sets: setsForDayExercise || exercise.sets,
+            };
+          }),
+        })),
+      };
+
+      console.log(
+        "Updated Mesocycle being sent to the server after removing set:",
+        JSON.stringify(updatedMesocycle, null, 2)
+      );
+
+      try {
+        const response = await fetch(
+          `${baseUrl}/mesocycles/${currentMesocycle.id}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+            body: JSON.stringify(updatedMesocycle),
+          }
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Error response from server:", errorText);
+          throw new Error(`Failed to update mesocycle: ${errorText}`);
+        }
+
+        console.log("Successfully updated mesocycle after removing set");
+      } catch (error) {
+        console.error("Error updating mesocycle after removing set:", error);
+      }
+    }, 100);
   };
 
   const openCalendarModal = () => setIsCalendarModalOpen(true);
@@ -571,10 +742,10 @@ export default function CurrentWorkout() {
               style={{ transform: "translateX(-10px)" }}
             />{" "}
           </div>
-          <div className="overflow-y-auto max-h-[calc(100vh-150px)] ">
+          <div className=" max-h-[calc(100vh-100px)] relative">
             <ul className="list-none list-inside text-white ">
               {currentDay.exercises.map((exercise, exIndex) => (
-                <li key={exIndex} className="p-3 overflow-auto bg-darkGray">
+                <li key={exIndex} className="p-3 overflow-visible bg-darkGray">
                   <div
                     className="flex justify-between items-center relative"
                     ref={(el) => (menuRefs.current[exIndex] = el)}
@@ -658,18 +829,43 @@ export default function CurrentWorkout() {
                             className="absolute left-full ml-1 top-5 w-48 bg-white rounded-md shadow-lg z-10"
                           >
                             <ul className="py-1 bg-hamburgerbackground text-white ">
+                              <li className="block px-4 py-2 bg-inputBGGray hover:!bg-darkestGray z-20">
+                                <label className="inline-flex items-center">
+                                  <input
+                                    type="checkbox"
+                                    className="form-checkbox"
+                                    checked={applyToFutureWeeks}
+                                    onChange={(e) =>
+                                      setApplyToFutureWeeks(e.target.checked)
+                                    }
+                                    style={{
+                                      width: "20px",
+                                      height: "20px",
+                                      marginTop: "10px",
+                                      marginLeft: "10px",
+                                      marginRight: "10px",
+                                    }}
+                                  />
+                                  <span className="ml-2 ">
+                                    Apply to future weeks
+                                  </span>
+                                </label>
+                              </li>
                               <li className="block px-4 py-2 hover:!bg-darkestGray z-20">
                                 <button
                                   onClick={(event) => {
-                                    console.log(
-                                      "Button clicked for adding set"
-                                    );
+                                    console.log("Event Object:", event); // Log the event object
+                                    event.preventDefault();
                                     event.stopPropagation();
-                                    addSet(currentDayIndex, exIndex);
+                                    addSet(
+                                      currentDayIndex,
+                                      exIndex,
+                                      applyToFutureWeeks
+                                    );
                                   }}
-                                  className=" focus:outline-none block w-full text-left cursor-pointer"
+                                  className="focus:outline-none block w-full text-left cursor-pointer"
                                 >
-                                  ADD SET
+                                  Add set
                                 </button>
                               </li>
                               <li className="block px-4 py-2 hover:bg-darkGray">
@@ -679,12 +875,13 @@ export default function CurrentWorkout() {
                                     removeSet(
                                       currentDayIndex,
                                       exIndex,
-                                      setIndex
+                                      setIndex,
+                                      applyToFutureWeeks
                                     );
                                   }}
                                   className=" focus:outline-none block w-full text-left cursor-pointer"
                                 >
-                                  REMOVE SET
+                                  Remove set
                                 </button>
                               </li>
                             </ul>
@@ -698,9 +895,6 @@ export default function CurrentWorkout() {
                         <select
                           value={set.weight || set.targetWeight || ""}
                           onChange={(e) => {
-                            console.log(
-                              `Exercise type before change: ${exercise.type}`
-                            ); // Log exercise type before handling weight change
                             handleWeightChange(
                               currentDayIndex,
                               exIndex,
