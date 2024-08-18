@@ -21,12 +21,11 @@ const port = process.env.PORT || 3000;
 const corsOptions = {
   origin:
     process.env.NODE_ENV === "production"
-      ? "https://treningsapp-frontend.vercel.app"
+      ? "https://setoptimizer.com"
       : "http://localhost:5173",
   credentials: true,
 };
 
-// Bruk cors middleware etter at corsOptions er definert
 app.use(cors(corsOptions));
 
 app.use(bodyParser.json());
@@ -142,7 +141,7 @@ app.post("/api/logout", authenticateToken, async (req, res) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "None",
-    path: "/", // Sørg for at dette matcher med hva som ble brukt i login-endepunktet
+    path: "/",
   });
 
   console.log("Cookies after clearing:", req.cookies);

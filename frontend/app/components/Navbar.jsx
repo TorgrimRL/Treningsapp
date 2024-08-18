@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../utils/AuthContext";
-import { useNavigate } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 import Logout from "./Logout";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const { isLoggedIn, setAuthStatus, checkAuthStatus } = useAuth();
   const menuRef = useRef(null);
-  const navigate = useNavigate();
+
   const baseUrl = import.meta.env.VITE_API_URL;
   const [showLogout, setShowLogout] = useState(false);
   const handleLogout = (e) => {
@@ -55,7 +55,9 @@ export default function Navbar() {
         className=" mx-auto flex justify-between items-center px-4 py-3 text-white bg-darkGray"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="text-white bg-darkGray text-xl font-bold">My App</div>
+        <Link to="/" className="text-white bg-darkGray text-xl font-bold">
+          SETOPTIMIZER
+        </Link>
         <div className="md:hidden relative">
           <button
             onClick={toggleMenu}

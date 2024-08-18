@@ -25,7 +25,7 @@ export default function Root() {
             <Outlet />
           </main>
           <footer className="text-gray-400">
-            <p>&copy; 2024 My App</p>
+            <p>&copy; 2024 SETOPTIMIZER.COM</p>
           </footer>
         </AuthProvider>
         <ScrollRestoration />
