@@ -58,19 +58,22 @@ function LandingPage() {
           className="shadow-lg max-w-full h-auto"
         />
         <p className="text-gray-300 text-lg mt-4">
-          No need to wait. Continue your progress with available weights
+          No need to wait. Continue your progress with available weights.
         </p>
-        <div className="max-w-xs mt-2">
+        <div className="mt-2">
           <img
             src="/images/targetreps.png"
             alt="different weights"
             className="shadow-lg max-w-full h-auto"
           />
           <p className="text-gray-300 text-lg mt-4">
-            Our app calculates the ideal weight and reps for you.
+            Our app calculates the ideal weight and reps for you. In this
+            session, the 16kg dumbbells were occupied, so the app adjusted your
+            target to the available 14kg dumbbells.
           </p>
         </div>
       </div>
+
       <div className="flex flex-col items-center p-10 bg-darkestGray text-center">
         <h2 className="text-3xl font-bold text-white mb-8">How it works</h2>
         <div className="flex flex-col space-y-8">
