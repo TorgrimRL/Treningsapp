@@ -51,7 +51,7 @@ function LandingPage() {
           </h2>
         </div>
       </div>
-      <div className="flex flex-col items-center relative p-10  text-center">
+      <div className="flex flex-col items-center relative p-10 text-center">
         <img
           src="/images/lastweeksreps.png"
           alt="last weeks reps and weight"
@@ -60,7 +60,7 @@ function LandingPage() {
         <p className="text-gray-300 text-lg mt-4">
           No need to wait. Continue your progress with available weights.
         </p>
-        <div className="mt-2">
+        <div className="flex flex-col items-center mt-2">
           <img
             src="/images/targetreps.png"
             alt="different weights"
@@ -73,7 +73,6 @@ function LandingPage() {
           </p>
         </div>
       </div>
-
       <div className="flex flex-col items-center p-10 bg-darkestGray text-center">
         <h2 className="text-3xl font-bold text-white mb-8">How it works</h2>
         <div className="flex flex-col space-y-8">

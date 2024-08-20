@@ -32,6 +32,91 @@ export default function CurrentWorkout() {
   const [applyToFutureWeeks, setApplyToFutureWeeks] = useState(false);
 
   const baseUrl = import.meta.env.VITE_API_URL;
+  useEffect(() => {
+    const updateMesocycleOnServer = async () => {
+      const updatedMesocycle = {
+        ...currentMesocycle,
+        plan: currentMesocycle.plan.map((day, dIndex) => ({
+          ...day,
+          exercises: day.exercises.map((exercise, eIndex) => ({
+            ...exercise,
+            sets:
+              sets[dIndex] && sets[dIndex][eIndex]
+                ? sets[dIndex][eIndex]
+                : exercise.sets,
+          })),
+        })),
+      };
+
+      console.log(
+        "Updated mesocycle to be sent to server:",
+        JSON.stringify(updatedMesocycle, null, 2)
+      );
+
+      try {
+        const response = await fetch(
+          `${baseUrl}/mesocycles/${currentMesocycle.id}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+            body: JSON.stringify(updatedMesocycle),
+          }
+        );
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Failed to update mesocycle: ${errorText}`);
+        }
+
+        console.log("Successfully updated mesocycle");
+      } catch (error) {
+        console.error("Error updating mesocycle:", error);
+      }
+    };
+
+    if (Object.keys(sets).length > 0) {
+      updateMesocycleOnServer();
+    }
+  }, [sets, currentMesocycle]); // Avhengig av både `sets` og `currentMesocycle`
+
+  // Funksjonen for å håndtere sett-endring
+  const handleSetCompletionChange = (
+    dayIndex,
+    exerciseIndex,
+    setIndex,
+    value,
+    weightValue,
+    repsValue
+  ) => {
+    setSets((prev) => {
+      const updatedSets = {
+        ...prev,
+        [dayIndex]: {
+          ...prev[dayIndex],
+          [exerciseIndex]: prev[dayIndex][exerciseIndex].map((set, sIndex) => {
+            if (sIndex === setIndex) {
+              return {
+                ...set,
+                completed: value,
+                weight: value ? weightValue : set.targetWeight,
+                reps: value ? repsValue : set.targetReps,
+              };
+            }
+            return set;
+          }),
+        },
+      };
+
+      console.log(
+        "Updated sets locally:",
+        JSON.stringify(updatedSets, null, 2)
+      );
+      return updatedSets;
+    });
+  };
 
   const getFirstIncompleteDay = (plan) => {
     for (let i = 0; i < plan.length; i++) {
@@ -480,7 +565,9 @@ export default function CurrentWorkout() {
           setsData[dayIndex] = {};
           notesData[dayIndex] = {};
           day.exercises.forEach((exercise, exerciseIndex) => {
-            setsData[dayIndex][exerciseIndex] = exercise.sets || [];
+            setsData[dayIndex][exerciseIndex] = Array.isArray(exercise.sets)
+              ? exercise.sets
+              : [];
             notesData[dayIndex][exerciseIndex] = exercise.note || "";
           });
         });
@@ -551,92 +638,98 @@ export default function CurrentWorkout() {
     currentMesocycle.daysPerWeek
   );
 
-  const handleSetCompletionChange = async (
-    dayIndex,
-    exerciseIndex,
-    setIndex,
-    value,
-    weightValue,
-    repsValue
-  ) => {
-    // Updating sets locally
-    setSets((prev) => {
-      const updatedSets = {
-        ...prev,
-        [dayIndex]: {
-          ...prev[dayIndex],
-          [exerciseIndex]: prev[dayIndex][exerciseIndex].map((set, sIndex) => {
-            if (sIndex === setIndex) {
-              if (!value) {
-                return {
-                  ...set,
-                  completed: false,
-                  weight: set.targetWeight,
-                  reps: set.targetReps,
-                };
-              }
+  // const handleSetCompletionChange = async (
+  //   dayIndex,
+  //   exerciseIndex,
+  //   setIndex,
+  //   value,
+  //   weightValue,
+  //   repsValue
+  // ) => {
+  //   // Updating sets locally
+  //   setSets((prev) => {
+  //     const updatedSets = {
+  //       ...prev,
+  //       [dayIndex]: {
+  //         ...prev[dayIndex],
+  //         [exerciseIndex]: prev[dayIndex][exerciseIndex].map((set, sIndex) => {
+  //           if (sIndex === setIndex) {
+  //             if (!value) {
+  //               return {
+  //                 ...set,
+  //                 completed: false,
+  //                 weight: set.targetWeight,
+  //                 reps: set.targetReps,
+  //               };
+  //             }
 
-              return {
-                ...set,
-                completed: value,
-                weight: weightValue,
-                reps: repsValue,
-              };
-            }
-            return set;
-          }),
-        },
-      };
+  //             return {
+  //               ...set,
+  //               completed: value,
+  //               weight: weightValue,
+  //               reps: repsValue,
+  //             };
+  //           }
+  //           return set;
+  //         }),
+  //       },
+  //     };
 
-      const updatedMesocycle = {
-        ...currentMesocycle,
-        plan: currentMesocycle.plan.map((day, dIndex) =>
-          dIndex === dayIndex
-            ? {
-                ...day,
-                exercises: day.exercises.map((exercise, eIndex) =>
-                  eIndex === exerciseIndex
-                    ? {
-                        ...exercise,
-                        sets: updatedSets[dayIndex][exerciseIndex],
-                      }
-                    : exercise
-                ),
-              }
-            : day
-        ),
-      };
+  //     const updatedMesocycle = {
+  //       ...currentMesocycle,
+  //       plan: currentMesocycle.plan.map((day, dIndex) =>
+  //         dIndex === dayIndex
+  //           ? {
+  //               ...day,
+  //               exercises: day.exercises.map((exercise, eIndex) =>
+  //                 eIndex === exerciseIndex
+  //                   ? {
+  //                       ...exercise,
+  //                       sets: updatedSets[dayIndex][exerciseIndex],
+  //                     }
+  //                   : exercise
+  //               ),
+  //             }
+  //           : day
+  //       ),
+  //     };
 
-      const changes = getChanges(currentMesocycle.plan, updatedMesocycle.plan);
+  //     const changes = getChanges(currentMesocycle.plan, updatedMesocycle.plan);
+  //     console.log(
+  //       "Updated mesocycle before sending to server:",
+  //       JSON.stringify(updatedMesocycle, null, 2)
+  //     );
+  //     (async () => {
+  //       try {
+  //         const response = await fetch(
+  //           `${baseUrl}/mesocycles/${currentMesocycle.id}`,
+  //           {
+  //             method: "PUT",
+  //             headers: {
+  //               "Content-Type": "application/json",
+  //             },
+  //             credentials: "include",
+  //             body: JSON.stringify(updatedMesocycle),
+  //           }
+  //         );
+  //         console.log("Response from server:", response);
+  //         if (!response.ok) {
+  //           const errorText = await response.text();
+  //           throw new Error(`Failed to update mesocycle: ${errorText}`);
+  //         }
 
-      (async () => {
-        try {
-          const response = await fetch(
-            `${baseUrl}/mesocycles/${currentMesocycle.id}`,
-            {
-              method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              credentials: "include",
-              body: JSON.stringify(updatedMesocycle),
-            }
-          );
+  //         console.log("Successfully updated mesocycle");
+  //       } catch (error) {
+  //         console.error("Error updating mesocycle:", error);
+  //       }
+  //     })();
 
-          if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Failed to update mesocycle: ${errorText}`);
-          }
-
-          console.log("Successfully updated mesocycle");
-        } catch (error) {
-          console.error("Error updating mesocycle:", error);
-        }
-      })();
-
-      return updatedSets;
-    });
-  };
+  //     return {
+  //       ...prev,
+  //       ...updatedSets,
+  //     };
+  //   });
+  // };
 
   function getChanges(currentPlan, updatedPlan) {
     const changes = [];

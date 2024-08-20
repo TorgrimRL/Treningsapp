@@ -52,10 +52,10 @@ export default function Navbar() {
       }}
     >
       <div
-        className=" mx-auto flex justify-between items-center px-4 py-3 text-white bg-darkGray"
+        className=" mx-auto flex justify-between items-center px-4 py-3 text-white bg-black"
         onClick={(e) => e.stopPropagation()}
       >
-        <Link to="/" className="text-white bg-darkGray text-xl font-bold">
+        <Link to="/" className="text-white text-xl font-bold">
           SETOPTIMIZER
         </Link>
         <div className="md:hidden relative">

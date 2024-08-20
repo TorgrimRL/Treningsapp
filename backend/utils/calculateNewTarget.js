@@ -31,7 +31,6 @@ export default function calculateNewTarget(
   }
 
   if (Math.abs(roundedWeight - weight) > tolerance) {
-    // Consider using weight directly instead of weightAsFloat
     if (weight === 30) {
       console.log(
         `Returning new target: Weight = ${roundedWeight}, Reps = ${reps}`
