@@ -714,36 +714,36 @@ export default function CurrentWorkout() {
   //   });
   // };
 
-  function getChanges(currentPlan, updatedPlan) {
-    const changes = [];
+  // function getChanges(currentPlan, updatedPlan) {
+  //   const changes = [];
 
-    updatedPlan.forEach((day, dayIndex) => {
-      day.exercises.forEach((exercise, exerciseIndex) => {
-        exercise.sets.forEach((set, setIndex) => {
-          const currentSet =
-            currentPlan[dayIndex].exercises[exerciseIndex].sets[setIndex];
-          if (
-            currentSet.weight !== set.weight ||
-            currentSet.reps !== set.reps ||
-            currentSet.completed !== set.completed
-          ) {
-            changes.push({
-              dayIndex,
-              exerciseIndex,
-              setIndex,
-              changes: {
-                weight: { from: currentSet.weight, to: set.weight },
-                reps: { from: currentSet.reps, to: set.reps },
-                completed: { from: currentSet.completed, to: set.completed },
-              },
-            });
-          }
-        });
-      });
-    });
+  //   updatedPlan.forEach((day, dayIndex) => {
+  //     day.exercises.forEach((exercise, exerciseIndex) => {
+  //       exercise.sets.forEach((set, setIndex) => {
+  //         const currentSet =
+  //           currentPlan[dayIndex].exercises[exerciseIndex].sets[setIndex];
+  //         if (
+  //           currentSet.weight !== set.weight ||
+  //           currentSet.reps !== set.reps ||
+  //           currentSet.completed !== set.completed
+  //         ) {
+  //           changes.push({
+  //             dayIndex,
+  //             exerciseIndex,
+  //             setIndex,
+  //             changes: {
+  //               weight: { from: currentSet.weight, to: set.weight },
+  //               reps: { from: currentSet.reps, to: set.reps },
+  //               completed: { from: currentSet.completed, to: set.completed },
+  //             },
+  //           });
+  //         }
+  //       });
+  //     });
+  //   });
 
-    return changes;
-  }
+  //   return changes;
+  // }
 
   const repRange = [];
   for (let i = 1; i <= 30; i++) {
@@ -799,7 +799,7 @@ export default function CurrentWorkout() {
 
   return (
     <div className="pt-6">
-      <h1 className="text-sm text-gray-500 bg-darkGray sticky top-12 pl-4 uppercase">
+      <h1 className="text-sm text-gray-500 bg-darkGray sticky top-12 pl-4 mt-1 uppercase">
         {currentMesocycle.name}
       </h1>
       {currentDay ? (

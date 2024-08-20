@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import MesocycleForm from "../components/MesocycleForm";
 import { getCookie } from "../utils/cookies";
 import { useNavigate } from "@remix-run/react";
+import ProtectedRoute from "../components/ProtectedRoute";
 
 export default function NewMesocycle() {
   const [csrfToken, setCSRFToken] = useState("");
@@ -56,7 +57,6 @@ export default function NewMesocycle() {
       const mesocycleData = await fetchResponse.json();
       console.log("Fetched new mesocycle:", mesocycleData);
 
-      // Naviger til "current workout"
       navigate("/currentworkout");
     } catch (error) {
       console.error("There was a problem with the fetch operation", error);
@@ -67,11 +67,13 @@ export default function NewMesocycle() {
     handleFormSubmit(mesocycleData);
   };
   return (
-    <div className=" text-white bg-darkGray">
-      <div style={{ paddingTop: "30px" }}></div>
-      <h1>Create a new mesocycle</h1>
-      <MesocycleForm onSubmit={handleSubmit} />
-      <div id="root">{/* <TestModal /> */}</div>
-    </div>
+    <ProtectedRoute>
+      <div className=" text-white bg-darkGray">
+        <div style={{ paddingTop: "30px" }}></div>
+        <h1>Create a new mesocycle</h1>
+        <MesocycleForm onSubmit={handleSubmit} />
+        <div id="root">{/* <TestModal /> */}</div>
+      </div>
+    </ProtectedRoute>
   );
 }
