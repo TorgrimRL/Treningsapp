@@ -102,14 +102,14 @@ app.post("/api/login", async (req, res) => {
       console.log("Invalid password");
       return res.status(400).send("Username or password is incorrect");
     }
-    const token = jwt.sign({ id: user.id }, secretKey, { expiresIn: "365d" });
+    const token = jwt.sign({ id: user.id }, secretKey, { expiresIn: "30d" });
     console.log("Generated Token:", token);
 
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "None",
-      maxAge: 3600000,
+      maxAge: 604800000,
       path: "/",
     });
 
