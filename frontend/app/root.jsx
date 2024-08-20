@@ -24,12 +24,14 @@ export default function Root() {
       <body className="bg-darkestGray text-white">
         <AuthProvider>
           <Navbar />
-          <main>
-            <Outlet />
-          </main>
-          <footer className="text-gray-400">
-            <p>&copy; 2024 SETOPTIMIZER.COM</p>
-          </footer>
+          <div id="root">
+            <main>
+              <Outlet />
+            </main>
+            <footer className="text-gray-400">
+              <p>&copy; 2024 SETOPTIMIZER.COM</p>
+            </footer>
+          </div>
         </AuthProvider>
         <ScrollRestoration />
         <Scripts />

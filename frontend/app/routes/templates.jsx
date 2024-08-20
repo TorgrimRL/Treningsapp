@@ -1,6 +1,7 @@
 import React from "react";
 import TemplateSelector from "../components/TemplateSelector";
 import { useNavigate } from "@remix-run/react";
+import ProtectedRoute from "../components/ProtectedRoute";
 
 export default function Templates() {
   const navigate = useNavigate();
@@ -17,11 +18,13 @@ export default function Templates() {
     });
   };
   return (
-    <div style={{ paddingTop: "30px" }}>
-      <TemplateSelector
-        onSelectTemplate={handleSelectTemplate}
-      ></TemplateSelector>
-      <div id="root"></div>
-    </div>
+    <ProtectedRoute>
+      <div style={{ paddingTop: "30px" }}>
+        <TemplateSelector
+          onSelectTemplate={handleSelectTemplate}
+        ></TemplateSelector>
+        <div id="root"></div>
+      </div>
+    </ProtectedRoute>
   );
 }
