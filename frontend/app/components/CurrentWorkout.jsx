@@ -33,51 +33,6 @@ export default function CurrentWorkout() {
 
   const baseUrl = import.meta.env.VITE_API_URL;
 
-  useEffect(() => {
-    const updateMesocycleOnServer = async () => {
-      const updatedMesocycle = {
-        ...currentMesocycle,
-        plan: currentMesocycle.plan.map((day, dIndex) => ({
-          ...day,
-          exercises: day.exercises.map((exercise, eIndex) => ({
-            ...exercise,
-            sets:
-              sets[dIndex] && sets[dIndex][eIndex]
-                ? sets[dIndex][eIndex]
-                : exercise.sets,
-          })),
-        })),
-      };
-
-      try {
-        const response = await fetch(
-          `${baseUrl}/mesocycles/${currentMesocycle.id}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            credentials: "include",
-            body: JSON.stringify(updatedMesocycle),
-          }
-        );
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Failed to update mesocycle: ${errorText}`);
-        }
-
-        console.log("Successfully updated mesocycle");
-      } catch (error) {
-        console.error("Error updating mesocycle:", error);
-      }
-    };
-
-    if (Object.keys(sets).length > 0) {
-      updateMesocycleOnServer();
-    }
-  }, [sets, currentMesocycle]);
-
   const handleSetCompletionChange = (
     dayIndex,
     exerciseIndex,
@@ -104,6 +59,43 @@ export default function CurrentWorkout() {
           }),
         },
       };
+
+      // Send the update to the server
+      const updatedMesocycle = {
+        ...currentMesocycle,
+        plan: currentMesocycle.plan.map((day, dIndex) => ({
+          ...day,
+          exercises: day.exercises.map((exercise, eIndex) => ({
+            ...exercise,
+            sets: updatedSets[dIndex][eIndex] || exercise.sets,
+          })),
+        })),
+      };
+
+      (async () => {
+        try {
+          const response = await fetch(
+            `${baseUrl}/mesocycles/${currentMesocycle.id}`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              credentials: "include",
+              body: JSON.stringify(updatedMesocycle),
+            }
+          );
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Failed to update mesocycle: ${errorText}`);
+          }
+
+          console.log("Successfully updated mesocycle");
+        } catch (error) {
+          console.error("Error updating mesocycle:", error);
+        }
+      })();
 
       return updatedSets;
     });
