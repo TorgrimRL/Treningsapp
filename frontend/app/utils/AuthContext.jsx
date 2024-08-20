@@ -1,13 +1,17 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [isLoggedIn, setIsLoggedInn] = useState(false);
-  const login = () => setIsLoggedInn(true);
-  const logout = () => setIsLoggedInn(false);
-  const setAuthStatus = (status) => setIsLoggedInn(status);
+  const [isLoggedIn, setIsLoggedIn] = useState(null);
+  const [authCheckInProgress, setAuthCheckInProgress] = useState(true);
   const baseUrl = import.meta.env.VITE_API_URL;
+  const navigate = useNavigate();
+
+  const login = () => setIsLoggedIn(true);
+  const logout = () => setIsLoggedIn(false);
+  const setAuthStatus = (status) => setIsLoggedIn(status);
 
   const checkAuthStatus = async () => {
     try {
@@ -15,20 +19,29 @@ export const AuthProvider = ({ children }) => {
         credentials: "include",
       });
       const data = await response.json();
-      setIsLoggedInn(data.isLoggedIn);
+      setIsLoggedIn(data.isLoggedIn);
       console.log("Auth status checked:", data.isLoggedIn);
     } catch (error) {
       console.error("Failed to check auth status:", error);
-      setIsLoggedInn(false);
+      setIsLoggedIn(false);
+    } finally {
+      setAuthCheckInProgress(false);
     }
   };
 
   useEffect(() => {
     checkAuthStatus();
   }, []);
+
+  useEffect(() => {
+    if (!authCheckInProgress && isLoggedIn === false) {
+      navigate("/login");
+    }
+  }, [isLoggedIn, authCheckInProgress, navigate]);
+
   return (
     <AuthContext.Provider
-      value={{ isLoggedIn, login, logout, setAuthStatus, checkAuthStatus }}
+      value={{ isLoggedIn, login, logout, setAuthStatus, authCheckInProgress }}
     >
       {children}
     </AuthContext.Provider>

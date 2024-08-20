@@ -32,6 +32,7 @@ export default function CurrentWorkout() {
   const [applyToFutureWeeks, setApplyToFutureWeeks] = useState(false);
 
   const baseUrl = import.meta.env.VITE_API_URL;
+
   useEffect(() => {
     const updateMesocycleOnServer = async () => {
       const updatedMesocycle = {
@@ -47,11 +48,6 @@ export default function CurrentWorkout() {
           })),
         })),
       };
-
-      console.log(
-        "Updated mesocycle to be sent to server:",
-        JSON.stringify(updatedMesocycle, null, 2)
-      );
 
       try {
         const response = await fetch(
@@ -80,9 +76,8 @@ export default function CurrentWorkout() {
     if (Object.keys(sets).length > 0) {
       updateMesocycleOnServer();
     }
-  }, [sets, currentMesocycle]); // Avhengig av både `sets` og `currentMesocycle`
+  }, [sets, currentMesocycle]);
 
-  // Funksjonen for å håndtere sett-endring
   const handleSetCompletionChange = (
     dayIndex,
     exerciseIndex,
@@ -110,10 +105,6 @@ export default function CurrentWorkout() {
         },
       };
 
-      console.log(
-        "Updated sets locally:",
-        JSON.stringify(updatedSets, null, 2)
-      );
       return updatedSets;
     });
   };
@@ -271,7 +262,7 @@ export default function CurrentWorkout() {
           ref?.contains(event.target)
         )
       ) {
-        event.stopPropagation(); // Prevent further propagation if inside menu
+        event.stopPropagation();
       }
     };
     document.addEventListener("mousedown", handleMouseDown);

@@ -55,8 +55,8 @@ export default function Navbar() {
         className=" mx-auto flex justify-between items-center px-4 py-3 text-white bg-black"
         onClick={(e) => e.stopPropagation()}
       >
-        <Link to="/" className="text-white text-xl font-bold">
-          SETOPTIMIZER
+        <Link to="/" className="text-red-500 text-2xl font-bold">
+          SO
         </Link>
         <div className="md:hidden relative">
           <button
