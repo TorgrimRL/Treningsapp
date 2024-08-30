@@ -77,9 +77,10 @@ router.put("/mesocycles/:id", authenticateToken, async (req, res) => {
           exercise.sets.every((set) => set.completed)
       )
     );
-    const newCompletedDate = allDaysCompleted
-      ? new Date().toISOString()
-      : completedDate;
+    const newCompletedDate =
+      allDaysCompleted && !completedDate
+        ? new Date().toISOString()
+        : completedDate;
 
     const result = await db.sql`
       UPDATE mesocycles
