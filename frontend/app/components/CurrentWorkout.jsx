@@ -101,23 +101,6 @@ export default function CurrentWorkout() {
     });
   };
 
-  const getFirstIncompleteDay = (plan) => {
-    for (let i = 0; i < plan.length; i++) {
-      const day = plan[i];
-      const allExercisesCompleted = day.exercises.every((exercise) => {
-        if (!exercise.sets) {
-          return false;
-        }
-        return exercise.sets.every((set) => set.completed);
-      });
-
-      if (!allExercisesCompleted) {
-        return i;
-      }
-    }
-
-    return plan.length - 1;
-  };
   const handleNoteChange = (newNote) => {
     setCurrentNote(newNote);
   };
@@ -540,8 +523,12 @@ export default function CurrentWorkout() {
         console.log("Mesocycle Data:", data);
         setCurrentMesocycle(data);
 
-        const firstIncompleteDayIndex = getFirstIncompleteDay(data.plan);
-        setCurrentDayIndex(firstIncompleteDayIndex);
+        if (data.firstIncompleteDayIndex !== undefined) {
+          setCurrentDayIndex(data.firstIncompleteDayIndex);
+        } else {
+          console.warn("firstIncompleteDayIndex is undefined");
+        }
+
         const notesData = {};
         const setsData = {};
         data.plan.forEach((day, dayIndex) => {
@@ -620,130 +607,6 @@ export default function CurrentWorkout() {
     currentDayIndex,
     currentMesocycle.daysPerWeek
   );
-
-  // const handleSetCompletionChange = async (
-  //   dayIndex,
-  //   exerciseIndex,
-  //   setIndex,
-  //   value,
-  //   weightValue,
-  //   repsValue
-  // ) => {
-  //   // Updating sets locally
-  //   setSets((prev) => {
-  //     const updatedSets = {
-  //       ...prev,
-  //       [dayIndex]: {
-  //         ...prev[dayIndex],
-  //         [exerciseIndex]: prev[dayIndex][exerciseIndex].map((set, sIndex) => {
-  //           if (sIndex === setIndex) {
-  //             if (!value) {
-  //               return {
-  //                 ...set,
-  //                 completed: false,
-  //                 weight: set.targetWeight,
-  //                 reps: set.targetReps,
-  //               };
-  //             }
-
-  //             return {
-  //               ...set,
-  //               completed: value,
-  //               weight: weightValue,
-  //               reps: repsValue,
-  //             };
-  //           }
-  //           return set;
-  //         }),
-  //       },
-  //     };
-
-  //     const updatedMesocycle = {
-  //       ...currentMesocycle,
-  //       plan: currentMesocycle.plan.map((day, dIndex) =>
-  //         dIndex === dayIndex
-  //           ? {
-  //               ...day,
-  //               exercises: day.exercises.map((exercise, eIndex) =>
-  //                 eIndex === exerciseIndex
-  //                   ? {
-  //                       ...exercise,
-  //                       sets: updatedSets[dayIndex][exerciseIndex],
-  //                     }
-  //                   : exercise
-  //               ),
-  //             }
-  //           : day
-  //       ),
-  //     };
-
-  //     const changes = getChanges(currentMesocycle.plan, updatedMesocycle.plan);
-  //     console.log(
-  //       "Updated mesocycle before sending to server:",
-  //       JSON.stringify(updatedMesocycle, null, 2)
-  //     );
-  //     (async () => {
-  //       try {
-  //         const response = await fetch(
-  //           `${baseUrl}/mesocycles/${currentMesocycle.id}`,
-  //           {
-  //             method: "PUT",
-  //             headers: {
-  //               "Content-Type": "application/json",
-  //             },
-  //             credentials: "include",
-  //             body: JSON.stringify(updatedMesocycle),
-  //           }
-  //         );
-  //         console.log("Response from server:", response);
-  //         if (!response.ok) {
-  //           const errorText = await response.text();
-  //           throw new Error(`Failed to update mesocycle: ${errorText}`);
-  //         }
-
-  //         console.log("Successfully updated mesocycle");
-  //       } catch (error) {
-  //         console.error("Error updating mesocycle:", error);
-  //       }
-  //     })();
-
-  //     return {
-  //       ...prev,
-  //       ...updatedSets,
-  //     };
-  //   });
-  // };
-
-  // function getChanges(currentPlan, updatedPlan) {
-  //   const changes = [];
-
-  //   updatedPlan.forEach((day, dayIndex) => {
-  //     day.exercises.forEach((exercise, exerciseIndex) => {
-  //       exercise.sets.forEach((set, setIndex) => {
-  //         const currentSet =
-  //           currentPlan[dayIndex].exercises[exerciseIndex].sets[setIndex];
-  //         if (
-  //           currentSet.weight !== set.weight ||
-  //           currentSet.reps !== set.reps ||
-  //           currentSet.completed !== set.completed
-  //         ) {
-  //           changes.push({
-  //             dayIndex,
-  //             exerciseIndex,
-  //             setIndex,
-  //             changes: {
-  //               weight: { from: currentSet.weight, to: set.weight },
-  //               reps: { from: currentSet.reps, to: set.reps },
-  //               completed: { from: currentSet.completed, to: set.completed },
-  //             },
-  //           });
-  //         }
-  //       });
-  //     });
-  //   });
-
-  //   return changes;
-  // }
 
   const repRange = [];
   for (let i = 1; i <= 30; i++) {

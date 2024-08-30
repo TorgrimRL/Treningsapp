@@ -3,6 +3,7 @@ import db from "../remoteDatabase.js";
 import { authenticateToken, csrfProtection } from "../middleware.js";
 import calculateNewTarget from "../utils/calculateNewTarget.js";
 import createDeloadWeek from "../utils/createDeloadWeek.js";
+import processPlan from "../utils/processPlan.js";
 
 const router = express.Router();
 
@@ -133,18 +134,22 @@ router.get(
         console.log("No current workout found for user:", req.user.id);
         return res.status(404).json({ error: "Current workout not found" });
       }
-      console.log("Raw plan data:", row.plan);
+      // console.log("Raw plan data:", row.plan);
       let plan;
       try {
         plan = JSON.parse(row.plan);
       } catch (error) {
         return res.status(500).json({ error: "Invalid plan data" });
       }
+      const { updatedPlan, firstIncompleteDayIndex } = processPlan(plan);
+      if (firstIncompleteDayIndex === undefined) {
+        console.error("firstIncompleteDayIndex is undefined in processPlan");
+      }
       const daysPerWeek = row.daysPerWeek;
       const totalWeeks = row.weeks;
       const firstWeekExercises = plan[0].exercises;
 
-      const updatedPlan = plan.map((day, dayIndex) => {
+      const finalPlan = updatedPlan.map((day, dayIndex) => {
         const currentWeek = Math.floor(dayIndex / daysPerWeek) + 1;
 
         return {
@@ -234,13 +239,14 @@ router.get(
 
       res.json({
         ...row,
-        plan: updatedPlan,
+        plan: finalPlan,
         isCurrent: !!row.isCurrent,
         completedDate: row.completedDate
           ? new Date(row.completedDate).toISOString()
           : null,
         totalWeeks: row.weeks,
         daysPerWeek: row.daysPerWeek,
+        firstIncompleteDayIndex,
       });
     } catch (err) {
       console.error("Error fetching current workout:", err.message);

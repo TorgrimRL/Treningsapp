@@ -15,7 +15,6 @@ export default function createDeloadWeek(
         sets: [],
       };
     }
-
     const updatedSets = firstWeekExercise.sets
       .slice(0, 2)
       .map((baseWeekset, setIndex) => {
@@ -25,13 +24,16 @@ export default function createDeloadWeek(
 
         const deloadWeight = parseFloat(baseWeekset.weight);
         const deloadReps = Math.floor(parseInt(baseWeekset.reps, 10) / 2);
+        const completedStatus =
+          currentWeeksExercises[exerciseIndex]?.sets?.[setIndex]?.completed ??
+          false;
         return {
           ...baseWeekset,
           weight: deloadWeight,
           reps: deloadReps,
           targetWeight: deloadWeight,
           targetReps: deloadReps,
-          // completed: false,
+          completed: completedStatus,
         };
       })
       .filter(Boolean);

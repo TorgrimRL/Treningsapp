@@ -71,14 +71,15 @@ export default function CalendarModal({
                 {Array.from({ length: numRows }).map((_, dayIndex) => {
                   const day = mesocycle.plan[weekIndex * numRows + dayIndex];
                   if (!day) return null;
+                  const dayClass = day.isCompleted
+                    ? "bg-green-700"
+                    : currentDayIndex === weekIndex * numRows + dayIndex
+                    ? "bg-red-500"
+                    : "bg-darkestGray";
                   return (
                     <li
                       key={dayIndex}
-                      className={`border p-0 mb-1 cursor-pointer text-xs uppercase min-w-[75px] min-h-[50px] flex items-center justify-center ${
-                        currentDayIndex === weekIndex * numRows + dayIndex
-                          ? "bg-red-500"
-                          : "bg-darkestGray"
-                      }`}
+                      className={`border p-0 mb-1 cursor-pointer text-xs uppercase min-w-[75px] min-h-[50px] flex items-center justify-center ${dayClass}`}
                       onClick={() => {
                         console.log(
                           "Day item clicked:",
