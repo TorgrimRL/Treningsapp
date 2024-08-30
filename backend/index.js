@@ -14,6 +14,8 @@ import {
   csrfProtection,
   csrfTokenRoute,
 } from "./middleware.js";
+import dotenv from "dotenv";
+dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -44,7 +46,10 @@ app.use((req, res, next) => {
   next();
 });
 
-const secretKey = "secretkey";
+const secretKey = process.env.JWT_SECRET_KEY;
+if (!secretKey && process.env.NODE_ENV === "production") {
+  throw new Error("Missing _JWT_SECRET_KEY in environment");
+}
 app.get("/favicon.ico", (req, res) => res.status(204));
 
 app.use("/api", exerciseRoutes);
@@ -136,6 +141,12 @@ app.get("/api/check-auth", authenticateToken, (req, res) => {
     res.json({ isLoggedIn: true });
   } catch (error) {
     console.log("Token verification failed:", error.message); // Logging ved feil i verifisering
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "None",
+      path: "/",
+    });
     res.json({ isLoggedIn: false });
   }
 });

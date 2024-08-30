@@ -117,39 +117,6 @@ router.get("/mesocycles/:id", authenticateToken, async (req, res) => {
 });
 
 // Endpoint to fetch the current workout
-// router.get(
-//   "/current-workout",
-//   authenticateToken,
-//   csrfProtection,
-//   async (req, res) => {
-//     try {
-//       console.log("Fetching current workout for user:", req.user.id);
-//       const result = await db.sql`
-//       SELECT * FROM mesocycles WHERE isCurrent = 1 AND user_id = ${req.user.id}
-//     `;
-//       console.log("Result from db.sql:", result);
-
-//       const row = result[0]; // Hvis result er en array, henter vi den første raden
-//       if (!row) {
-//         console.log("No current workout found for user:", req.user.id);
-//         return res.status(404).json({ error: "Current workout not found" });
-//       }
-//       console.log("Raw plan data:", row.plan);
-//       let plan;
-//       try {
-//         plan = JSON.parse(row.plan);
-//       } catch (error) {
-//         return res.status(500).json({ error: "Invalid plan data" });
-//       }
-
-//       // Resten av logikken som oppdaterer planen og returnerer responsen
-//     } catch (err) {
-//       console.error("Error fetching current workout:", err.message);
-//       res.status(500).json({ error: err.message });
-//     }
-//   }
-// );
-
 router.get(
   "/current-workout",
   authenticateToken,

@@ -1,8 +1,10 @@
 import jwt from "jsonwebtoken";
 
 import csurf from "csurf";
+import dotenv from "dotenv";
+dotenv.config();
 
-const secretKey = "secretkey";
+const secretKey = process.env.JWT_SECRET_KEY;
 
 //Middleware to verifiy token
 

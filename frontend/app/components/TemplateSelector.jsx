@@ -12,15 +12,13 @@ const TemplateSelector = ({ onSelectTemplate }) => {
   const handleSelect = (template) => {
     setSelectedTemplate(template);
     setIsModalOpen(true);
-
-    // onSelectTemplate(template);
   };
 
   const handleModalSave = () => {
     if (onSelectTemplate && typeof onSelectTemplate === "function") {
       onSelectTemplate(selectedTemplate);
     }
-    // onSelectTemplate(template);
+    
     setIsModalOpen(false);
   };
 

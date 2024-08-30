@@ -18,7 +18,7 @@ describe('CSRF Protection', () => {
                     if (err) {
                         if (err.message.includes('UNIQUE constraint failed')) {
                             console.log('User already exists. Skipping creation.');
-                            resolve(); // Fortsett selv om brukeren allerede finnes
+                            resolve(); 
                         } else {
                             console.error('Error creating user:', err.message);
                             reject(err);
