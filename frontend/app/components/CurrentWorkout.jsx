@@ -661,19 +661,21 @@ export default function CurrentWorkout() {
   };
 
   return (
-    <div className="pt-6">
-      <h1 className="text-sm text-gray-500 bg-darkGray sticky top-12 pl-4 mt-1 uppercase">
+    <div className="pt-[4.8rem]">
+      {" "}
+      {/* Adjusted padding to ensure content starts below fixed headers */}
+      <h1 className="text-sm text-gray-500 bg-darkGray fixed top-12 w-full z-20 pl-4 mt-1 uppercase">
         {currentMesocycle.name}
       </h1>
       {currentDay ? (
-        <div className="mb-4">
-          <div className="p-1 text-white bg-darkGray mb-1 flex items-center justify-between sticky top-16 ">
+        <div className="mb-0">
+          <div className="p-1 text-white bg-darkGray  flex items-center justify-between fixed top-[4.5rem] w-full z-20">
             <div className="space-x-2 pl-3 mr-auto">
               <span className="font-semibold uppercase">
                 {week === currentMesocycle.weeks
                   ? "DELOAD WEEK"
                   : `Week ${week} Day ${dayNumber} ${getDayLabel(currentDay)}`}
-              </span>{" "}
+              </span>
             </div>
             <FaCalendarAlt
               className="text-white cursor-pointer text-xl -ml-4"
