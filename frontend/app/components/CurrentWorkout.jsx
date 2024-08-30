@@ -663,7 +663,6 @@ export default function CurrentWorkout() {
   return (
     <div className="pt-[4.8rem]">
       {" "}
-      {/* Adjusted padding to ensure content starts below fixed headers */}
       <h1 className="text-sm text-gray-500 bg-darkGray fixed top-12 w-full z-20 pl-4 mt-1 uppercase">
         {currentMesocycle.name}
       </h1>
@@ -882,11 +881,6 @@ export default function CurrentWorkout() {
                           }
                           className="bg-inputBGGray text-center border-black w-full rounded p-1"
                         >
-                          {repRange.map((reps) => (
-                            <option key={reps} value={reps}>
-                              {reps}
-                            </option>
-                          ))}
                           {week <= 2 && (
                             <option value="3 RIR" disabled>
                               3 RIR
@@ -902,6 +896,11 @@ export default function CurrentWorkout() {
                               0/1 RIR
                             </option>
                           )}
+                          {repRange.map((reps) => (
+                            <option key={reps} value={reps}>
+                              {reps}
+                            </option>
+                          ))}
                         </select>
                       </div>
                       <div className="flex items-center justify-center ml-2 relative">
