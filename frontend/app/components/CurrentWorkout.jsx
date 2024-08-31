@@ -420,6 +420,7 @@ export default function CurrentWorkout() {
         console.error("Error updating mesocycle:", error);
       }
     }, 100);
+    setApplyToFutureWeeks(false);
   };
 
   const removeSet = async (
@@ -668,7 +669,7 @@ export default function CurrentWorkout() {
       </h1>
       {currentDay ? (
         <div className="mb-0">
-          <div className="p-1 text-white bg-darkGray  flex items-center justify-between fixed top-[4.5rem] w-full z-20">
+          <div className="p-1 text-white bg-darkGray  flex items-center justify-between fixed top-[4.5rem] w-full z-20 border-b border-darkestGray">
             <div className="space-x-2 pl-3 mr-auto">
               <span className="font-semibold uppercase">
                 {week === currentMesocycle.weeks

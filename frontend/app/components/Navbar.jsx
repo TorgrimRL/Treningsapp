@@ -46,13 +46,13 @@ export default function Navbar() {
         top: 0,
         left: 0,
         width: "100%",
-        zIndex: 5,
+        zIndex: 30,
 
         boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
       }}
     >
       <div
-        className=" mx-auto flex justify-between items-center px-4 py-3 text-white bg-black"
+        className=" mx-auto flex justify-between items-center px-4 py-2 text-white bg-black"
         onClick={(e) => e.stopPropagation()}
       >
         <Link to="/" className="text-red-500 text-2xl font-bold">
@@ -128,7 +128,7 @@ export default function Navbar() {
         </div>
         {isOpen && (
           <div
-            className="absolute right-0 top-full w-48 bg-white rounded-md shadow-lg z-10 md:hidden"
+            className="fixed right-0 top-12 w-48 bg-white rounded-md shadow-lg z-[1000] md:hidden"
             ref={menuRef}
           >
             <ul className="py-1 bg-hamburgerbackground text-white ">

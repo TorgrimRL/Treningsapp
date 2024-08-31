@@ -48,7 +48,7 @@ app.use((req, res, next) => {
 
 const secretKey = process.env.JWT_SECRET_KEY;
 if (!secretKey && process.env.NODE_ENV === "production") {
-  throw new Error("Missing _JWT_SECRET_KEY in environment");
+  throw new Error("Missing JWT_SECRET_KEY in environment");
 }
 app.get("/favicon.ico", (req, res) => res.status(204));
 
