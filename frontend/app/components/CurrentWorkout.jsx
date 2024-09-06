@@ -638,7 +638,15 @@ export default function CurrentWorkout() {
     const targetWeight = parseFloat(set.targetWeight);
     const targetReps = parseInt(set.targetReps, 10);
     const currentWeight = parseFloat(set.weight);
-    const currentReps = parseInt(set.reps, 10);
+
+    const currentReps = set.reps;
+    if (
+      currentReps === "3 RIR" ||
+      currentReps === "2 RIR" ||
+      currentReps === "0/1 RIR"
+    ) {
+      return "noIndicator";
+    }
 
     const weightDifference = currentWeight - targetWeight;
     const maxIncrementDeviation = 3 * incrementSize;
@@ -664,7 +672,7 @@ export default function CurrentWorkout() {
   return (
     <div className="pt-[4.8rem]">
       {" "}
-      <h1 className="text-sm text-gray-500 bg-darkGray fixed top-12 w-full z-20 pl-4 mt-1 uppercase">
+      <h1 className="text-sm text-gray-500 bg-darkGray fixed top-12 w-full z-20 pl-4 mt-1 uppercase border-t border-darkestGray">
         {currentMesocycle.name}
       </h1>
       {currentDay ? (
@@ -923,7 +931,10 @@ export default function CurrentWorkout() {
                             top: "50%",
                             transform: "translateY(-10%)",
                           };
-                          if (status === "noEvaluation") {
+                          if (
+                            status === "noEvaluation" ||
+                            status === "noIndicator"
+                          ) {
                             return null;
                           }
                           if (status === "target") {
