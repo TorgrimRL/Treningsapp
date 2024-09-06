@@ -147,11 +147,10 @@ router.get(
       }
       const daysPerWeek = row.daysPerWeek;
       const totalWeeks = row.weeks;
-      const firstWeekExercises = plan[0].exercises;
 
       const finalPlan = updatedPlan.map((day, dayIndex) => {
         const currentWeek = Math.floor(dayIndex / daysPerWeek) + 1;
-
+        const firstWeekExercises = plan[dayIndex % daysPerWeek].exercises;
         return {
           ...day,
           exercises: day.exercises.map((exercise, exerciseIndex) => {

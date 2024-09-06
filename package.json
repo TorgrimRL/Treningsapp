@@ -1,6 +1,0 @@
-{
-  "dependencies": {
-    "@sqlitecloud/drivers": "^1.0.193",
-    "react-icons": "^5.2.1"
-  }
-}
