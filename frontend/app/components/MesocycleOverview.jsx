@@ -49,8 +49,7 @@ const MesocycleOverview = () => {
         });
         const data = await response.json();
 
-        const updatedData = data.map(checkCompletion);
-        setMesocycles(updatedData);
+        setMesocycles(data);
       } catch (error) {
         console.error("Error fetching mesocycles:", error);
       }
@@ -58,16 +57,16 @@ const MesocycleOverview = () => {
     fetchMesocycles();
   }, []);
 
-  const checkCompletion = (mesocycle) => {
-    const allDaysCompleted = mesocycle.plan.every((day) =>
-      day.exercises.every((exercise) => exercise.completed)
-    );
-    if (allDaysCompleted && !mesocycle.completedDate) {
-      // Uncomment when exercisestatus per day is implemented
-      mesocycle.completedDate = new Date().toISOString();
-    }
-    return mesocycle;
-  };
+  // const checkCompletion = (mesocycle) => {
+  //   const allDaysCompleted = mesocycle.plan.every((day) =>
+  //     day.exercises.every((exercise) => exercise.completed)
+  //   );
+  //   if (allDaysCompleted && !mesocycle.completedDate) {
+  //     // Uncomment when exercisestatus per day is implemented
+  //     mesocycle.completedDate = new Date().toISOString();
+  //   }
+  //   return mesocycle;
+  // };
 
   const toggleMenu = (id) => {
     setOpenMenus((prevState) => ({
@@ -88,90 +87,61 @@ const MesocycleOverview = () => {
         </a>
       </header>
       <ul className="list-none p-0 m-0">
-        {sortedPlans.map((mesocycle) => (
-          <li
-            key={mesocycle.id}
-            className={`flex justify-between items-center max-w-sm bg-darkestGray p-4 rounded mb-2 ${
-              mesocycle.isCurrent ? "border-l-4 border-red-600" : ""
-            }`}
-          >
-            <div>
-              <h2 className="text-lg m-0 max-w-sm mb-1 truncate max-w-[200px]">
-                {mesocycle.name}
-              </h2>
-              <p className="text-sm text-gray-400 m-0">
-                {mesocycle.weeks} WEEKS - {mesocycle.daysPerWeek} DAYS/WEEK
-              </p>
-              {mesocycle.completedDate && (
+        {sortedPlans.map((mesocycle) => {
+          const isCompleted = mesocycle.completedDate !== null;
+          console.log(`Mesocycle ${mesocycle.id} is completed:`, isCompleted);
+
+          return (
+            <li
+              key={mesocycle.id}
+              className={`flex justify-between items-center max-w-sm bg-darkestGray p-4 rounded mb-2 ${
+                mesocycle.isCurrent ? "border-l-4 border-red-600" : ""
+              }`}
+            >
+              <div>
+                <h2 className="text-lg m-0 max-w-sm mb-1 truncate max-w-[200px]">
+                  {mesocycle.name}
+                </h2>
                 <p className="text-sm text-gray-400 m-0">
-                  Completed:{" "}
-                  {new Date(mesocycle.completedDate).toLocaleDateString()}
+                  {mesocycle.weeks} WEEKS - {mesocycle.daysPerWeek} DAYS/WEEK
                 </p>
-              )}
-            </div>
-            <div className="flex items-center">
-              <span
-                className={`py-1 px-2 rounded text-sm mr-2 ${
-                  mesocycle.isCurrent
-                    ? "bg-orange-600"
-                    : mesocycle.completedDate
-                    ? "bg-green-600"
-                    : "bg-gray-600"
-                }`}
-              >
-                {mesocycle.isCurrent
-                  ? "CURRENT"
-                  : mesocycle.completedDate
-                  ? new Date(mesocycle.completedDate).toLocaleDateString()
-                  : "NOT COMPLETED"}
-              </span>
-              <div className="relative" ref={menuRef}>
-                <button
-                  onClick={() => toggleMenu(mesocycle.id)}
-                  className="text-white focus:outline-none py-2"
-                >
-                  <FontAwesomeIcon icon={faEllipsisV} />
-                </button>
+                {isCompleted && (
+                  <p className="text-sm text-gray-400 m-0">
+                    Completed:{" "}
+                    {new Date(mesocycle.completedDate).toLocaleDateString()}
+                  </p>
+                )}
               </div>
-              {openMenus[mesocycle.id] && (
-                <div
-                  className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10"
-                  ref={menuRef}
+              <div className="flex items-center">
+                <span
+                  className={`py-1 px-2 rounded text-sm mr-2 ${
+                    mesocycle.isCurrent
+                      ? "bg-orange-600"
+                      : isCompleted
+                      ? "bg-green-600"
+                      : "bg-gray-600"
+                  }`}
                 >
-                  <ul className="py-1">
-                    <li>
-                      <a
-                        href="#"
-                        className="block px-4 py-2 text-gray-800 hover:bg-gray-200"
-                      >
-                        Edit
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="#"
-                        className="block px-4 py-2 text-gray-800 hover:bg-gray-200"
-                      >
-                        Delete
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="#"
-                        className="block px-4 py-2 text-gray-800 hover:bg-gray-200"
-                      >
-                        View Details
-                      </a>
-                    </li>
-                  </ul>
+                  {mesocycle.isCurrent
+                    ? "CURRENT"
+                    : isCompleted
+                    ? new Date(mesocycle.completedDate).toLocaleDateString()
+                    : "NOT COMPLETED"}
+                </span>
+                <div className="relative" ref={menuRef}>
+                  <button
+                    onClick={() => toggleMenu(mesocycle.id)}
+                    className="text-white focus:outline-none py-2"
+                  >
+                    <FontAwesomeIcon icon={faEllipsisV} />
+                  </button>
                 </div>
-              )}
-            </div>
-          </li>
-        ))}
+              </div>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
 };
-
 export default MesocycleOverview;
