@@ -30,7 +30,6 @@ export default function CurrentWorkout() {
   const [currentNote, setCurrentNote] = useState("");
   const [currentExercise, setCurrentExercise] = useState(null);
   const [applyToFutureWeeks, setApplyToFutureWeeks] = useState(false);
-
   const baseUrl = import.meta.env.VITE_API_URL;
 
   const handleSetCompletionChange = (
@@ -672,12 +671,12 @@ export default function CurrentWorkout() {
   return (
     <div className="pt-[4.8rem]">
       {" "}
-      <h1 className="text-sm text-gray-500 bg-darkGray fixed top-12 w-full z-20 pl-4 mt-1 uppercase border-t border-darkestGray">
+      <h1 className="text-sm text-gray-500 bg-darkGray fixed top-10 w-full z-20 pl-4 mt-1 pt-2 uppercase border-t border-darkestGray">
         {currentMesocycle.name}
       </h1>
       {currentDay ? (
         <div className="mb-0">
-          <div className="p-1 text-white bg-darkGray  flex items-center justify-between fixed top-[4.5rem] w-full z-20 border-b border-darkestGray">
+          <div className="p-1 text-white bg-darkGray  flex items-center justify-between fixed top-[4.4rem] w-full z-20 border-b border-darkestGray">
             <div className="space-x-2 pl-3 mr-auto">
               <span className="font-semibold uppercase">
                 {week === currentMesocycle.weeks

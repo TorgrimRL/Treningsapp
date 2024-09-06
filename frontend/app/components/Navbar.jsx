@@ -71,7 +71,6 @@ export default function Navbar() {
             }}
           >
             <FontAwesomeIcon icon={faBars} size="1x" />
-            {/* ☰ */}
           </button>
         </div>
         <div className="hidden md:flex md:space-x-4 h-full items-center ">
