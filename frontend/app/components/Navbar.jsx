@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../utils/AuthContext";
 import { Link } from "@remix-run/react";
 import Logout from "./Logout";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faBars } from "@fortawesome/free-solid-svg-icons";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -68,7 +70,8 @@ export default function Navbar() {
               right: "15px",
             }}
           >
-            ☰
+            <FontAwesomeIcon icon={faBars} size="1x" />
+            {/* ☰ */}
           </button>
         </div>
         <div className="hidden md:flex md:space-x-4 h-full items-center ">
