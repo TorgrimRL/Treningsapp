@@ -11,6 +11,7 @@ import {
   faThumbtack,
 } from "@fortawesome/free-solid-svg-icons";
 import NoteModal from "./NoteModal";
+import ProgressBar from "./ProgressBar";
 
 Modal.setAppElement("#root");
 
@@ -31,6 +32,21 @@ export default function CurrentWorkout() {
   const [currentExercise, setCurrentExercise] = useState(null);
   const [applyToFutureWeeks, setApplyToFutureWeeks] = useState(false);
   const baseUrl = import.meta.env.VITE_API_URL;
+
+  const calculateProgress = () => {
+    let totalSets = 0;
+    let completeSets = 0;
+
+    currentMesocycle.plan[currentDayIndex]?.exercises.forEach((exercise) => {
+      exercise.sets.forEach((set) => {
+        totalSets += 1;
+        if (set.completed) {
+          completeSets += 1;
+        }
+      });
+    });
+    return totalSets === 0 ? 0 : (completeSets / totalSets) * 100;
+  };
 
   const handleSetCompletionChange = (
     dayIndex,
@@ -555,7 +571,15 @@ export default function CurrentWorkout() {
   }, []);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="pt-[3.8rem] text-center flex flex-col items-center">
+        <div
+          className="spinner-border animate-spin inline-block w-8 h-8 border-4 border-t-red-500 border-red-200 rounded-full"
+          role="status"
+        ></div>
+        <span className="mt-2">Loading...</span>
+      </div>
+    );
   }
 
   const handleDayClick = async (index) => {
@@ -690,7 +714,10 @@ export default function CurrentWorkout() {
               className="text-white cursor-pointer text-xl -ml-4"
               onClick={openCalendarModal}
               style={{ transform: "translateX(-10px)" }}
-            />{" "}
+            />
+          </div>
+          <div className="mb-1 p-0 bg-transparent h-auto">
+            <ProgressBar progress={calculateProgress()} />
           </div>
           <div className=" max-h-[calc(100vh-8rem)] overflow-y-auto relative">
             <ul className="list-none list-inside text-white ">

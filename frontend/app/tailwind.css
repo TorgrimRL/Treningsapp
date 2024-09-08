@@ -5,3 +5,19 @@
 input[type="checkbox"] {
   accent-color: #38a169; /* Tailwind green-500 */
 }
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.spinner-border {
+  border-top-color: #da1515;
+  border-right-color: transparent;
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+}
