@@ -197,8 +197,8 @@ export const templates = [
     days: 3,
     dayLabels: [
       "Monday", // Day 1: Push Emphasis
-      "Thursday", // Day 2: Legs Emphasis
-      "Sunday", // Day 3: Pull Emphasis
+      "Wednesday", // Day 2: Legs Emphasis
+      "Friday", // Day 3: Pull Emphasis
     ],
     muscleGroups: [
       // Day 1 (Monday) - Push Emphasis
@@ -239,7 +239,7 @@ export const templates = [
   {
     name: "Full Body",
     days: 4,
-    dayLabels: ["Monday", "Tuesday", "Thursday", "Friday"],
+    dayLabels: ["Monday", "Tuesday", "Thursday", "Saturday"],
     muscleGroups: [
       // Day 1 (Monday)
       [
@@ -395,6 +395,238 @@ export const templates = [
         "Traps", // Traps
         "Rear Delts", // Rear or Side Delts
         "Biceps", // Biceps
+      ],
+    ],
+  },
+  {
+    name: "Chest/Back",
+    days: 3,
+    dayLabels: ["Monday", "Wednesday", "Friday"],
+    muscleGroups: [
+      // Day 1 - Chest/Back Emphasis
+      [
+        "Chest", // Horizontal Push becomes Chest
+        "Chest", // Chest Isolation or Triceps becomes Chest
+        "Front Delts", // Incline Push or Front Delts becomes Front Delts
+        "Side Delts", // Side Delts
+        "Back", // Vertical Pull becomes Back
+        "Back", // Horizontal Pull becomes Back
+        "Hamstrings", // Hamstrings Hip Hinge becomes Hamstrings
+        "Quads", // Quads
+      ],
+      // Day 2 - Back Emphasis
+      [
+        "Back", // Vertical Pull becomes Back
+        "Back", // Horizontal Pull becomes Back
+        "Rear Delts", // Rear Delts or Side Delts becomes Rear Delts
+        "Biceps", // Biceps
+        "Chest", // Horizontal Push becomes Chest
+        "Chest", // Incline Push becomes Chest
+        "Glutes", // Glutes
+        "Hamstrings", // Hamstrings Isolation becomes Hamstrings
+      ],
+      // Day 3 - Push Emphasis
+      [
+        "Chest", // Horizontal Push becomes Chest
+        "Chest", // Chest Isolation or Triceps becomes Chest
+        "Front Delts", // Incline Push or Front Delts becomes Front Delts
+        "Side Delts", // Side Delts
+        "Back", // Vertical Pull becomes Back
+        "Back", // Horizontal Pull becomes Back
+        "Hamstrings", // Hamstrings Hip Hinge becomes Hamstrings
+        "Quads", // Quads
+      ],
+    ],
+  },
+  {
+    name: "Arms&Delts",
+    days: 3,
+    dayLabels: ["Monday", "Wednesday", "Friday"],
+    muscleGroups: [
+      // Day 1 - Biceps Emphasis
+      [
+        "Biceps", // Biceps
+        "Biceps", // Biceps
+        "Rear Delts", // Rear Delts or Side Delts
+        "Rear Delts", // Rear Delts or Side Delts
+        "Back", // Vertical Pull
+        "Back", // Horizontal Pull
+        "Chest", // Horizontal Push
+        "Quads", // Quads
+      ],
+      // Day 2 - Push Emphasis
+      [
+        "Front Delts", // Front Delts
+        "Triceps", // Triceps
+        "Triceps", // Triceps
+        "Chest", // Incline Push
+        "Chest", // Horizontal Push
+        "Side Delts", // Side Delts
+        "Back", // Vertical Pull
+        "Glutes", // Glutes
+      ],
+      // Day 3 - Full Body Emphasis
+      [
+        "Side Delts", // Side Delts
+        "Biceps", // Biceps
+        "Triceps", // Triceps
+        "Traps", // Traps
+        "Back", // Horizontal Pull
+        "Chest", // Incline Push
+        "Quads", // Quads
+        "Hamstrings", // Hamstrings Hip Hinge
+      ],
+    ],
+  },
+  {
+    name: "Legs",
+    days: 4,
+    dayLabels: [
+      "Monday", // Day 1
+      "Tuesday", // Day 2
+      "Thursday", // Day 3
+      "Saturday", // Day 4
+    ],
+    muscleGroups: [
+      // Day 1 (Monday) - Lower Body Focus
+      [
+        "Quads", // Quads
+        "Quads", // Quads
+        "Hamstrings", // Hamstrings Isolation
+        "Calves", // Calves
+        "Back", // Vertical Pull
+        "Rear Delts", // Rear or Side Delts
+      ],
+      // Day 2 (Tuesday) - Glutes and Push Focus
+      [
+        "Glutes", // Glutes
+        "Glutes", // Glutes
+        "Chest", // Incline Push
+        "Chest", // Horizontal Push
+        "Triceps", // Triceps
+        "Abs", // Abs
+      ],
+      // Day 3 (Thursday) - Lower Body and Pull Focus
+      [
+        "Quads", // Quads
+        "Quads", // Quads
+        "Calves", // Calves
+        "Back", // Horizontal Pull
+        "Rear Delts", // Rear or Side Delts
+        "Biceps", // Biceps
+      ],
+      // Day 4 (Friday) - Hamstrings and Upper Body Focus
+      [
+        "Hamstrings", // Hamstrings Isolation
+        "Hamstrings", // Hamstrings Hip Hinge
+        "Chest", // Horizontal Push
+        "Front Delts", // Front Delts
+        "Traps", // Traps
+        "Abs", // Abs
+      ],
+    ],
+  },
+  {
+    name: "Arms&Delts",
+    days: 4,
+    dayLabels: [
+      "Monday", // Day 1
+      "Tuesday", // Day 2
+      "Thursday", // Day 3
+      "Saturday", // Day 4
+    ],
+    muscleGroups: [
+      // Day 1 (Monday) - Triceps, Delts, and Lower Body
+      [
+        "Triceps", // Horizontal Triceps
+        "Triceps", // Vertical Triceps
+        "Front Delts", // Front Delts
+        "Side Delts", // Side Delts
+        "Chest", // Incline Push
+        "Quads", // Quads
+        "Calves", // Calves
+      ],
+      // Day 2 (Tuesday) - Biceps and Pull Focus
+      [
+        "Biceps", // Biceps
+        "Biceps", // Biceps
+        "Rear Delts", // Rear or Side Delts
+        "Rear Delts", // Rear or Side Delts
+        "Back", // Vertical Pull
+        "Glutes", // Glutes
+        "Hamstrings", // Hamstring Isolation
+      ],
+      // Day 3 (Thursday) - Delts and Push Focus
+      [
+        "Front Delts", // Front Delts
+        "Front Delts", // Front Delts
+        "Triceps", // Triceps
+        "Side Delts", // Side Delts
+        "Chest", // Horizontal Push
+        "Quads", // Quads
+        "Calves", // Calves
+      ],
+      // Day 4 (Friday) - Biceps and Pull Focus
+      [
+        "Rear Delts", // Rear or Side Delts
+        "Rear Delts", // Rear or Side Delts
+        "Biceps", // Biceps
+        "Biceps", // Biceps
+        "Traps", // Traps
+        "Back", // Horizontal Pull
+        "Hamstrings", // Hamstring Hip Hinge
+      ],
+    ],
+  },
+  {
+    name: "Chest & Back",
+    days: 4,
+    dayLabels: [
+      "Monday", // Day 1
+      "Tuesday", // Day 2
+      "Thursday", // Day 3
+      "Friday", // Day 4
+    ],
+    muscleGroups: [
+      // Day 1 (Monday) - Chest and Push Focus
+      [
+        "Chest", // Incline Push
+        "Chest", // Chest Isolation
+        "Chest", // Horizontal Push
+        "Triceps", // Vertical Triceps
+        "Side Delts", // Side Delts
+        "Quads", // Quads
+        "Calves", // Calves
+      ],
+      // Day 2 (Tuesday) - Back and Pull Focus
+      [
+        "Back", // Vertical Pull
+        "Back", // Vertical Pull
+        "Back", // Horizontal Pull
+        "Rear Delts", // Rear or Side Delts
+        "Biceps", // Biceps
+        "Abs", // Abs
+        "Hamstrings", // Hamstring Isolation
+      ],
+      // Day 3 (Thursday) - Push Focus with Lower Body
+      [
+        "Chest", // Horizontal Push
+        "Chest", // Chest Isolation
+        "Chest", // Incline Push
+        "Triceps", // Horizontal Triceps
+        "Glutes", // Glutes
+        "Quads", // Quads
+        "Calves", // Calves
+      ],
+      // Day 4 (Friday) - Back and Pull Focus
+      [
+        "Back", // Horizontal Pull
+        "Back", // Horizontal Pull
+        "Back", // Vertical Pull
+        "Rear Delts", // Rear Delts
+        "Biceps", // Biceps
+        "Abs", // Abs
+        "Hamstrings", // Hamstring Hip Hinge
       ],
     ],
   },

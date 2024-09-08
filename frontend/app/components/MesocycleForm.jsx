@@ -57,7 +57,11 @@ const MesocycleForm = ({ onSubmit }) => {
               if (!acc[exercise.muscleGroup]) {
                 acc[exercise.muscleGroup] = [];
               }
-              acc[exercise.muscleGroup].push(exercise.name);
+              acc[exercise.muscleGroup].push({
+                name: exercise.name,
+                type: exercise.type,
+                videoLink: exercise.videoLink,
+              });
               return acc;
             }, {})
           );
@@ -77,7 +81,7 @@ const MesocycleForm = ({ onSubmit }) => {
   };
   const handleSaveCustomExercise = async (newExercise) => {
     if (newExercise) {
-      const { name, muscleGroup } = newExercise;
+      const { name, muscleGroup, type, videoLink } = newExercise;
       console.log("New exercise to add:", newExercise);
       setCustomExercises((prevCustomExercises) => {
         console.log("Previous custom exercises:", prevCustomExercises);
@@ -85,7 +89,7 @@ const MesocycleForm = ({ onSubmit }) => {
         if (updatedCustomExercises[muscleGroup]) {
           updatedCustomExercises[muscleGroup] = [
             ...updatedCustomExercises[muscleGroup],
-            name,
+            { name, type, videoLink },
           ];
         } else {
           updatedCustomExercises[muscleGroup] = [name];
@@ -135,29 +139,44 @@ const MesocycleForm = ({ onSubmit }) => {
   const handleChange = (dayIndex, exerciseIndex, field, value) => {
     const updatedPlan = [...plan];
     const muscleGroup =
-      updatedPlan[dayIndex].exercises[exerciseIndex].muscleGroup;
-
-    const selectedExercise = exercises[muscleGroup]?.find(
-      (ex) => ex.name === value
-    );
+      field === "muscleGroup"
+        ? value
+        : updatedPlan[dayIndex].exercises[exerciseIndex].muscleGroup;
+    const selectedExercise =
+      exercises[muscleGroup]?.find(
+        (ex) =>
+          ex.name ===
+          (field === "exercise"
+            ? value
+            : updatedPlan[dayIndex].exercises[exerciseIndex].exercise)
+      ) ||
+      customExercises[muscleGroup]?.find(
+        (ex) =>
+          ex.name ===
+          (field === "exercise"
+            ? value
+            : updatedPlan[dayIndex].exercises[exerciseIndex].exercise)
+      );
 
     updatedPlan[dayIndex] = {
       ...updatedPlan[dayIndex],
       exercises: [...updatedPlan[dayIndex].exercises],
     };
+
     updatedPlan[dayIndex].exercises[exerciseIndex] = {
       ...updatedPlan[dayIndex].exercises[exerciseIndex],
       [field]: value,
       type:
-        field === "exercise" && selectedExercise
-          ? selectedExercise.type
-          : updatedPlan[dayIndex].exercises[exerciseIndex].type,
-      priority:
-        field === "muscleGroup"
-          ? selectedGroups[value]
-          : updatedPlan[dayIndex].exercises[exerciseIndex].priority,
-    };
+        selectedExercise?.type ||
+        updatedPlan[dayIndex].exercises[exerciseIndex].type,
+      videoLink:
+        selectedExercise?.videoLink ||
+        updatedPlan[dayIndex].exercises[exerciseIndex].videoLink,
 
+      priority:
+        selectedGroups[muscleGroup] ||
+        updatedPlan[dayIndex].exercises[exerciseIndex].priority,
+    };
     setPlan(updatedPlan);
   };
 
@@ -222,10 +241,16 @@ const MesocycleForm = ({ onSubmit }) => {
       filledPlan.push(
         ...firstWeekPlan.map((day) => ({
           ...day,
-          exercises: day.exercises.map((exercise) => ({
-            ...exercise,
-            priority: selectedGroups[exercise.muscleGroup],
-          })),
+          exercises: day.exercises.map((exercise) => {
+            console.log("Exercise before mapping:", exercise); // Check if 'type' and 'videoLink' exist
+
+            return {
+              ...exercise,
+              priority: selectedGroups[exercise.muscleGroup],
+              type: exercise.type,
+              videoLink: exercise.videoLink,
+            };
+          }),
         }))
       );
     }
@@ -238,6 +263,8 @@ const MesocycleForm = ({ onSubmit }) => {
       completedDate: null,
       isCurrent: true,
     };
+    console.log("Mesocycle Data from mesocycleform:", mesocycleData); // Log the full mesocycle object
+    onSubmit(mesocycleData);
     onSubmit(mesocycleData);
     setIsModalOpen(false);
   };
@@ -420,11 +447,16 @@ const MesocycleForm = ({ onSubmit }) => {
                             {ex.name}
                           </option>
                         ))}
-                        {customExercises[exercise.muscleGroup]?.map((ex) => (
-                          <option key={ex} value={ex}>
-                            {ex}
-                          </option>
-                        ))}
+                        {customExercises[exercise.muscleGroup]?.map((ex) => {
+                          console.log(
+                            `Custom Exercise: ${ex.name}, Type: ${ex.type}`
+                          );
+                          return (
+                            <option key={ex.name} value={ex.name}>
+                              {ex.name}
+                            </option>
+                          );
+                        })}
                       </select>
                     </label>
                     {/* <span style={{ marginLeft: "10px" }}>

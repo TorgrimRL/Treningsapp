@@ -19,7 +19,7 @@ router.post("/exercises", authenticateToken, async (req, res) => {
       exerciseID: result.lastID,
     });
   } catch (error) {
-    console.error("Error creating new exercise:", err.message);
+    console.error("Error creating new exercise:", error.message);
     res.status(500).json({ error: "Failed to create a new exercise" });
   }
 });
