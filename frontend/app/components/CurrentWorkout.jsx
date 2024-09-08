@@ -509,6 +509,7 @@ export default function CurrentWorkout() {
         console.error("Error updating mesocycle after removing set:", error);
       }
     }, 100);
+    setApplyToFutureWeeks(false);
   };
 
   const openCalendarModal = () => setIsCalendarModalOpen(true);
