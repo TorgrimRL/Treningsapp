@@ -1,17 +1,17 @@
 export const muscleGroups = [
   "Abs",
-  "Calves",
+  "Back",
   "Biceps",
+  "Calves",
+  "Chest",
+  "Front Delts",
+  "Glutes",
+  "Hamstrings",
+  "Quads",
   "Rear Delts",
   "Side Delts",
   "Traps",
   "Triceps",
-  "Back",
-  "Quads",
-  "Glutes",
-  "Hamstrings",
-  "Chest",
-  "Front Delts",
 ];
 
 export const exerciseTemplate = {

@@ -440,23 +440,39 @@ const MesocycleForm = ({ onSubmit }) => {
                         }
                         required
                         className="bg-darkestGray text-center border border-gray-400 w-full rounded p-1 flex flex-grow"
+                        placeholder="Select an "
                       >
-                        <option value="">Select an exercise</option>
-                        {exercises[exercise.muscleGroup]?.map((ex) => (
-                          <option key={ex.name} value={ex.name}>
-                            {ex.name}
-                          </option>
-                        ))}
-                        {customExercises[exercise.muscleGroup]?.map((ex) => {
-                          console.log(
-                            `Custom Exercise: ${ex.name}, Type: ${ex.type}`
-                          );
-                          return (
+                        <option value="" disabled selected hidden>
+                          Select an exercise
+                        </option>
+
+                        {exercises[exercise.muscleGroup]
+                          ?.sort((a, b) => a.name.localeCompare(b.name))
+                          .map((ex) => (
                             <option key={ex.name} value={ex.name}>
                               {ex.name}
                             </option>
-                          );
-                        })}
+                          ))}
+                        <option
+                          disabled
+                          className="block w-full border-t border-gray-300 my-2"
+                        ></option>
+                        <option disabled className="font-bold text-gray-700">
+                          Custom Exercises
+                        </option>
+
+                        {customExercises[exercise.muscleGroup]
+                          ?.sort((a, b) => a.name.localeCompare(b.name))
+                          .map((ex) => {
+                            console.log(
+                              `Custom Exercise: ${ex.name}, Type: ${ex.type}`
+                            );
+                            return (
+                              <option key={ex.name} value={ex.name}>
+                                {ex.name}
+                              </option>
+                            );
+                          })}
                       </select>
                     </label>
                     {/* <span style={{ marginLeft: "10px" }}>
