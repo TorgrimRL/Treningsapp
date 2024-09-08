@@ -455,9 +455,12 @@ const MesocycleForm = ({ onSubmit }) => {
                           ))}
                         <option
                           disabled
-                          className="block w-full border-t border-gray-300 my-2"
+                          className="block w-full border-t border-black-300 my-2"
                         ></option>
-                        <option disabled className="font-bold text-gray-700">
+                        <option
+                          disabled
+                          className="block w-full border-t border-black-300 font-bold text-gray-700"
+                        >
                           Custom Exercises
                         </option>
 

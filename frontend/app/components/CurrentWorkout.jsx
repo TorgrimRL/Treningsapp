@@ -182,6 +182,7 @@ export default function CurrentWorkout() {
           const errorText = await response.text();
           throw new Error(`Failed to update mesocycle: ${errorText}`);
         }
+        setCurrentMesocycle(updatedMesocycle);
       } catch (error) {
         console.error("Error updating mesocycle:", error);
       }
