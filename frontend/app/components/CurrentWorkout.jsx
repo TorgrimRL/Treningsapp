@@ -700,25 +700,30 @@ export default function CurrentWorkout() {
       <h1 className="text-sm text-gray-500 bg-darkGray fixed top-10 w-full z-20 pl-4 mt-1 pt-2 uppercase border-t border-darkestGray">
         {currentMesocycle.name}
       </h1>
+      <div style={{ marginTop: "-0px", marginBottom: "-1px" }}>
+        <ProgressBar progress={calculateProgress()} />
+      </div>
       {currentDay ? (
         <div className="mb-0">
-          <div className="p-1 text-white bg-darkGray  flex items-center justify-between fixed top-[4.4rem] w-full z-20 border-b border-darkestGray">
-            <div className="space-x-2 pl-3 mr-auto">
-              <span className="font-semibold uppercase">
-                {week === currentMesocycle.weeks
-                  ? "DELOAD WEEK"
-                  : `Week ${week} Day ${dayNumber} ${getDayLabel(currentDay)}`}
-              </span>
+          <div>
+            <div className="p-1 text-white bg-darkGray  flex items-center justify-between fixed top-[4.4rem] w-full z-20 ">
+              <div className="space-x-2 pl-3 mr-auto">
+                <span className="font-semibold uppercase">
+                  {week === currentMesocycle.weeks
+                    ? "DELOAD WEEK"
+                    : `Week ${week} Day ${dayNumber} ${getDayLabel(
+                        currentDay
+                      )}`}
+                </span>
+              </div>
+              <FaCalendarAlt
+                className="text-white cursor-pointer text-xl -ml-4"
+                onClick={openCalendarModal}
+                style={{ transform: "translateX(-10px)" }}
+              />
             </div>
-            <FaCalendarAlt
-              className="text-white cursor-pointer text-xl -ml-4"
-              onClick={openCalendarModal}
-              style={{ transform: "translateX(-10px)" }}
-            />
           </div>
-          <div className="mb-1 p-0 bg-transparent h-auto">
-            <ProgressBar progress={calculateProgress()} />
-          </div>
+
           <div className=" max-h-[calc(100vh-8rem)] overflow-y-auto relative">
             <ul className="list-none list-inside text-white ">
               {currentDay.exercises.map((exercise, exIndex) => (
