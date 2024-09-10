@@ -711,10 +711,7 @@ export default function CurrentWorkout() {
       <h1 className="text-sm text-gray-500 bg-darkGray fixed top-10 w-full z-20 pl-4 mt-1 pt-2 uppercase border-t border-darkestGray">
         {currentMesocycle.name}
       </h1>
-      <div
-        className="fixed top-[2.rem] z-20 w-full"
-        style={{ marginTop: "-0px", marginBottom: "-1px" }}
-      >
+      <div style={{ marginTop: "-0px", marginBottom: "-1px" }}>
         <ProgressBar progress={progress} />
       </div>
       {currentDay ? (
