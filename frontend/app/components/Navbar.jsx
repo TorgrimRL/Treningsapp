@@ -74,24 +74,18 @@ export default function Navbar() {
           </button>
         </div>
         <div className="hidden md:flex md:space-x-4 h-full items-center ">
-          <a
-            href="/"
-            className="text-white h-full flex items-center hover:bg-gray-700"
-          >
+          <a href="/" className="text-white h-full flex items-center ">
             Home
           </a>
           {!isLoggedIn && (
-            <a
-              href="/login"
-              className="text-white h-full flex items-center hover:bg-gray-700"
-            >
+            <a href="/login" className="text-white h-full flex items-center ">
               Login
             </a>
           )}
           {!isLoggedIn && (
             <a
               href="/register"
-              className="text-white h-full flex items-center hover:bg-gray-700"
+              className="text-white h-full flex items-center "
             >
               Register
             </a>
@@ -100,19 +94,19 @@ export default function Navbar() {
             <>
               <a
                 href="/currentworkout"
-                className="text-white h-full flex items-center hover:bg-gray-700"
+                className="text-white h-full flex items-center "
               >
                 Current workout
               </a>
               <a
                 href="/mesocycles-new"
-                className="text-white h-full flex items-center hover:bg-gray-700"
+                className="text-white h-full flex items-center"
               >
                 Plan a new training block
               </a>
               <a
                 href="/templates"
-                className="text-white h-full flex items-center hover:bg-gray-700"
+                className="text-white h-full flex items-center "
               >
                 Templates
               </a>
@@ -120,7 +114,7 @@ export default function Navbar() {
               <li className="block px-4 py-2 hover:bg-darkGray">
                 <button
                   onClick={handleLogout}
-                  className="text-white h-full flex items-center hover:bg-gray-700"
+                  className="text-white h-full flex items-center "
                 >
                   Logout
                 </button>
