@@ -35,7 +35,7 @@ export default function CurrentWorkout() {
 
   const calculateProgress = () => {
     if (!sets[currentDayIndex]) {
-      return 0; // Returner 0 hvis sett-dataene ikke er tilgjengelige enda
+      return 0;
     }
     let totalSets = 0;
     let completeSets = 0;
@@ -711,7 +711,10 @@ export default function CurrentWorkout() {
       <h1 className="text-sm text-gray-500 bg-darkGray fixed top-10 w-full z-20 pl-4 mt-1 pt-2 uppercase border-t border-darkestGray">
         {currentMesocycle.name}
       </h1>
-      <div style={{ marginTop: "-0px", marginBottom: "-1px" }}>
+      <div
+        className="fixed top-[2.rem] z-20 w-full"
+        style={{ marginTop: "-0px", marginBottom: "-1px" }}
+      >
         <ProgressBar progress={progress} />
       </div>
       {currentDay ? (
