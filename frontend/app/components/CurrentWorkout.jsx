@@ -34,6 +34,9 @@ export default function CurrentWorkout() {
   const baseUrl = import.meta.env.VITE_API_URL;
 
   const calculateProgress = () => {
+    if (!sets[currentDayIndex]) {
+      return 0; // Returner 0 hvis sett-dataene ikke er tilgjengelige enda
+    }
     let totalSets = 0;
     let completeSets = 0;
 
@@ -47,6 +50,14 @@ export default function CurrentWorkout() {
     });
     return totalSets === 0 ? 0 : (completeSets / totalSets) * 100;
   };
+  const [progress, setProgress] = useState(calculateProgress());
+  useEffect(() => {
+    setProgress(calculateProgress());
+  }, [
+    currentMesocycle,
+    currentDayIndex,
+    currentMesocycle?.plan?.[currentDayIndex]?.exercises,
+  ]);
 
   const handleSetCompletionChange = (
     dayIndex,
@@ -86,7 +97,7 @@ export default function CurrentWorkout() {
           })),
         })),
       };
-
+      setCurrentMesocycle(updatedMesocycle);
       (async () => {
         try {
           const response = await fetch(
@@ -701,7 +712,7 @@ export default function CurrentWorkout() {
         {currentMesocycle.name}
       </h1>
       <div style={{ marginTop: "-0px", marginBottom: "-1px" }}>
-        <ProgressBar progress={calculateProgress()} />
+        <ProgressBar progress={progress} />
       </div>
       {currentDay ? (
         <div className="mb-0">
