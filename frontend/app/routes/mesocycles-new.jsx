@@ -70,7 +70,7 @@ export default function NewMesocycle() {
     <ProtectedRoute>
       <div className=" text-white bg-darkGray">
         <div style={{ paddingTop: "30px" }}></div>
-        <h1>Create a new mesocycle</h1>
+
         <MesocycleForm onSubmit={handleSubmit} />
         <div id="root">{/* <TestModal /> */}</div>
       </div>

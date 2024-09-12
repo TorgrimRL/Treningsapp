@@ -23,7 +23,7 @@ const port = process.env.PORT || 3000;
 const corsOptions = {
   origin: function (origin, callback) {
     const allowedOrigins = [
-      "http://localhost:5173", // Localhost for development
+      "http://localhost:5173",
       "https://setoptimizer.com",
       "https://www.setoptimizer.com",
     ];
