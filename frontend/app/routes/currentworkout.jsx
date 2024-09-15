@@ -8,6 +8,9 @@ export let loader = async ({ request }) => {
   const baseUrl = import.meta.env.VITE_API_URL; // Bruk `import.meta.env` for miljøvariabler
 
   const cookieHeader = request.headers.get("Cookie");
+  console.log("🚀 Starting loader...");
+  console.log("Base URL:", baseUrl);
+  console.log("Cookie header from request:", cookieHeader); // Log the received cookies from the request
 
   try {
     // Fetch current workout fra backend
@@ -15,25 +18,30 @@ export let loader = async ({ request }) => {
       method: "GET",
       credentials: "include",
       headers: {
-        Cookie: cookieHeader,
+        cookie: cookieHeader,
       },
     });
 
+    console.log("Response status:", response.status);
     if (!response.ok) {
       const errorText = await response.text();
+      console.error("Error response from backend:", errorText); // Log the error text from the backend
       throw new Error(`Failed to fetch current workout: ${errorText}`);
     }
 
+    console.log("Fetching data from response...");
     const data = await response.json();
+    console.log("Data fetched successfully:", data); // Log the fetched data
+
     return json(data);
   } catch (error) {
-    console.error("Error fetching current workout:", error);
+    console.error("Error during fetch:", error); // Log any caught errors
     throw new Response("Failed to fetch data", { status: 500 });
   }
 };
 
 export default function CurrentWorkoutRoute() {
-  const currentMesocycle = useLoaderData(); // Bruk loader data i stedet for å fetche i komponenten
+  const currentMesocycle = useLoaderData();
 
   return (
     <ProtectedRoute>

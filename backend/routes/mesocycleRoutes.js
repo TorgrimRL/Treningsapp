@@ -124,6 +124,7 @@ router.get(
   authenticateToken,
   csrfProtection,
   async (req, res) => {
+    console.log("Token from cookies in current-workout:", req.cookies.token);
     try {
       console.log("Fetching current workout for user:", req.user.id);
       const result = await db.sql`
