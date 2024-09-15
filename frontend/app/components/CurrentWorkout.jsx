@@ -15,8 +15,8 @@ import ProgressBar from "./ProgressBar";
 
 Modal.setAppElement("#root");
 
-export default function CurrentWorkout() {
-  const [currentMesocycle, setCurrentMesocycle] = useState([]);
+export default function CurrentWorkout({ data }) {
+  const [currentMesocycle, setCurrentMesocycle] = useState(data);
   const [loading, setLoading] = useState(true);
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
   const [currentDayIndex, setCurrentDayIndex] = useState(null);
@@ -542,44 +542,27 @@ export default function CurrentWorkout() {
   const openCalendarModal = () => setIsCalendarModalOpen(true);
 
   useEffect(() => {
-    const fetchMesocycle = async () => {
-      try {
-        const response = await fetch(`${baseUrl}/current-workout`, {
-          method: "GET",
-          credentials: "include",
-        });
-        const data = await response.json();
-        console.log("Mesocycle Data:", data);
-        setCurrentMesocycle(data);
+    if (currentMesocycle.firstIncompleteDayIndex !== undefined) {
+      setCurrentDayIndex(currentMesocycle.firstIncompleteDayIndex);
+    }
 
-        if (data.firstIncompleteDayIndex !== undefined) {
-          setCurrentDayIndex(data.firstIncompleteDayIndex);
-        } else {
-          console.warn("firstIncompleteDayIndex is undefined");
-        }
+    const notesData = {};
+    const setsData = {};
+    data.plan.forEach((day, dayIndex) => {
+      setsData[dayIndex] = {};
+      notesData[dayIndex] = {};
+      day.exercises.forEach((exercise, exerciseIndex) => {
+        setsData[dayIndex][exerciseIndex] = Array.isArray(exercise.sets)
+          ? exercise.sets
+          : [];
+        notesData[dayIndex][exerciseIndex] = exercise.note || "";
+      });
+    });
+    setNotes(notesData);
+    setSets(setsData);
 
-        const notesData = {};
-        const setsData = {};
-        data.plan.forEach((day, dayIndex) => {
-          setsData[dayIndex] = {};
-          notesData[dayIndex] = {};
-          day.exercises.forEach((exercise, exerciseIndex) => {
-            setsData[dayIndex][exerciseIndex] = Array.isArray(exercise.sets)
-              ? exercise.sets
-              : [];
-            notesData[dayIndex][exerciseIndex] = exercise.note || "";
-          });
-        });
-        setNotes(notesData);
-        setSets(setsData);
-      } catch (error) {
-        console.error("Error fetching mesocycles", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchMesocycle();
-  }, []);
+    setLoading(false);
+  }, [currentMesocycle]);
 
   if (loading) {
     return (
