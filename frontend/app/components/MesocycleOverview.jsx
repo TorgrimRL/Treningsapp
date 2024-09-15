@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEllipsisV } from "@fortawesome/free-solid-svg-icons";
+import { useLoaderData } from "@remix-run/react";
 
 const MesocycleOverview = () => {
-  const [mesocycles, setMesocycles] = useState([]);
+  const mesocycles = useLoaderData();
   const [openMenus, setOpenMenus] = useState({});
   const [sortedPlans, setSortedPlans] = useState([]);
   const menuRef = useRef(null);
@@ -40,22 +41,22 @@ const MesocycleOverview = () => {
     };
   }, [menuRef]);
 
-  useEffect(() => {
-    const fetchMesocycles = async () => {
-      try {
-        const response = await fetch(`${baseUrl}/mesocycles`, {
-          method: "GET",
-          credentials: "include",
-        });
-        const data = await response.json();
+  // useEffect(() => {
+  //   const fetchMesocycles = async () => {
+  //     try {
+  //       const response = await fetch(`${baseUrl}/mesocycles`, {
+  //         method: "GET",
+  //         credentials: "include",
+  //       });
+  //       const data = await response.json();
 
-        setMesocycles(data);
-      } catch (error) {
-        console.error("Error fetching mesocycles:", error);
-      }
-    };
-    fetchMesocycles();
-  }, []);
+  //       setMesocycles(data);
+  //     } catch (error) {
+  //       console.error("Error fetching mesocycles:", error);
+  //     }
+  //   };
+  //   fetchMesocycles();
+  // }, []);
 
   // const checkCompletion = (mesocycle) => {
   //   const allDaysCompleted = mesocycle.plan.every((day) =>
@@ -81,7 +82,7 @@ const MesocycleOverview = () => {
         <h1 className="text-2xl m-0">Mesocycles</h1>
         <a
           href="mesocycles-new"
-          className="bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-lg rounded"
+          className="bg-red-600 mt-2 text-white border-none py-2 px-4 cursor-pointer text-lg rounded"
         >
           + NEW
         </a>
@@ -99,7 +100,7 @@ const MesocycleOverview = () => {
               }`}
             >
               <div>
-                <h2 className="text-lg m-0 max-w-sm mb-1 truncate max-w-[200px]">
+                <h2 className="text-lg m-0 mb-1 truncate max-w-[150px] whitespace-nowrap overflow-hidden text-ellipsis">
                   {mesocycle.name}
                 </h2>
                 <p className="text-sm text-gray-400 m-0">
