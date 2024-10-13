@@ -75,11 +75,12 @@ const MesocycleForm = ({ onSubmit }) => {
     };
     fetchCustomExercises();
   }, []);
-  const handleSaveMesocycleDetails = () => {
-    if (mesocycleName && numberOfWeeks) {
-      setIsModalOpen(false);
-    }
+  const handleSaveMesocycleDetails = (name, weeks) => {
+    setMesocycleName(name);
+    setNumberOfWeeks(weeks);
+    setIsModalOpen(false);
   };
+
   const handleOpenAddExerciseModal = () => {
     setIsExerciseModalOpen(true);
   };
@@ -321,34 +322,7 @@ const MesocycleForm = ({ onSubmit }) => {
           }}
         >
           {" "}
-          <div className="text-center border-black mb-10 p-4 border border-black border-thick">
-            <label className="mb-4 block">
-              Training Block Name:
-              <input
-                type="text"
-                value={mesocycleName}
-                placeholder="Enter name of training block here"
-                onChange={(e) => setMesocycleName(e.target.value)}
-                required
-                className="bg-inputBGGray text-center border-black w-full p-1"
-              />
-              <label className=" mb-4 block">
-                Number of weeks:
-                <select
-                  value={numberOfWeeks}
-                  onChange={(e) => setNumberOfWeeks(e.target.value)}
-                  required
-                  className="bg-inputBGGray text-center border-black w-full p-1"
-                >
-                  <option value={""} disabled>
-                    Select Weeks
-                  </option>
-                  <option value={4}>4</option>
-                  <option value={5}>5</option>
-                  <option value={6}>6</option>
-                </select>
-              </label>
-            </label>
+          <div className="text-center  mb-10 p-4 ">
             <button
               type="submit"
               style={{ marginTop: "20px" }}
