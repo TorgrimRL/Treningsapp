@@ -8,9 +8,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import Modal from "react-modal";
 import MuscleGroupModal from "./MuscleGroupModal";
-import { useNavigate } from "@remix-run/react";
 import { useLocation } from "@remix-run/react";
 import AddExerciseModal from "./AddExerciseModal";
+import MesocycleDetailsModal from "./MesocycleDetailsModal";
 
 Modal.setAppElement("#root");
 
@@ -29,7 +29,7 @@ const MesocycleForm = ({ onSubmit }) => {
         ],
       }))
   );
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(true);
   const [mesocycleName, setMesocycleName] = useState("");
   const [numberOfWeeks, setNumberOfWeeks] = useState("");
   const [selectedGroups, setSelectedGroups] = useState({});
@@ -75,6 +75,11 @@ const MesocycleForm = ({ onSubmit }) => {
     };
     fetchCustomExercises();
   }, []);
+  const handleSaveMesocycleDetails = (name, weeks) => {
+    setMesocycleName(name);
+    setNumberOfWeeks(weeks);
+    setIsModalOpen(false);
+  };
 
   const handleOpenAddExerciseModal = () => {
     setIsExerciseModalOpen(true);
@@ -297,234 +302,224 @@ const MesocycleForm = ({ onSubmit }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-        }}
-      >
-        {" "}
-        <div className="text-center border-black mb-10 p-4 border border-black border-thick">
-          <label className="mb-4 block">
-            Training Block Name:
-            <input
-              type="text"
-              value={mesocycleName}
-              placeholder="Enter name of training block here"
-              onChange={(e) => setMesocycleName(e.target.value)}
-              required
-              className="bg-inputBGGray text-center border-black w-full p-1"
-            />
-            <label className=" mb-4 block">
-              Number of weeks:
-              <select
-                value={numberOfWeeks}
-                onChange={(e) => setNumberOfWeeks(e.target.value)}
-                required
-                className="bg-inputBGGray text-center border-black w-full p-1"
-              >
-                <option value={""} disabled>
-                  Select Weeks
-                </option>
-                <option value={4}>4</option>
-                <option value={5}>5</option>
-                <option value={6}>6</option>
-              </select>
-            </label>
-          </label>
-          <button
-            type="submit"
-            style={{ marginTop: "20px" }}
-            className="bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-lg  mr-4"
-          >
-            Save Plan
-          </button>
-          <button
-            type="button" // Viktig: Legg til type="button" for å forhindre form submit
-            style={{ marginTop: "20px" }}
-            className="bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-lg"
-            onClick={(event) => handleAutofillExercises(event)}
-          >
-            Auto Fill Exercises
-          </button>
-        </div>
+    <div>
+      {/* Render MesocycleDetailsModal */}
+      <MesocycleDetailsModal
+        isOpen={isModalOpen}
+        onRequestClose={() => setIsModalOpen(false)}
+        onSave={handleSaveMesocycleDetails}
+        mesocycleName={mesocycleName}
+        setMesocycleName={setMesocycleName}
+        numberOfWeeks={numberOfWeeks}
+        setNumberOfWeeks={setNumberOfWeeks}
+      />
+      <form onSubmit={handleSubmit}>
         <div
           style={{
             display: "flex",
-            justifyContent: "start",
-            width: "100%",
-            overflow: "auto",
+            flexDirection: "column",
+            alignItems: "center",
           }}
         >
-          {plan.map((day, dayIndex) => (
-            <div
-              key={dayIndex}
-              style={{ margin: "0 5px", flex: 1 }}
-              className="bg-darkestGray border-gray-700 shadow-lg p-1 mb-6  max-w-sm"
+          {" "}
+          <div className="text-center  mb-10 p-4 ">
+            <button
+              type="submit"
+              style={{ marginTop: "20px" }}
+              className="bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-lg  mr-4"
             >
-              <label className="flex items-center justify-between mb-2">
-                <select
-                  value={day.label}
-                  onChange={(e) => handleLabelChange(dayIndex, e.target.value)}
-                  required
-                  className="bg-darkestGray text-center border border-gray-400 w-40 p-1 flex flex-col"
-                >
-                  <option value="">Add a Label</option>
-                  {days.map((dayLabel) => (
-                    <option key={dayLabel} value={dayLabel}>
-                      {dayLabel}
-                    </option>
-                  ))}
-                </select>
-                <button type="button" onClick={() => handleRemoveDay(dayIndex)}>
-                  <FontAwesomeIcon icon={faTrash} />
-                </button>
-              </label>
-              {day.exercises.map((exercise, exerciseIndex) => (
-                <div
-                  key={exerciseIndex}
-                  className="flex justify-between flex-col bg-darkGray border  border-gray-700 max-w p-3 mb-3"
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <div className="flex flex-col">
-                      <label>
-                        Muscle Group:
+              Save Plan
+            </button>
+            <button
+              type="button" // Viktig: Legg til type="button" for å forhindre form submit
+              style={{ marginTop: "20px" }}
+              className="bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-lg"
+              onClick={(event) => handleAutofillExercises(event)}
+            >
+              Auto Fill Exercises
+            </button>
+          </div>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "start",
+              width: "100%",
+              overflow: "auto",
+            }}
+          >
+            {plan.map((day, dayIndex) => (
+              <div
+                key={dayIndex}
+                style={{ margin: "0 5px", flex: 1 }}
+                className="bg-darkestGray border-gray-700 shadow-lg p-1 mb-6  max-w-sm"
+              >
+                <label className="flex items-center justify-between mb-2">
+                  <select
+                    value={day.label}
+                    onChange={(e) =>
+                      handleLabelChange(dayIndex, e.target.value)
+                    }
+                    required
+                    className="bg-darkestGray text-center border border-gray-400 w-40 p-1 flex flex-col"
+                  >
+                    <option value="">Add a Label</option>
+                    {days.map((dayLabel) => (
+                      <option key={dayLabel} value={dayLabel}>
+                        {dayLabel}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveDay(dayIndex)}
+                  >
+                    <FontAwesomeIcon icon={faTrash} />
+                  </button>
+                </label>
+                {day.exercises.map((exercise, exerciseIndex) => (
+                  <div
+                    key={exerciseIndex}
+                    className="flex justify-between flex-col bg-darkGray border  border-gray-700 max-w p-3 mb-3"
+                  >
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="flex flex-col">
+                        <label>
+                          Muscle Group:
+                          <select
+                            value={exercise.muscleGroup}
+                            onChange={(e) =>
+                              handleChange(
+                                dayIndex,
+                                exerciseIndex,
+                                "muscleGroup",
+                                e.target.value
+                              )
+                            }
+                            className="bg-darkestGray text-center border border-gray-400 w-50 rounded p-1 flex flex-col"
+                            required
+                          >
+                            <option value="">Select a muscle group</option>
+                            {AllMuscleGroups.map((group) => (
+                              <option key={group} value={group}>
+                                {group}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleRemoveExercise(dayIndex, exerciseIndex)
+                        }
+                        className="text-white hover:text-red-800 ml-2"
+                        style={{ position: "relative", top: "-1.1rem" }}
+                      >
+                        <FontAwesomeIcon icon={faTrash} />
+                      </button>
+                    </div>
+                    <div className="flex  mb-2">
+                      <label className="flex flex-col w-full">
+                        Exercise:
                         <select
-                          value={exercise.muscleGroup}
+                          value={exercise.exercise}
                           onChange={(e) =>
                             handleChange(
                               dayIndex,
                               exerciseIndex,
-                              "muscleGroup",
+                              "exercise",
                               e.target.value
                             )
                           }
-                          className="bg-darkestGray text-center border border-gray-400 w-50 rounded p-1 flex flex-col"
                           required
+                          className="bg-darkestGray text-center border border-gray-400 w-full rounded p-1 flex flex-grow"
+                          placeholder="Select an "
                         >
-                          <option value="">Select a muscle group</option>
-                          {AllMuscleGroups.map((group) => (
-                            <option key={group} value={group}>
-                              {group}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                    </div>
+                          <option value="" disabled selected hidden>
+                            Select an exercise
+                          </option>
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        handleRemoveExercise(dayIndex, exerciseIndex)
-                      }
-                      className="text-white hover:text-red-800 ml-2"
-                      style={{ position: "relative", top: "-1.1rem" }}
-                    >
-                      <FontAwesomeIcon icon={faTrash} />
-                    </button>
-                  </div>
-                  <div className="flex  mb-2">
-                    <label className="flex flex-col w-full">
-                      Exercise:
-                      <select
-                        value={exercise.exercise}
-                        onChange={(e) =>
-                          handleChange(
-                            dayIndex,
-                            exerciseIndex,
-                            "exercise",
-                            e.target.value
-                          )
-                        }
-                        required
-                        className="bg-darkestGray text-center border border-gray-400 w-full rounded p-1 flex flex-grow"
-                        placeholder="Select an "
-                      >
-                        <option value="" disabled selected hidden>
-                          Select an exercise
-                        </option>
-
-                        {exercises[exercise.muscleGroup]
-                          ?.sort((a, b) => a.name.localeCompare(b.name))
-                          .map((ex) => (
-                            <option key={ex.name} value={ex.name}>
-                              {ex.name}
-                            </option>
-                          ))}
-                        <option
-                          disabled
-                          className="block w-full border-t border-black-300 my-2"
-                        ></option>
-                        <option
-                          disabled
-                          className="block w-full border-t border-black-300 font-bold text-gray-700"
-                        >
-                          Custom Exercises
-                        </option>
-
-                        {customExercises[exercise.muscleGroup]
-                          ?.sort((a, b) => a.name.localeCompare(b.name))
-                          .map((ex) => {
-                            console.log(
-                              `Custom Exercise: ${ex.name}, Type: ${ex.type}`
-                            );
-                            return (
+                          {exercises[exercise.muscleGroup]
+                            ?.sort((a, b) => a.name.localeCompare(b.name))
+                            .map((ex) => (
                               <option key={ex.name} value={ex.name}>
                                 {ex.name}
                               </option>
-                            );
-                          })}
-                      </select>
-                    </label>
-                    {/* <span style={{ marginLeft: "10px" }}>
+                            ))}
+                          <option
+                            disabled
+                            className="block w-full border-t border-black-300 my-2"
+                          ></option>
+                          <option
+                            disabled
+                            className="block w-full border-t border-black-300 font-bold text-gray-700"
+                          >
+                            Custom Exercises
+                          </option>
+
+                          {customExercises[exercise.muscleGroup]
+                            ?.sort((a, b) => a.name.localeCompare(b.name))
+                            .map((ex) => {
+                              console.log(
+                                `Custom Exercise: ${ex.name}, Type: ${ex.type}`
+                              );
+                              return (
+                                <option key={ex.name} value={ex.name}>
+                                  {ex.name}
+                                </option>
+                              );
+                            })}
+                        </select>
+                      </label>
+                      {/* <span style={{ marginLeft: "10px" }}>
                     Priority: {exercise.priority || "None"}
                     </span> */}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleOpenAddExerciseModal}
+                      className="text-sm"
+                    >
+                      Add custom exercise
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleOpenAddExerciseModal}
-                    className="text-sm"
-                  >
-                    Add custom exercise
-                  </button>
-                </div>
-              ))}
+                ))}
+                <button
+                  type="button"
+                  onClick={() => handleAddExercise(dayIndex)}
+                  className="flex w-full justify-between items-center bg-darkGray border border-gray-700 w-55 p-3 mb-3"
+                >
+                  + ADD MUSCLE GROUP
+                </button>
+              </div>
+            ))}
+            <div style={{ flex: "0 0 200px", alignSelf: "flex-start" }}>
               <button
                 type="button"
-                onClick={() => handleAddExercise(dayIndex)}
-                className="flex w-full justify-between items-center bg-darkGray border border-gray-700 w-55 p-3 mb-3"
+                onClick={handleAddDay}
+                className="flex w-full justify-between items-center h-10 bg-darkestGray border border-gray-700 w-55 p-3 mb-3"
+                style={{ height: "", marginTop: "" }}
               >
-                + ADD MUSCLE GROUP
+                + Add a day
               </button>
             </div>
-          ))}
-          <div style={{ flex: "0 0 200px", alignSelf: "flex-start" }}>
-            <button
-              type="button"
-              onClick={handleAddDay}
-              className="flex w-full justify-between items-center h-10 bg-darkestGray border border-gray-700 w-55 p-3 mb-3"
-              style={{ height: "", marginTop: "" }}
-            >
-              + Add a day
-            </button>
           </div>
         </div>
-      </div>
-      <MuscleGroupModal
+        {/* <MuscleGroupModal
         isOpen={isModalOpen}
         onRequestClose={() => setIsModalOpen(false)}
         muscleGroups={AllMuscleGroups}
         onSave={handleModalSave}
         href="../current-workout"
-      />
-      <AddExerciseModal
-        isOpen={isExerciseModalOpen}
-        onRequestClose={() => setIsExerciseModalOpen(false)}
-        onSave={handleSaveCustomExercise}
-      />
-    </form>
+      /> */}
+        <AddExerciseModal
+          isOpen={isExerciseModalOpen}
+          onRequestClose={() => setIsExerciseModalOpen(false)}
+          onSave={handleSaveCustomExercise}
+        />
+      </form>
+    </div>
   );
 };
 

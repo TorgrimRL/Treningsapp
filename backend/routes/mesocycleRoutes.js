@@ -117,6 +117,19 @@ router.get("/mesocycles/:id", authenticateToken, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+// Endpoint to fetch all mesocycle names for the authenticated user
+router.get("/mesocycle-names", authenticateToken, async (req, res) => {
+  try {
+    const userID = req.user.id; // Hent bruker-ID fra autentiseringstokenet
+    const mesocycles =
+      await db.sql`SELECT name FROM mesocycles WHERE user_id = ${userID}`;
+    const names = mesocycles.map((mesocycle) => mesocycle.name);
+    res.status(200).json(names);
+  } catch (err) {
+    console.error("Database error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 // Endpoint to fetch the current workout
 router.get(

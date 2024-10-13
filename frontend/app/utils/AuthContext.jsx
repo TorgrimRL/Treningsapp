@@ -15,9 +15,21 @@ export const AuthProvider = ({ children }) => {
   const checkAuthStatus = async () => {
     try {
       const response = await fetch(`${baseUrl}/check-auth`, {
-        credentials: "include",
+        credentials: "include", // Pass på at cookies inkluderes
       });
-      const data = await response.json();
+
+      console.log("Cookies available:", document.cookie); // Sjekk hvilke cookies som sendes
+
+      if (!response.ok) {
+        console.error("Server error:", response.status);
+        setIsLoggedIn(false);
+        return;
+      }
+
+      const responseText = await response.text();
+      console.log("Response text:", responseText);
+
+      const data = JSON.parse(responseText);
       setIsLoggedIn(data.isLoggedIn);
       console.log("Auth status checked:", data.isLoggedIn);
     } catch (error) {
