@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import Modal from "react-modal";
 
@@ -17,7 +16,55 @@ const MuscleGroupModal = ({ isOpen, onRequestClose, muscleGroups, onSave }) => {
   };
 
   const handleSave = () => {
-    onSave(selectedGroups);
+    if (wantToUsePreviousWeekAsBase && weekAsTarget !== null) {
+      // Lag en kopi av treningsblokken der vi kun endrer den første uken
+      const newExerciseBlock = {
+        ...exerciseBlock,
+        weeks: exerciseBlock.weeks.map((week, weekIndex) => {
+          if (weekIndex === 0) {
+            // Sett target-vekter og reps for første uke basert på valgt uke
+            const targetWeek = exerciseBlock.weeks[weekAsTarget];
+            return {
+              ...week,
+              exercises: week.exercises.map((exercise, exerciseIndex) => {
+                const targetExercise = targetWeek.exercises[exerciseIndex];
+                return {
+                  ...exercise,
+                  sets: exercise.sets.map((set, setIndex) => {
+                    const targetSet = targetExercise.sets[setIndex];
+                    return {
+                      ...set,
+                      targetWeight: targetSet.weight,
+                      targetReps: targetSet.reps,
+                      completed: false, // Nullstill fullføringsstatus for første uke
+                      weight: 0, // Nullstille vekten for ny gjennomføring
+                      reps: 0, // Nullstille repetisjoner for ny gjennomføring
+                    };
+                  }),
+                };
+              }),
+            };
+          } else {
+            // Andre uker beholdes som de er, med blanke sets
+            return {
+              ...week,
+              exercises: week.exercises.map((exercise) => ({
+                ...exercise,
+                sets: exercise.sets.map((set) => ({
+                  ...set,
+                  completed: false, // Nullstill fullføringsstatus
+                  weight: 0, // Nullstille vekten
+                  reps: 0, // Nullstille repetisjoner
+                })),
+              })),
+            };
+          }
+        }),
+      };
+
+      console.log("New exercise block ready to save:", newExerciseBlock);
+      // Her kan du lagre eller bruke newExerciseBlock som ønsket
+    }
     onRequestClose();
   };
 

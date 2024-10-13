@@ -667,15 +667,45 @@ export default function CurrentWorkout() {
     setIndex,
     exerciseIndex
   ) => {
+    // Week index er ikke nullindeksert, så sjekk om vi er i uke 1 (weekIndex === 1)
     if (weekIndex === 1) {
-      return "noEvaluation";
+      if (!set.targetReps || !set.targetWeight) {
+        // Hvis vi ikke har target verdier, returner noIndicator
+        return "noIndicator";
+      } else if (set.reps === 0 && set.weight === 0) {
+        // Hvis vi har target verdier men reps og vekt ikke er satt, oppdater dem
+        setSets((prev) => ({
+          ...prev,
+          [dayIndex]: {
+            ...prev[dayIndex],
+            [exerciseIndex]: prev[dayIndex][exerciseIndex].map((s, sIndex) =>
+              sIndex === setIndex
+                ? {
+                    ...s,
+                    reps: parseInt(set.targetReps, 10),
+                    weight: parseFloat(set.targetWeight),
+                    completed: false,
+                  }
+                : s
+            ),
+          },
+        }));
+        return "noIndicator"; // Returner noIndicator til verdiene er oppdatert
+      }
     }
+
+    // Fortsett med evalueringen bare hvis reps og vekt er logget
+    if (set.reps === 0) {
+      return "noIndicator";
+    }
+
     const incrementSize = exerciseType === "dumbbell" ? 2 : 2.5;
     const targetWeight = parseFloat(set.targetWeight);
     const targetReps = parseInt(set.targetReps, 10);
     const currentWeight = parseFloat(set.weight);
+    const currentReps = parseInt(set.reps, 10);
 
-    const currentReps = set.reps;
+    // Hvis reps inneholder RIR-verdier, skal vi ikke evaluere statusen
     if (
       currentReps === "3 RIR" ||
       currentReps === "2 RIR" ||
