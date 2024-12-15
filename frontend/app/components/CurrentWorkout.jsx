@@ -12,6 +12,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import NoteModal from "./NoteModal";
 import ProgressBar from "./ProgressBar";
+import ChooseExerciseModal from "./ChooseExerciseModal";
 
 Modal.setAppElement("#root");
 
@@ -31,6 +32,8 @@ export default function CurrentWorkout() {
   const [currentNote, setCurrentNote] = useState("");
   const [currentExercise, setCurrentExercise] = useState(null);
   const [applyToFutureWeeks, setApplyToFutureWeeks] = useState(false);
+  const [isChooseExerciseModalOpen, setIsChooseExerciseModalOpen] =
+    useState(false);
   const baseUrl = import.meta.env.VITE_API_URL;
 
   const calculateProgress = () => {
@@ -215,6 +218,72 @@ export default function CurrentWorkout() {
       }
 
       setIsNoteModalOpen(false);
+    }
+  };
+  const handleSaveExercise = (selectedExerciseId, applyToFutureWeeks) => {
+    if (currentExercise) {
+      const { dayIndex, exerciseIndex } = currentExercise;
+
+      const updatedMesocycle = {
+        ...currentMesocycle,
+        plan: currentMesocycle.plan.map((day, dIndex) => {
+          if (
+            applyToFutureWeeks &&
+            dIndex % currentMesocycle.daysPerWeek ===
+              dayIndex % currentMesocycle.daysPerWeek
+          ) {
+            return {
+              ...day,
+              exercises: day.exercises.map((exercise, eIndex) =>
+                eIndex === exerciseIndex
+                  ? { ...exercise, exercise: selectedExerciseId }
+                  : exercise
+              ),
+            };
+          }
+
+          if (dIndex === dayIndex) {
+            return {
+              ...day,
+              exercises: day.exercises.map((exercise, eIndex) =>
+                eIndex === exerciseIndex
+                  ? { ...exercise, exercise: selectedExerciseId }
+                  : exercise
+              ),
+            };
+          }
+
+          return day;
+        }),
+      };
+
+      setCurrentMesocycle(updatedMesocycle);
+
+      // Send oppdatering til server
+      (async () => {
+        try {
+          const response = await fetch(
+            `${baseUrl}/mesocycles/${currentMesocycle.id}`,
+            {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify(updatedMesocycle),
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error("Failed to update mesocycle");
+          }
+
+          console.log("Mesocycle updated successfully");
+        } catch (error) {
+          console.error("Error updating mesocycle:", error);
+        }
+      })();
+
+      // Lukk modalen
+      setIsChooseExerciseModalOpen(false);
     }
   };
 
@@ -540,6 +609,7 @@ export default function CurrentWorkout() {
   };
 
   const openCalendarModal = () => setIsCalendarModalOpen(true);
+  const openChooseExerciseModal = () => setIsChooseExerciseModalOpen(true);
 
   useEffect(() => {
     const fetchMesocycle = async () => {
@@ -810,6 +880,21 @@ export default function CurrentWorkout() {
                               className=" block text-white focus:outline-none "
                             >
                               Add note
+                            </button>
+                          </li>
+                          <li className="block px-4 py-2 hover:!bg-darkestGray">
+                            <button
+                              onClick={(event) => {
+                                event.stopPropagation();
+
+                                setCurrentExercise({
+                                  dayIndex: currentDayIndex,
+                                  exerciseIndex: exIndex,
+                                });
+                                setIsChooseExerciseModalOpen(true);
+                              }}
+                            >
+                              Change exercise
                             </button>
                           </li>
                         </ul>
@@ -1095,6 +1180,12 @@ export default function CurrentWorkout() {
         note={currentNote}
         onNoteChange={handleNoteChange}
         onSave={handleSaveNote}
+      />
+      <ChooseExerciseModal
+        isOpen={isChooseExerciseModalOpen}
+        onRequestClose={() => setIsChooseExerciseModalOpen(false)}
+        onSave={handleSaveExercise}
+        currentExercise={currentExercise}
       />
     </div>
   );
