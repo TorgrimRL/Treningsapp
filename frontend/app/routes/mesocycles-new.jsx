@@ -24,6 +24,7 @@ export default function NewMesocycle() {
     try {
       const token = getCookie("token");
       console.log("Retrieved token:", token);
+      console.log("Mesocycle object in handleFormSubmit:", mesocycle);
       const response = await fetch(`${baseUrl}/mesocycles`, {
         method: "POST",
         headers: {
