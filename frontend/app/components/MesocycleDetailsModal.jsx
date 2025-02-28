@@ -27,6 +27,7 @@ const MesocycleDetailsModal = ({
         if (response.ok) {
           const data = await response.json();
           setExistingNames(data);
+          console.log(data);
         } else {
           console.error("Failed to fetch mesocycle names");
         }
@@ -108,7 +109,7 @@ const MesocycleDetailsModal = ({
         </div>
         <div className="flex justify-end">
           <button
-            onClick={onSave}
+            onClick={() => onSave(mesocycleName, numberOfWeeks)}
             className={`
                               flex items-center justify-center bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-lg"
 

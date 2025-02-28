@@ -7,7 +7,6 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import Modal from "react-modal";
-import MuscleGroupModal from "./MuscleGroupModal";
 import { useLocation } from "@remix-run/react";
 import AddExerciseModal from "./AddExerciseModal";
 import MesocycleDetailsModal from "./MesocycleDetailsModal";
@@ -76,6 +75,9 @@ const MesocycleForm = ({ onSubmit }) => {
     fetchCustomExercises();
   }, []);
   const handleSaveMesocycleDetails = (name, weeks) => {
+    console.log(name);
+    console.log(weeks);
+
     setMesocycleName(name);
     setNumberOfWeeks(weeks);
     setIsModalOpen(false);
@@ -331,7 +333,7 @@ const MesocycleForm = ({ onSubmit }) => {
               Save Plan
             </button>
             <button
-              type="button" // Viktig: Legg til type="button" for å forhindre form submit
+              type="button"
               style={{ marginTop: "20px" }}
               className="bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-lg"
               onClick={(event) => handleAutofillExercises(event)}
