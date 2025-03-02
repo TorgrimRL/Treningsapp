@@ -86,7 +86,7 @@ router.put("/mesocycles/:id", authenticateToken, async (req, res) => {
     const result = await db.sql`
       UPDATE mesocycles
       SET name = ${name}, weeks = ${weeks}, plan = ${JSON.stringify(plan)}, 
-          daysPerWeek = ${daysPerWeek}, isCurrent = ${isCurrent}, 
+          daysPerWeek = ${daysPerWeek}, isCurrent = ${isCurrent ? 1 : 0}, 
           completedDate = ${newCompletedDate}
       WHERE id = ${id} AND user_id = ${userID}
     `;
