@@ -1,6 +1,8 @@
 # Treningsappen
 
-Treningsappen, hostet på [setoptimizer.com](https://setoptimizer.com), er en webapplikasjon utviklet for å lære meg webutvikling sommeren 2025 etter første året på Informatikk ved Universitetet i Tromsø. Appen er primært rettet mot meg selv og andre erfarne treningsentusiaster som trener med vekter på treningssenter. NB! Databaseleverandøren har bestemt seg for å sette databasen i dvale om den ikke blir brukt på 12 timerog dette fører til at funksjonalitet som involverer databasen ikke funker før den har våknet opp noe som tar et minutt.
+Treningsappen, hostet på [setoptimizer.com](https://setoptimizer.com), er en webapplikasjon utviklet for å lære meg webutvikling sommeren 2025 etter første året på Informatikk ved Universitetet i Tromsø. Appen er primært rettet mot meg selv og andre erfarne treningsentusiaster som trener med vekter på treningssenter. 
+
+OBS! Databaseleverandøren har bestemt seg for å sette databasen i dvale om den ikke blir brukt på 12 timer og dette fører til at funksjonalitet som involverer databasen ikke funker før den har våknet opp noe som tar et minutt.
 
 ## Hva appen gjør
 
