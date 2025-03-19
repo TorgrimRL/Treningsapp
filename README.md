@@ -19,4 +19,4 @@ Prosjektet er delt opp i to hoveddeler:
 - **Backend:**  
   En Node.js Express-server med en SQLite-database. Backenden håndterer forretningslogikk, datalagring, API-kall og generering av progresjonsmål basert på treningsdata.
 
-Denne todelte arkitekturen (frontend/back-end) gir en klar separasjon mellom presentasjon og logikk, noe som gjør appen modulær, lett vedlikeholdbar og enklere å videreutvikle.
+
