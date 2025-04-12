@@ -9,6 +9,8 @@ import {
 import Navbar from "./components/Navbar";
 import "./tailwind.css";
 import { AuthProvider } from "./utils/AuthContext";
+import { WaitModalProvider } from "./components/WaitModalContext";
+import GlobalWaitModal from "./components/GlobalWaitModal";
 
 export default function Root() {
   const [isWarningVisible, setIsWarningVisible] = useState(true);
@@ -22,17 +24,20 @@ export default function Root() {
         <Links />
       </head>
       <body className="bg-darkestGray text-white">
-        <AuthProvider>
-          <Navbar />
-          <div id="root">
-            <main>
-              <Outlet />
-            </main>
-            <footer className="text-gray-400">
-              <p>&copy; 2024 SETOPTIMIZER.COM</p>
-            </footer>
-          </div>
-        </AuthProvider>
+        <WaitModalProvider>
+          <AuthProvider>
+            <Navbar />
+            <div id="root">
+              <main>
+                <Outlet />
+              </main>
+              <footer className="text-gray-400">
+                <p>&copy; 2024 SETOPTIMIZER.COM</p>
+              </footer>
+            </div>
+            <GlobalWaitModal />
+          </AuthProvider>
+        </WaitModalProvider>
         <ScrollRestoration />
         <Scripts />
 

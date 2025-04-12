@@ -10,6 +10,7 @@ import Modal from "react-modal";
 import { useLocation } from "@remix-run/react";
 import AddExerciseModal from "./AddExerciseModal";
 import MesocycleDetailsModal from "./MesocycleDetailsModal";
+import { useApiFetch } from "../utils/apiFetch";
 
 Modal.setAppElement("#root");
 
@@ -38,35 +39,32 @@ const MesocycleForm = ({ onSubmit }) => {
   const [isExerciseModalOpen, setIsExerciseModalOpen] = useState(false);
   const [customExercises, setCustomExercises] = useState({});
   const baseUrl = import.meta.env.VITE_API_URL;
-
+  const { apiFetch } = useApiFetch();
   useEffect(() => {
     const fetchCustomExercises = async () => {
       try {
-        const response = await fetch(`${baseUrl}/exercises`, {
+        const { ok, data, hadSleep } = await apiFetch(`${baseUrl}/exercises`, {
           method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           credentials: "include",
         });
-        if (response.ok) {
-          const data = await response.json();
-          setCustomExercises(
-            data.reduce((acc, exercise) => {
-              if (!acc[exercise.muscleGroup]) {
-                acc[exercise.muscleGroup] = [];
-              }
-              acc[exercise.muscleGroup].push({
-                name: exercise.name,
-                type: exercise.type,
-                videoLink: exercise.videoLink,
-              });
-              return acc;
-            }, {})
-          );
+        if (ok) {
+          const groupedExercises = data.reduce((acc, exercise) => {
+            if (!acc[exercise.muscleGroup]) {
+              acc[exercise.muscleGroup] = [];
+            }
+            acc[exercise.muscleGroup].push({
+              name: exercise.name,
+              type: exercise.type,
+              videoLink: exercise.videoLink,
+            });
+            return acc;
+          }, {});
+          setCustomExercises(groupedExercises);
         } else {
-          const errorText = await response.text();
-          throw new Error(`Failed to fetch exercises: ${errorText}`);
+          throw new Error(
+            `Failed to fetch exercises: ${data.message || "Unknown error"}`
+          );
         }
       } catch (error) {
         console.error("Error fetching exercises", error);
@@ -106,20 +104,18 @@ const MesocycleForm = ({ onSubmit }) => {
       });
 
       try {
-        const response = await fetch(`${baseUrl}/exercises`, {
+        const { ok, data, hadSleep } = await apiFetch(`${baseUrl}/exercises`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify(newExercise),
         });
-        if (!response.ok) {
-          const errorText = await response.text();
+        if (!ok) {
+          const errorText = data.message || "Unknown error";
           throw new Error(`Failed to update customexercises: ${errorText}`);
         }
       } catch (error) {
-        console.error("Error trying to send exercise to backend");
+        console.error("Error trying to send exercise to backend", error);
       }
     }
   };

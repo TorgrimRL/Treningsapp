@@ -15,6 +15,8 @@ import {
   csrfTokenRoute,
 } from "./middleware.js";
 import dotenv from "dotenv";
+import { safeQuery } from "./utils/safeQuery.js";
+import { buildResponsePayload } from "./utils/buildResponsePayload.js";
 dotenv.config();
 
 const app = express();
@@ -74,18 +76,19 @@ app.get("/api/register", (req, res) => {
 app.post("/api/register", async (req, res) => {
   try {
     const { username, password } = req.body;
-
-    const user = await db.sql`SELECT * FROM users WHERE username = ${username}`;
-
-    if (user.length > 0) {
+    const { result: userResult, hadRetry: selectHadRetry } =
+      await safeQuery`SELECT * FROM users WHERE username = ${username}`;
+    if (userResult.length > 0) {
       return res.status(400).json({ message: "Username already exists" });
     }
-
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    await db.sql`INSERT INTO users (username, password) VALUES (${username}, ${hashedPassword})`;
-
-    res.status(201).json({ message: "User registered" });
+    const { hadRetry: insertHadRetry } =
+      await safeQuery`INSERT INTO users (username, password) VALUES (${username}, ${hashedPassword})`;
+    const hadRetry = selectHadRetry || insertHadRetry;
+    const responsePayload = buildResponsePayload(hadRetry, {
+      message: "User registered",
+    });
+    res.status(201).json(responsePayload);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -94,9 +97,8 @@ app.post("/api/register", async (req, res) => {
 app.post("/api/login", async (req, res) => {
   try {
     const { username, password } = req.body;
-    const userResult =
-      await db.sql`SELECT * FROM users WHERE username = ${username}`;
-
+    const { result: userResult, hadRetry } =
+      await safeQuery`SELECT * FROM users WHERE username = ${username}`;
     const user = userResult[0];
     if (!user) {
       console.log("Username not found");
@@ -109,7 +111,6 @@ app.post("/api/login", async (req, res) => {
     }
     const token = jwt.sign({ id: user.id }, secretKey, { expiresIn: "30d" });
     console.log("Generated Token:", token);
-
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -117,8 +118,8 @@ app.post("/api/login", async (req, res) => {
       maxAge: 604800000,
       path: "/",
     });
-
-    res.json({ token });
+    const responsePayload = buildResponsePayload(hadRetry, { token });
+    res.json(responsePayload);
   } catch (err) {
     console.log("Database Error:", err);
     return res.status(500).send(err.message);
@@ -173,11 +174,13 @@ app.delete(
   async (req, res) => {
     try {
       const { username } = req.params;
-      await db.sql`DELETE FROM users WHERE username = ${username}`;
-      res.status(200).json({ message: "User deleted successfully" });
+      const { hadRetry } =
+        await safeQuery`DELETE FROM users WHERE username = ${username}`;
+      const responsePayload = buildResponsePayload(hadRetry);
+      res.status(200).json(responsePayload);
     } catch (error) {
       console.log("Database Error");
-      res.status(500).json({ message: err.message });
+      res.status(500).json({ message: error.message });
     }
   }
 );

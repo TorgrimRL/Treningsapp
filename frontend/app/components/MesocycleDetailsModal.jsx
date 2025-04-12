@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Modal from "react-modal";
-
+import { useApiFetch } from "../utils/apiFetch";
 const MesocycleDetailsModal = ({
   isOpen,
   onSave,
@@ -13,19 +13,20 @@ const MesocycleDetailsModal = ({
   const [existingNames, setExistingNames] = useState([]);
   const [isNameAvailable, setIsNameAvailable] = useState(true);
   const baseUrl = import.meta.env.VITE_API_URL;
+  const { apiFetch } = useApiFetch();
 
   useEffect(() => {
     const fetchMesocycleNames = async () => {
       try {
-        const response = await fetch(`${baseUrl}/mesocycle-names`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-        });
-        if (response.ok) {
-          const data = await response.json();
+        const { ok, data, hadSleep } = await apiFetch(
+          `${baseUrl}/mesocycle-names`,
+          {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+          }
+        );
+        if (ok) {
           setExistingNames(data);
           console.log(data);
         } else {
@@ -38,6 +39,7 @@ const MesocycleDetailsModal = ({
 
     fetchMesocycleNames();
   }, []);
+
   const handleMesocycleNameChange = (name) => {
     setMesocycleName(name);
     if (

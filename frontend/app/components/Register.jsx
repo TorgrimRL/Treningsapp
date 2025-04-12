@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useApiFetch } from "../utils/apiFetch";
 
 export default function Register() {
   const [username, setUsername] = useState("");
@@ -8,6 +9,8 @@ export default function Register() {
   const [message, setMessage] = useState("");
   const navigate = useNavigate();
   const baseUrl = import.meta.env.VITE_API_URL;
+  const { apiFetch } = useApiFetch();
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -17,35 +20,25 @@ export default function Register() {
     }
 
     try {
-      const response = await fetch(`${baseUrl}/register`, {
+      const { ok, data, hadSleep } = await apiFetch(`${baseUrl}/register`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ username, password }),
       });
 
-      console.log("Response:", response);
+      console.log("Response:", data);
       console.log(import.meta.env.VITE_API_URL);
 
-      if (!response.ok) {
-        const text = await response.text();
-        console.log("Response text: ", text);
-        try {
-          const data = JSON.parse(text);
-          setMessage(`Registration failed: ${data.message}`);
-        } catch (error) {
-          setMessage(`Registration failed: ${text}`);
-        }
+      if (!ok) {
+        setMessage(`Registration failed: ${data.message || "Unknown error"}`);
         return;
       }
-      const data = await response.json();
-      setMessage("Registration successfull, you can now login.");
+      setMessage("Registration successful, you can now login.");
       navigate("/login");
     } catch (error) {
       console.error("Error during registration", error);
-      setMessage("An error occured during registration");
+      setMessage("An error occurred during registration");
     }
   };
 
