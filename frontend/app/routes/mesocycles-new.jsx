@@ -3,10 +3,12 @@ import MesocycleForm from "../components/MesocycleForm";
 import { getCookie } from "../utils/cookies";
 import { useNavigate } from "@remix-run/react";
 import ProtectedRoute from "../components/ProtectedRoute";
+import { useApiFetch } from "../utils/apiFetch";
 
 export default function NewMesocycle() {
   const [csrfToken, setCSRFToken] = useState("");
   const baseUrl = import.meta.env.VITE_API_URL;
+  const { apiFetch } = useApiFetch();
   const navigate = useNavigate();
   useEffect(() => {
     const fetchCsrfToken = async () => {
@@ -25,7 +27,12 @@ export default function NewMesocycle() {
       const token = getCookie("token");
       console.log("Retrieved token:", token);
       console.log("Mesocycle object in handleFormSubmit:", mesocycle);
-      const response = await fetch(`${baseUrl}/mesocycles`, {
+
+      const {
+        ok: postOk,
+        data: postData,
+        hadSleep: postHadSleep,
+      } = await apiFetch(`${baseUrl}/mesocycles`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -36,27 +43,33 @@ export default function NewMesocycle() {
         body: JSON.stringify(mesocycle),
       });
 
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
+      if (!postOk) {
+        throw new Error(
+          "Failed to create mesocycle: " + (postData.message || "Unknown error")
+        );
       }
+      console.log("Mesocycle created:", postData);
 
-      const result = await response.json();
-      console.log("Mesocycle created:", result);
-      // Fetch den nylig opprettede mesocyclen
-      const fetchResponse = await fetch(`${baseUrl}/mesocycles/${result.id}`, {
+      const {
+        ok: getOk,
+        data: getData,
+        hadSleep: getHadSleep,
+      } = await apiFetch(`${baseUrl}/mesocycles/${postData.id}`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
         credentials: "include",
       });
 
-      if (!fetchResponse.ok) {
-        throw new Error("Failed to fetch the new mesocycle");
+      if (!getOk) {
+        throw new Error(
+          "Failed to fetch the new mesocycle: " +
+            (getData.message || "Unknown error")
+        );
       }
-
-      const mesocycleData = await fetchResponse.json();
-      console.log("Fetched new mesocycle:", mesocycleData);
+      console.log("Fetched new mesocycle:", getData);
 
       navigate("/currentworkout");
     } catch (error) {

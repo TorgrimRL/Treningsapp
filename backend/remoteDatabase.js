@@ -2,6 +2,7 @@ import { Database } from "@sqlitecloud/drivers";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+import { safeQuery } from "./utils/safeQuery.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -9,7 +10,6 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, ".env") });
 
 const dbUri = process.env.DB_URI;
-console.log("DB_URI:", dbUri);
 
 const db = new Database(dbUri);
 
@@ -18,7 +18,7 @@ db.sql`USE DATABASE database.sqlite`
     console.log("Database selected successfully");
 
     return Promise.all([
-      db.sql`CREATE TABLE IF NOT EXISTS users (
+      safeQuery`CREATE TABLE IF NOT EXISTS users (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               username TEXT UNIQUE,
               password TEXT
@@ -26,7 +26,7 @@ db.sql`USE DATABASE database.sqlite`
         .then(() => console.log("Users table created"))
         .catch((err) => console.error("Error creating Users table:", err)),
 
-      db.sql`CREATE TABLE IF NOT EXISTS Mesocycles (
+      safeQuery`CREATE TABLE IF NOT EXISTS Mesocycles (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               name TEXT,
               weeks INTEGER,
@@ -40,7 +40,7 @@ db.sql`USE DATABASE database.sqlite`
         .then(() => console.log("Mesocycles table created"))
         .catch((err) => console.error("Error creating Mesocycles table:", err)),
 
-      db.sql`CREATE TABLE IF NOT EXISTS exercises (
+      safeQuery`CREATE TABLE IF NOT EXISTS exercises (
               id INTEGER PRIMARY KEY AUTOINCREMENT,
               name TEXT,
               type TEXT,

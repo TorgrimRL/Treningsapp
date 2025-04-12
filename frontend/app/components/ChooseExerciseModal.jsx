@@ -5,26 +5,27 @@ import {
   exercises as predefinedExercises,
   muscleGroups as predefinedMuscleGroups,
 } from "../constants/constants";
+import { useApiFetch } from "../utils/apiFetch";
 
 const ChooseExerciseModal = ({ isOpen, onRequestClose, onSave }) => {
   const [selectedExerciseId, setSelectedExerciseId] = useState(null);
   const [availableExercises, setAvailableExercises] = useState({});
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState("");
   const [applyToFutureWeeks, setApplyToFutureWeeks] = useState(false);
-
+  const { apiFetch } = useApiFetch();
   const baseUrl = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     const fetchExercises = async () => {
       try {
-        const response = await fetch(`${baseUrl}/exercises`, {
+        const { ok, data, hadSleep } = await apiFetch(`${baseUrl}/exercises`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
         });
 
-        if (response.ok) {
-          const customExercises = await response.json();
+        if (ok) {
+          const customExercises = data;
           const combinedExercises = { ...predefinedExercises };
 
           customExercises.forEach((exercise) => {

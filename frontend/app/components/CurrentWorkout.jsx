@@ -13,7 +13,7 @@ import {
 import NoteModal from "./NoteModal";
 import ProgressBar from "./ProgressBar";
 import ChooseExerciseModal from "./ChooseExerciseModal";
-
+import { useApiFetch } from "../utils/apiFetch";
 Modal.setAppElement("#root");
 
 export default function CurrentWorkout() {
@@ -35,6 +35,7 @@ export default function CurrentWorkout() {
   const [isChooseExerciseModalOpen, setIsChooseExerciseModalOpen] =
     useState(false);
   const baseUrl = import.meta.env.VITE_API_URL;
+  const { apiFetch } = useApiFetch();
 
   const calculateProgress = () => {
     if (!sets[currentDayIndex]) {
@@ -103,21 +104,28 @@ export default function CurrentWorkout() {
       setCurrentMesocycle(updatedMesocycle);
       (async () => {
         try {
-          const response = await fetch(
+          const { ok, data, hadSleep } = await apiFetch(
             `${baseUrl}/mesocycles/${currentMesocycle.id}`,
             {
               method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-              },
+              headers: { "Content-Type": "application/json" },
               credentials: "include",
               body: JSON.stringify(updatedMesocycle),
             }
           );
 
-          if (!response.ok) {
-            const errorText = await response.text();
+          if (!ok) {
+            const errorText = data.message || "Unknown error";
             throw new Error(`Failed to update mesocycle: ${errorText}`);
+          }
+
+          if (hadSleep) {
+            console.log(
+              "Database went to sleep, so the update took extra time."
+            );
+            // Ventemodalen vil trigges automatisk via apiFetch.
+            // Ingen redirect eller videre handling trigges her.
+            return;
           }
 
           console.log("Successfully updated mesocycle");
@@ -197,21 +205,25 @@ export default function CurrentWorkout() {
       };
 
       try {
-        const response = await fetch(
+        const { ok, data, hadSleep } = await apiFetch(
           `${baseUrl}/mesocycles/${currentMesocycle.id}`,
           {
             method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             credentials: "include",
             body: JSON.stringify(updatedMesocycle),
           }
         );
-        if (!response.ok) {
-          const errorText = await response.text();
+
+        if (!ok) {
+          const errorText = data.message || "Unknown error";
           throw new Error(`Failed to update mesocycle: ${errorText}`);
         }
+
+        if (hadSleep) {
+          console.log("Database was sleeping; update took extra time");
+        }
+
         setCurrentMesocycle(updatedMesocycle);
       } catch (error) {
         console.error("Error updating mesocycle:", error);
@@ -262,7 +274,7 @@ export default function CurrentWorkout() {
       // Send oppdatering til server
       (async () => {
         try {
-          const response = await fetch(
+          const { ok, data, hadSleep } = await apiFetch(
             `${baseUrl}/mesocycles/${currentMesocycle.id}`,
             {
               method: "PUT",
@@ -272,17 +284,25 @@ export default function CurrentWorkout() {
             }
           );
 
-          if (!response.ok) {
-            throw new Error("Failed to update mesocycle");
+          if (!ok) {
+            const errorText = data.message || "Unknown error";
+            throw new Error(`Failed to update mesocycle: ${errorText}`);
           }
 
-          console.log("Mesocycle updated successfully");
+          if (hadSleep) {
+            console.log(
+              "Database went to sleep, so the update took extra time."
+            );
+
+            return;
+          }
+
+          console.log("Successfully updated mesocycle");
         } catch (error) {
           console.error("Error updating mesocycle:", error);
         }
       })();
 
-      // Lukk modalen
       setIsChooseExerciseModalOpen(false);
     }
   };
@@ -493,22 +513,25 @@ export default function CurrentWorkout() {
       );
 
       try {
-        const response = await fetch(
+        const { ok, data, hadSleep } = await apiFetch(
           `${baseUrl}/mesocycles/${currentMesocycle.id}`,
           {
             method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             credentials: "include",
             body: JSON.stringify(updatedMesocycle),
           }
         );
 
-        if (!response.ok) {
-          const errorText = await response.text();
+        if (!ok) {
+          const errorText = data.message || "Unknown error";
           console.error("Error response from server:", errorText);
           throw new Error(`Failed to update mesocycle: ${errorText}`);
+        }
+
+        // Du kan logge hadSleep hvis du ønsker, men her fortsetter vi uansett
+        if (hadSleep) {
+          console.log("Database was sleeping, update took extra time.");
         }
 
         console.log("Successfully updated mesocycle with new sets");
@@ -582,22 +605,24 @@ export default function CurrentWorkout() {
       );
 
       try {
-        const response = await fetch(
+        const { ok, data, hadSleep } = await apiFetch(
           `${baseUrl}/mesocycles/${currentMesocycle.id}`,
           {
             method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
+            headers: { "Content-Type": "application/json" },
             credentials: "include",
             body: JSON.stringify(updatedMesocycle),
           }
         );
 
-        if (!response.ok) {
-          const errorText = await response.text();
+        if (!ok) {
+          const errorText = data.message || "Unknown error";
           console.error("Error response from server:", errorText);
           throw new Error(`Failed to update mesocycle: ${errorText}`);
+        }
+
+        if (hadSleep) {
+          console.log("Database was sleeping; update took extra time.");
         }
 
         console.log("Successfully updated mesocycle after removing set");
@@ -614,11 +639,13 @@ export default function CurrentWorkout() {
   useEffect(() => {
     const fetchMesocycle = async () => {
       try {
-        const response = await fetch(`${baseUrl}/current-workout`, {
-          method: "GET",
-          credentials: "include",
-        });
-        const data = await response.json();
+        const { ok, data, hadSleep } = await apiFetch(
+          `${baseUrl}/current-workout`,
+          {
+            method: "GET",
+            credentials: "include",
+          }
+        );
         console.log("Mesocycle Data:", data);
         setCurrentMesocycle(data);
 
@@ -665,17 +692,16 @@ export default function CurrentWorkout() {
 
   const handleDayClick = async (index) => {
     try {
-      const response = await fetch(`${baseUrl}/current-workout`, {
-        method: "GET",
-        credentials: "include",
-      });
-
-      const data = await response.json();
+      const { ok, data, hadSleep } = await apiFetch(
+        `${baseUrl}/current-workout`,
+        {
+          method: "GET",
+          credentials: "include",
+        }
+      );
       console.log("Updated Mesocycle Data:", data);
-
       setCurrentMesocycle(data);
-      setCurrentDayIndex(index);
-
+      setCurrentDayIndex(index); // index bør være definert i konteksten
       const setsData = {};
       data.plan.forEach((day, dayIndex) => {
         setsData[dayIndex] = {};
@@ -684,7 +710,6 @@ export default function CurrentWorkout() {
         });
       });
       setSets(setsData);
-
       setIsCalendarModalOpen(false);
     } catch (error) {
       console.error("Error fetching workout data:", error);

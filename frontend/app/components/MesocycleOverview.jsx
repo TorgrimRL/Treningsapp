@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEllipsisV } from "@fortawesome/free-solid-svg-icons";
 import RedoExerciseBlockModal from "./RedoExerciseBlockModal";
+import { useApiFetch } from "../utils/apiFetch";
 
 const MesocycleOverview = () => {
   const [mesocycles, setMesocycles] = useState([]);
@@ -11,7 +12,7 @@ const MesocycleOverview = () => {
   const [isRedoModalOpen, setIsRedoModalOpen] = useState(false);
   const menuRef = useRef(null);
   const baseUrl = import.meta.env.VITE_API_URL;
-
+  const { apiFetch } = useApiFetch();
   const sortPlansByCurrent = (plans) => {
     const currentPlans = plans.filter((plan) => plan.isCurrent);
     const nonCurrentPlans = plans.filter(
@@ -46,13 +47,15 @@ const MesocycleOverview = () => {
   useEffect(() => {
     const fetchMesocycles = async () => {
       try {
-        const response = await fetch(`${baseUrl}/mesocycles`, {
+        const { ok, data, hadSleep } = await apiFetch(`${baseUrl}/mesocycles`, {
           method: "GET",
           credentials: "include",
         });
-        const data = await response.json();
-
-        setMesocycles(data);
+        if (ok) {
+          setMesocycles(data);
+        } else {
+          throw new Error(data.message || "Failed to fetch mesocycles");
+        }
       } catch (error) {
         console.error("Error fetching mesocycles:", error);
       }
