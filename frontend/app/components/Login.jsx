@@ -66,6 +66,7 @@ export default function Login() {
           Username:
           <input
             type="text"
+            className="bg-inputBGGray"
             placeholder="Enter your username here"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
@@ -81,6 +82,7 @@ export default function Login() {
           Password:
           <input
             type="password"
+            className="bg-inputBGGray"
             placeholder="Enter your password here"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
