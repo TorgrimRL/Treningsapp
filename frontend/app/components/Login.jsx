@@ -44,7 +44,7 @@ export default function Login() {
       }
     } catch (error) {
       console.error("Error during login", error);
-      setMessage("An error occurred during login");
+      setMessage("An error occurred during login, most likely need to wake up database. Please try again in one minute");
     } finally {
       setLoading(false);
     }
