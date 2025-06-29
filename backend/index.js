@@ -67,7 +67,7 @@ app.get("/api/", (req, res) => {
   res.send("Welcome to the API");
 });
 
-app.get("api/ping", async (req, res) => {
+app.get("/api/ping", async (req, res) => {
   try {
     await safeQuery`SELECT 1`;
     res.status(200).send("OK");
