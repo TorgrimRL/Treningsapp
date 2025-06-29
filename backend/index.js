@@ -70,11 +70,11 @@ app.get("/api/", (req, res) => {
 app.get("/api/ping", async (req, res) => {
   try {
     await safeQuery`SELECT 1`;
-    res.status(200).send("OK");
-    console.log($`${new Date().toISOString()} – ping OK`);
+    console.log(`${new Date().toISOString()} – ping OK`);
+    return res.status(200).send("OK");
   } catch (err) {
     console.error(`${new Date().toISOString()} – ping FEILET:`, err);
-    res.status(500).json({ message: err.message });
+    return res.status(500).json({ message: err.message });
   }
 });
 
