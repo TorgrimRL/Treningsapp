@@ -67,10 +67,15 @@ app.get("/api/", (req, res) => {
   res.send("Welcome to the API");
 });
 
-app.get("/api/register", (req, res) => {
-  res.send(
-    "This is the register page. Use a POST request to register a new user."
-  );
+app.get("api/ping", async (req, res) => {
+  try {
+    await safeQuery`SELECT 1`;
+    res.status(200).send("OK");
+    console.log($`${new Date().toISOString()} – ping OK`);
+  } catch (err) {
+    console.error(`${new Date().toISOString()} – ping FEILET:`, err);
+    res.status(500).json({ message: err.message });
+  }
 });
 
 app.post("/api/register", async (req, res) => {
