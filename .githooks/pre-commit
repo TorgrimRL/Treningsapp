@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "Running backend tests before commit..."
+
+cd backend
+npm test -- --runInBand

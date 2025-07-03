@@ -1,69 +1,71 @@
-import request from 'supertest';
-import app from '../server';
-import bcrypt from 'bcrypt';
-import db from '../database';
+import { jest } from "@jest/globals";
+import request from "supertest";
+import { createTestDb } from "../testHelpers/testDb.js";
+import { loadAppWithQuery } from "../testHelpers/loadApp.js";
+import { getCsrfToken, registerAndLogin } from "../testHelpers/api.js";
 
-describe('CSRF Protection', () => {
-    let token;
-    const cookieJar = request.agent(app);
+describe("CSRF current behavior regression", () => {
+  let db;
+  let app;
+  let logSpy;
+  let errorSpy;
 
-    beforeAll(async () => {
-        // Hash passordet før innsending til databasen
-        const hashedPassword = await bcrypt.hash('newpassword', 10);
+  beforeEach(async () => {
+    logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
+    errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    db = await createTestDb();
+    app = await loadAppWithQuery(db.query);
+  });
 
-        try {
-            // Sett opp en bruker før testing
-            await new Promise((resolve, reject) => {
-                db.run('INSERT INTO users (username, password) VALUES (?, ?)', ['newuser', hashedPassword], function(err) {
-                    if (err) {
-                        if (err.message.includes('UNIQUE constraint failed')) {
-                            console.log('User already exists. Skipping creation.');
-                            resolve(); 
-                        } else {
-                            console.error('Error creating user:', err.message);
-                            reject(err);
-                        }
-                    } else {
-                        console.log('User created: newuser');
-                        resolve();
-                    }
-                });
-            });
+  afterEach(async () => {
+    logSpy.mockRestore();
+    errorSpy.mockRestore();
+    await db?.close();
+  });
 
-            // Autentiser brukeren og hent token
-            const res = await cookieJar
-                .post('/login')
-                .send({ username: 'newuser', password: 'newpassword' });
+  it("requires auth before issuing a CSRF token", async () => {
+    await request(app).get("/csrf-token").expect(401, "Access Denied");
 
-            if (res.body.token) {
-                token = res.body.token;
-                console.log('Login token:', token); // Bekreft at token er mottatt
-            } else {
-                console.error('Failed to retrieve login token', res.body);
-            }
-        } catch (error) {
-            console.error('Setup failed:', error);
-        }
+    const { agent } = await registerAndLogin(app, "csrfuser");
+    const csrfToken = await getCsrfToken(agent);
+
+    expect(csrfToken).toEqual(expect.any(String));
+  });
+
+  it("rejects CSRF-protected delete requests without a token", async () => {
+    const { agent, username } = await registerAndLogin(app, "csrfuser");
+
+    await agent.delete(`/api/users/${username}`).expect(403);
+  });
+
+  it("accepts CSRF-protected delete requests with the issued token", async () => {
+    const { agent, username } = await registerAndLogin(app, "csrfuser");
+    const csrfToken = await getCsrfToken(agent);
+
+    const response = await agent
+      .delete(`/api/users/${username}`)
+      .set("X-CSRF-Token", csrfToken)
+      .expect(200);
+
+    expect(response.body).toEqual({});
+  });
+
+  it("documents that exercise creation is currently auth-only and not CSRF-protected", async () => {
+    const { agent } = await registerAndLogin(app, "exerciseuser");
+
+    const response = await agent
+      .post("/api/exercises")
+      .send({
+        name: "Bench Press",
+        type: "barbell",
+        muscleGroup: "Chest",
+        videolink: "https://example.com/bench",
+      })
+      .expect(201);
+
+    expect(response.body).toEqual({
+      message: "Exercise created successfully",
+      exerciseID: 1,
     });
-
-    it('should return CSRF token when authenticated', async () => {
-        console.log('Using token:', token);
-        const res = await cookieJar
-            .get('/csrf-token')
-            .set('Authorization', `Bearer ${token}`)
-            .expect(200);
-
-        expect(res.body).toHaveProperty('csrfToken');
-    });
-
-    it('should return 403 for requests with invalid CSRF token', async () => {
-        const res = await cookieJar
-            .post('/workouts')
-            .set('Authorization', `Bearer ${token}`)
-            .set('X-CSRF-Token', 'invalid_token')
-            .send({ type: 'Running', duration: 30 })
-            .expect(403);
-
-        expect(res.text).toContain('invalid csrf token');
-    });
+  });
 });
