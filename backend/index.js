@@ -102,37 +102,31 @@ app.post("/api/register", async (req, res) => {
 app.post("/api/login", async (req, res) => {
   try {
     const { username, password } = req.body;
-    if (!username || !password) {
-      return res.status(400).send("Mangler brukernavn eller passord");
-    }
-
-    const { result } = await safeQuery`
-      SELECT id, password
-      FROM users
-      WHERE username = ${username}
-    `;
-    const user = result[0];
+    const { result: userResult, hadRetry } =
+      await safeQuery`SELECT * FROM users WHERE username = ${username}`;
+    const user = userResult[0];
     if (!user) {
-      console.log("Brukernavn ikke funnet");
-      return res.status(400).send("Brukernavn eller passord er feil");
+      console.log("Username not found");
+      return res.status(400).send("Username or password is incorrect");
     }
     const validPass = await bcrypt.compare(password, user.password);
     if (!validPass) {
-      console.log("Ugyldig passord");
-      return res.status(400).send("Brukernavn eller passord er feil");
+      console.log("Invalid password");
+      return res.status(400).send("Username or password is incorrect");
     }
     const token = jwt.sign({ id: user.id }, secretKey, { expiresIn: "30d" });
+    console.log("Generated Token:", token);
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "Lax",
-      maxAge: 30 * 24 * 60 * 60 * 1000,
+      SameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+      maxAge: 604800000,
       path: "/",
     });
-
-    return res.json({ token });
+    const responsePayload = buildResponsePayload(hadRetry, { token });
+    res.json(responsePayload);
   } catch (err) {
-    console.error("Database Error:", err);
+    console.log("Database Error:", err);
     return res.status(500).send(err.message);
   }
 });
