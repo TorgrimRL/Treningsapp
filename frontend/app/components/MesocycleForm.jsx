@@ -375,7 +375,7 @@ const MesocycleForm = ({ onSubmit }) => {
         numberOfWeeks={numberOfWeeks}
         setNumberOfWeeks={setNumberOfWeeks}
       />
-      <form onSubmit={handleSubmit}>
+      <form data-testid="mesocycle-form" onSubmit={handleSubmit}>
         <div
           style={{
             display: "flex",
@@ -385,6 +385,7 @@ const MesocycleForm = ({ onSubmit }) => {
         >
           <div className="text-center mb-10 p-4">
             <button
+              data-testid="save-training-plan"
               type="submit"
               style={{ marginTop: "20px" }}
               className="bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-lg mr-4"
@@ -392,6 +393,7 @@ const MesocycleForm = ({ onSubmit }) => {
               Save Plan
             </button>
             <button
+              data-testid="autofill-exercises"
               type="button"
               style={{ marginTop: "20px" }}
               className="bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-lg"
@@ -416,6 +418,7 @@ const MesocycleForm = ({ onSubmit }) => {
               >
                 <label className="flex items-center justify-between mb-2">
                   <select
+                    data-testid={`day-label-${dayIndex}`}
                     value={day.label}
                     onChange={(event) =>
                       handleLabelChange(dayIndex, event.target.value)
@@ -455,6 +458,7 @@ const MesocycleForm = ({ onSubmit }) => {
                         <div className="flex flex-col">
                           <label htmlFor={muscleGroupId}>Muscle Group:</label>
                           <select
+                            data-testid={`muscle-group-${dayIndex}-${exerciseIndex}`}
                             id={muscleGroupId}
                             value={exercise.muscleGroup}
                             onChange={(event) =>
@@ -494,6 +498,7 @@ const MesocycleForm = ({ onSubmit }) => {
                           Exercise:
                         </label>
                         <select
+                          data-testid={`exercise-${dayIndex}-${exerciseIndex}`}
                           id={exerciseId}
                           value={exercise.exercise}
                           onChange={(event) =>
@@ -548,6 +553,7 @@ const MesocycleForm = ({ onSubmit }) => {
                             Progression mode:
                           </label>
                           <select
+                            data-testid={`progression-mode-${dayIndex}-${exerciseIndex}`}
                             id={progressionModeId}
                             value={progressionSettings.progressionMode}
                             onChange={(event) =>
@@ -573,6 +579,7 @@ const MesocycleForm = ({ onSubmit }) => {
                             Weight increment:
                           </label>
                           <select
+                            data-testid={`weight-increment-${dayIndex}-${exerciseIndex}`}
                             id={weightIncrementId}
                             value={progressionSettings.weightIncrement}
                             onChange={(event) =>

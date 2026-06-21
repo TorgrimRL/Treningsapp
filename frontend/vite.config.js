@@ -4,6 +4,16 @@ import { defineConfig } from "vite";
 import { vercelPreset } from "@vercel/remix/vite";
 
 export default defineConfig({
+  optimizeDeps: {
+    include: [
+      "@fortawesome/free-solid-svg-icons",
+      "@fortawesome/react-fontawesome",
+      "react-icons/fa",
+      "react-modal",
+      "react-router-dom",
+    ],
+  },
+
   plugins: [
     remix({
       future: {

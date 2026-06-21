@@ -52,7 +52,7 @@ module.exports = {
 
     // Node
     {
-      files: [".eslintrc.cjs"],
+      files: [".eslintrc.cjs", "playwright.config.js", "e2e/**/*.js"],
       env: {
         node: true,
       },

@@ -1,4 +1,3 @@
-import React from "react";
 import { useState, useEffect } from "react";
 import Modal from "react-modal";
 import {
@@ -18,7 +17,7 @@ const ChooseExerciseModal = ({ isOpen, onRequestClose, onSave }) => {
   useEffect(() => {
     const fetchExercises = async () => {
       try {
-        const { ok, data, hadSleep } = await apiFetch(`${baseUrl}/exercises`, {
+        const { ok, data } = await apiFetch(`${baseUrl}/exercises`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
@@ -35,14 +34,15 @@ const ChooseExerciseModal = ({ isOpen, onRequestClose, onSave }) => {
             combinedExercises[exercise.muscleGroup].push({
               name: exercise.name,
               type: exercise.type,
-              videoLink: exercise.videoLink,
+              videoLink: exercise.videoLink || exercise.videolink || "",
             });
           });
 
           setAvailableExercises(combinedExercises);
         } else {
-          const errorText = await response.text();
-          throw new Error(`Failed to fetch exercises: ${errorText}`);
+          console.error(
+            `Failed to fetch exercises: ${data.message || "Unknown error"}`
+          );
         }
       } catch (error) {
         console.error("Error fetching exercises:", error);
@@ -52,11 +52,26 @@ const ChooseExerciseModal = ({ isOpen, onRequestClose, onSave }) => {
     if (isOpen) {
       fetchExercises();
     }
-  }, [isOpen]);
+  }, [isOpen, apiFetch, baseUrl]);
 
   const handleSave = () => {
-    if (selectedExerciseId) {
-      onSave(selectedExerciseId, applyToFutureWeeks);
+    const selectedExercise = availableExercises[selectedMuscleGroup]?.find(
+      (exercise) => exercise.name === selectedExerciseId
+    );
+
+    if (selectedExercise) {
+      onSave(
+        {
+          exercise: selectedExercise.name,
+          name: selectedExercise.name,
+          muscleGroup: selectedMuscleGroup,
+          priority: selectedMuscleGroup,
+          type: selectedExercise.type,
+          videoLink:
+            selectedExercise.videoLink || selectedExercise.videolink || "",
+        },
+        applyToFutureWeeks
+      );
       onRequestClose();
     }
   };
@@ -78,11 +93,16 @@ const ChooseExerciseModal = ({ isOpen, onRequestClose, onSave }) => {
       <div className="flex flex-col p-4">
         <header className="bold text-2xl mb-4 mt-2">Choose an exercise</header>
 
-        <label className="mb-4">
+        <label className="mb-4" htmlFor="choose-exercise-muscle-group">
           <span className="block mb-2">Select a Muscle Group:</span>
           <select
+            id="choose-exercise-muscle-group"
+            data-testid="choose-exercise-muscle-group"
             value={selectedMuscleGroup}
-            onChange={(e) => setSelectedMuscleGroup(e.target.value)}
+            onChange={(e) => {
+              setSelectedMuscleGroup(e.target.value);
+              setSelectedExerciseId(null);
+            }}
             className="bg-inputBGGray text-center w-full p-1"
           >
             <option value="">-- Select Muscle Group --</option>
@@ -95,8 +115,12 @@ const ChooseExerciseModal = ({ isOpen, onRequestClose, onSave }) => {
         </label>
 
         <div className="mb-4">
-          <label className="block mb-2">Select an Exercise:</label>
+          <label className="block mb-2" htmlFor="choose-exercise-name">
+            Select an Exercise:
+          </label>
           <select
+            id="choose-exercise-name"
+            data-testid="choose-exercise-name"
             value={selectedExerciseId || ""}
             onChange={(e) => setSelectedExerciseId(e.target.value)}
             className="bg-inputBGGray text-center w-full p-1"
@@ -114,6 +138,7 @@ const ChooseExerciseModal = ({ isOpen, onRequestClose, onSave }) => {
           </select>
         </div>
         <input
+          id="choose-exercise-apply-future"
           type="checkbox"
           checked={applyToFutureWeeks}
           onChange={(e) => setApplyToFutureWeeks(e.target.checked)}
@@ -126,10 +151,13 @@ const ChooseExerciseModal = ({ isOpen, onRequestClose, onSave }) => {
             marginRight: "10px",
           }}
         />
-        <label>Apply to future weeks </label>
+        <label htmlFor="choose-exercise-apply-future">
+          Apply to future weeks
+        </label>
 
         <div className="mt-4 flex justify-center">
           <button
+            data-testid="choose-exercise-save"
             onClick={handleSave}
             disabled={!selectedExerciseId}
             className="bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-large flex justify center"

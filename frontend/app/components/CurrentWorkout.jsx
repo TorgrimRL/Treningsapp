@@ -236,9 +236,31 @@ export default function CurrentWorkout() {
       setIsNoteModalOpen(false);
     }
   };
-  const handleSaveExercise = (selectedExerciseId, applyToFutureWeeks) => {
+  const handleSaveExercise = (selectedExercise, applyToFutureWeeks) => {
     if (currentExercise) {
       const { dayIndex, exerciseIndex } = currentExercise;
+      const selectedExerciseDetails =
+        typeof selectedExercise === "string"
+          ? { exercise: selectedExercise, name: selectedExercise }
+          : selectedExercise;
+      const selectedExerciseName =
+        selectedExerciseDetails.exercise || selectedExerciseDetails.name;
+
+      const applySelectedExercise = (exercise) => ({
+        ...exercise,
+        exercise: selectedExerciseName,
+        muscleGroup:
+          selectedExerciseDetails.muscleGroup || exercise.muscleGroup,
+        priority:
+          selectedExerciseDetails.priority ||
+          selectedExerciseDetails.muscleGroup ||
+          exercise.priority,
+        type: selectedExerciseDetails.type || exercise.type,
+        videoLink:
+          selectedExerciseDetails.videoLink ||
+          selectedExerciseDetails.videolink ||
+          exercise.videoLink,
+      });
 
       const updatedMesocycle = {
         ...currentMesocycle,
@@ -252,7 +274,7 @@ export default function CurrentWorkout() {
               ...day,
               exercises: day.exercises.map((exercise, eIndex) =>
                 eIndex === exerciseIndex
-                  ? { ...exercise, exercise: selectedExerciseId }
+                  ? applySelectedExercise(exercise)
                   : exercise
               ),
             };
@@ -263,7 +285,7 @@ export default function CurrentWorkout() {
               ...day,
               exercises: day.exercises.map((exercise, eIndex) =>
                 eIndex === exerciseIndex
-                  ? { ...exercise, exercise: selectedExerciseId }
+                  ? applySelectedExercise(exercise)
                   : exercise
               ),
             };
@@ -1013,7 +1035,10 @@ export default function CurrentWorkout() {
   return (
     <div className="pt-[4.8rem]">
       {" "}
-      <h1 className="text-sm text-gray-500 bg-darkGray fixed top-10 w-full z-20 pl-4 mt-1 pt-2 uppercase border-t border-darkestGray">
+      <h1
+        data-testid="current-workout-title"
+        className="text-sm text-gray-500 bg-darkGray fixed top-10 w-full z-20 pl-4 mt-1 pt-2 uppercase border-t border-darkestGray"
+      >
         {currentMesocycle.name}
       </h1>
       <div style={{ marginTop: "-0px", marginBottom: "-1px" }}>
@@ -1043,7 +1068,11 @@ export default function CurrentWorkout() {
           <div className=" max-h-[calc(100vh-8rem)] overflow-y-auto relative">
             <ul className="list-none list-inside text-white ">
               {currentDay.exercises.map((exercise, exIndex) => (
-                <li key={exIndex} className="p-3 overflow-visible bg-darkGray">
+                <li
+                  key={exIndex}
+                  data-testid={`workout-exercise-${exIndex}`}
+                  className="p-3 overflow-visible bg-darkGray"
+                >
                   <div
                     className="flex justify-between items-center relative"
                     ref={(el) => (menuRefs.current[exIndex] = el)}
@@ -1057,6 +1086,7 @@ export default function CurrentWorkout() {
                       </span>
                     </div>
                     <button
+                      data-testid={`exercise-menu-${exIndex}`}
                       onClick={() => {
                         toggleMenu(exIndex);
                       }}
@@ -1089,6 +1119,7 @@ export default function CurrentWorkout() {
                           </li>
                           <li className="block px-4 py-2 hover:!bg-darkestGray">
                             <button
+                              data-testid={`change-exercise-${exIndex}`}
                               onClick={(event) => {
                                 event.stopPropagation();
 
@@ -1165,6 +1196,7 @@ export default function CurrentWorkout() {
                   {sets[currentDayIndex]?.[exIndex]?.map((set, setIndex) => (
                     <div
                       key={setIndex}
+                      data-testid={`workout-set-${exIndex}-${setIndex}`}
                       className="flex flex-row items-center space-y-0 mb-4 border-b border-gray-600 pb-2"
                     >
                       <div className="relative ">
@@ -1251,6 +1283,7 @@ export default function CurrentWorkout() {
                           WEIGHT
                         </div>
                         <select
+                          data-testid="set-weight-select"
                           value={set.weight || set.targetWeight || ""}
                           onChange={(e) => {
                             handleWeightChange(
@@ -1279,6 +1312,7 @@ export default function CurrentWorkout() {
                           REPS
                         </div>
                         <select
+                          data-testid="set-reps-select"
                           value={
                             typeof set.reps === "string"
                               ? set.reps
@@ -1376,6 +1410,7 @@ export default function CurrentWorkout() {
                           LOG
                         </div>
                         <input
+                          data-testid="set-log-checkbox"
                           type="checkbox"
                           checked={
                             sets[currentDayIndex]?.[exIndex]?.[setIndex]
