@@ -30,7 +30,7 @@ describe("safeQuery regression", () => {
     const db = { sql: jest.fn().mockResolvedValue([{ ok: 1 }]) };
     const { safeQuery } = await loadSafeQueryWithDb(db);
 
-    //noinspection SqlNoDataSourceInspection
+    // noinspection SqlNoDataSourceInspection
     await expect(safeQuery`SELECT 1`).resolves.toEqual({
       result: [{ ok: 1 }],
       hadRetry: false,
@@ -48,7 +48,7 @@ describe("safeQuery regression", () => {
     };
     const { safeQuery } = await loadSafeQueryWithDb(db);
 
-    //noinspection SqlNoDataSourceInspection
+    // noinspection SqlNoDataSourceInspection
     const promise = safeQuery`SELECT 1`;
     const expectation = expect(promise).resolves.toEqual({
       result: [{ ok: 1 }],
@@ -66,7 +66,7 @@ describe("safeQuery regression", () => {
     const db = { sql: jest.fn().mockRejectedValue(error) };
     const { safeQuery } = await loadSafeQueryWithDb(db);
 
-    //noinspection SqlNoDataSourceInspection
+    // noinspection SqlNoDataSourceInspection
     await expect(safeQuery`SELECT broken`).rejects.toBe(error);
     expect(db.sql).toHaveBeenCalledTimes(1);
   });
@@ -76,7 +76,7 @@ describe("safeQuery regression", () => {
     const db = { sql: jest.fn().mockRejectedValue(connectionResetError()) };
     const { safeQuery } = await loadSafeQueryWithDb(db);
 
-    //noinspection SqlNoDataSourceInspection
+    // noinspection SqlNoDataSourceInspection
     const promise = safeQuery`SELECT 1`;
     const expectation = expect(promise).rejects.toThrow(/Max antall/);
 

@@ -32,7 +32,7 @@ describe("auth regression", () => {
 
     expect(response.body).toEqual({ message: "User registered" });
 
-    //noinspection SqlNoDataSourceInspection
+    // noinspection SqlNoDataSourceInspection
     const storedUser = await db.get("SELECT * FROM users WHERE username = ?", [
       "newuser",
     ]);

@@ -174,7 +174,7 @@ describe("exercise and mesocycle regression", () => {
       message: "Mesocycle updated successfully",
     });
 
-    //noinspection SqlNoDataSourceInspection
+    // noinspection SqlNoDataSourceInspection
     const row = await db.get("SELECT * FROM mesocycles WHERE id = ?", [id]);
     expect(row.completedDate).toEqual(expect.any(String));
     expect(Number.isNaN(Date.parse(row.completedDate))).toBe(false);

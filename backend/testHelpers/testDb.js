@@ -1,4 +1,5 @@
 import sqlite3 from "sqlite3";
+import { schemaStatements } from "../db/schema.js";
 
 function toSql(strings) {
   return strings.reduce((sql, chunk, index) => {
@@ -51,36 +52,11 @@ export async function createTestDb() {
   const all = createAll(db);
   const get = createGet(db);
 
-  //noinspection SqlNoDataSourceInspection
+  // noinspection SqlNoDataSourceInspection
   await run("PRAGMA foreign_keys = ON");
-  //noinspection SqlNoDataSourceInspection
-  await run(`CREATE TABLE users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE,
-    password TEXT
-  )`);
-  //noinspection SqlNoDataSourceInspection
-  await run(`CREATE TABLE Mesocycles (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
-    weeks INTEGER,
-    plan TEXT,
-    daysPerWeek INTEGER,
-    completedDate TEXT,
-    isCurrent INTEGER,
-    user_id INTEGER,
-    FOREIGN KEY(user_id) REFERENCES users(id)
-  )`);
-  //noinspection SqlNoDataSourceInspection
-  await run(`CREATE TABLE exercises (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT,
-    type TEXT,
-    muscleGroup TEXT,
-    videolink TEXT,
-    user_id INTEGER,
-    FOREIGN KEY(user_id) REFERENCES users(id)
-  )`);
+  for (const statement of schemaStatements) {
+    await run(statement.sql);
+  }
 
   const query = async (strings, ...values) => {
     const sql = toSql(strings);
