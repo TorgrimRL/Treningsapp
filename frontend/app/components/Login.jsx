@@ -51,6 +51,7 @@ export default function Login() {
   return (
     <>
       <form
+        data-testid="login-form"
         onSubmit={handleSubmit}
         style={{
           maxWidth: "400px",
@@ -63,6 +64,7 @@ export default function Login() {
         <label>
           Username:
           <input
+            data-testid="login-username"
             type="text"
             className="bg-inputBGGray"
             placeholder="Enter your username here"
@@ -79,6 +81,7 @@ export default function Login() {
         <label>
           Password:
           <input
+            data-testid="login-password"
             type="password"
             className="bg-inputBGGray"
             placeholder="Enter your password here"
@@ -93,6 +96,7 @@ export default function Login() {
           />
         </label>
         <button
+          data-testid="login-submit"
           type="submit"
           disabled={loading}
           className="bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-lg"

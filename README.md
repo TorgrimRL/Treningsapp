@@ -103,7 +103,35 @@ cd backend
 npm test -- --runInBand
 ```
 
-Dette kjører Jest-testene for backend med isolert testdatabase. Frontend har forelopig ikke eget testscript.
+Dette kjører Jest-testene for backend med isolert testdatabase.
+
+Frontend E2E-testene kjøres med Playwright. Første gang må Chromium installeres:
+
+```bash
+cd frontend
+npx playwright install chromium
+```
+
+Kjør E2E-testene slik:
+
+```bash
+cd frontend
+npm run test:e2e
+```
+
+E2E-testene starter egen backend på port `3001`, egen frontend på port `5174`, og bruker en seedet SQLite-database i `backend/database.e2e.sqlite`. Denne filen er ignorert av Git og resettes av testene.
+
+## E2E før merge til main
+
+Repoet har en GitHub Actions workflow i `.github/workflows/e2e.yml` som kjører Playwright E2E-testene på pull requests mot `main`. For at GitHub skal blokkere merge når E2E feiler, må workflowen settes som required status check i branch protection:
+
+1. Gå til GitHub repo settings.
+2. Åpne Branches og legg til eller rediger protection rule for `main`.
+3. Slå på `Require status checks to pass before merging`.
+4. Velg status checken `Playwright E2E`.
+5. Slå gjerne på `Require a pull request before merging`, slik at direkte push til `main` ikke omgår E2E-gaten.
+
+Workflowen kan også kjøres manuelt fra Actions-fanen med `workflow_dispatch`.
 
 ## Pre-commit hook
 

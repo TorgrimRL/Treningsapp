@@ -47,10 +47,16 @@ export default function NewMesocycle() {
         return;
       }
 
+      const mesocycleId = postData.mesocycleId || postData.id;
+      if (!mesocycleId) {
+        console.error("Failed to read created mesocycle id from response");
+        return;
+      }
+
       const {
         ok: getOk,
         data: getData,
-      } = await apiFetch(`${baseUrl}/mesocycles/${postData.id}`, {
+      } = await apiFetch(`${baseUrl}/mesocycles/${mesocycleId}`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,

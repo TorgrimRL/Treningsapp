@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Modal from "react-modal";
 import { useApiFetch } from "../utils/apiFetch";
 const MesocycleDetailsModal = ({
@@ -18,7 +18,7 @@ const MesocycleDetailsModal = ({
   useEffect(() => {
     const fetchMesocycleNames = async () => {
       try {
-        const { ok, data, hadSleep } = await apiFetch(
+        const { ok, data } = await apiFetch(
           `${baseUrl}/mesocycle-names`,
           {
             method: "GET",
@@ -38,7 +38,7 @@ const MesocycleDetailsModal = ({
     };
 
     fetchMesocycleNames();
-  }, []);
+  }, [apiFetch, baseUrl]);
 
   const handleMesocycleNameChange = (name) => {
     setMesocycleName(name);
@@ -55,6 +55,7 @@ const MesocycleDetailsModal = ({
 
   return (
     <Modal
+      data-testid="training-block-details-modal"
       isOpen={isOpen}
       shouldCloseOnOverlayClick={false}
       shouldCloseOnEsc={false}
@@ -75,8 +76,10 @@ const MesocycleDetailsModal = ({
           Enter Training Block Details
         </header>
         <div className="mb-4">
-          <label className="block mb-2">Training Block Name:</label>
+          <label htmlFor="training-block-name" className="block mb-2">Training Block Name:</label>
           <input
+            id="training-block-name"
+            data-testid="training-block-name"
             type="text"
             value={mesocycleName}
             onChange={(e) => handleMesocycleNameChange(e.target.value)}
@@ -94,8 +97,10 @@ const MesocycleDetailsModal = ({
           )}
         </div>
         <div className="mb-4">
-          <label className="block mb-2">Number of Weeks:</label>
+          <label htmlFor="training-block-weeks" className="block mb-2">Number of Weeks:</label>
           <select
+            id="training-block-weeks"
+            data-testid="training-block-weeks"
             value={numberOfWeeks}
             onChange={(e) => setNumberOfWeeks(e.target.value)}
             required
@@ -111,6 +116,7 @@ const MesocycleDetailsModal = ({
         </div>
         <div className="flex justify-end">
           <button
+            data-testid="training-block-details-save"
             onClick={() => onSave(mesocycleName, numberOfWeeks)}
             className={`
                               flex items-center justify-center bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-lg"
