@@ -1,6 +1,18 @@
 import db from "../remoteDatabase.js";
 
+async function waitForDatabaseReady() {
+  if (db.ready) {
+    await db.ready;
+  }
+
+  if (db.initializationError) {
+    throw db.initializationError;
+  }
+}
+
 export async function safeQuery(strings, ...values) {
+  await waitForDatabaseReady();
+
   const maxRetries = 7;
   let attempts = 0;
   let delay = 1000;

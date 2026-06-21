@@ -1,59 +1,43 @@
-import { Database } from "@sqlitecloud/drivers";
 import dotenv from "dotenv";
-import path from "path";
-import { fileURLToPath } from "url";
-import { safeQuery } from "./utils/safeQuery.js";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { createCloudDatabase } from "./db/cloudDatabase.js";
+import { createLocalDatabase } from "./db/localDatabase.js";
+import { ensureSchema } from "./db/schema.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 dotenv.config({ path: path.resolve(__dirname, ".env") });
 
-const dbUri = process.env.DB_URI;
+const dbMode = (process.env.DB_MODE || "cloud").toLowerCase();
 
-const db = new Database(dbUri);
+if (!["cloud", "local"].includes(dbMode)) {
+  throw new Error(`Unsupported DB_MODE: ${dbMode}`);
+}
 
-db.sql`USE DATABASE database.sqlite`
-  .then(() => {
+const db =
+  dbMode === "local"
+    ? createLocalDatabase()
+    : createCloudDatabase({ dbUri: process.env.DB_URI });
+
+async function initializeDatabase() {
+  if (dbMode === "cloud") {
+    await db.sql("USE DATABASE database.sqlite");
     console.log("Database selected successfully");
+  } else {
+    console.log(`Using local SQLite database: ${db.path}`);
+  }
 
-    return Promise.all([
-      safeQuery`CREATE TABLE IF NOT EXISTS users (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              username TEXT UNIQUE,
-              password TEXT
-          )`
-        .then(() => console.log("Users table created"))
-        .catch((err) => console.error("Error creating Users table:", err)),
+  await ensureSchema((sql, ...values) => db.sql(sql, ...values));
+  console.log(
+    dbMode === "local" ? "Connected to local SQLite" : "Connected to SQLite Cloud"
+  );
+}
 
-      safeQuery`CREATE TABLE IF NOT EXISTS Mesocycles (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              name TEXT,
-              weeks INTEGER,
-              plan TEXT,
-              daysPerWeek INTEGER,
-              completedDate TEXT,
-              isCurrent INTEGER,
-              user_id INTEGER,
-              FOREIGN KEY(user_id) REFERENCES users(id)
-          )`
-        .then(() => console.log("Mesocycles table created"))
-        .catch((err) => console.error("Error creating Mesocycles table:", err)),
-
-      safeQuery`CREATE TABLE IF NOT EXISTS exercises (
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              name TEXT,
-              type TEXT,
-              muscleGroup TEXT,
-              videolink TEXT,
-              user_id INTEGER,
-              FOREIGN KEY(user_id) REFERENCES users(id)
-          )`
-        .then(() => console.log("Exercises table created"))
-        .catch((err) => console.error("Error creating Exercises table:", err)),
-    ]);
-  })
-  .then(() => console.log("Connected to SQLite Cloud"))
-  .catch((err) => console.error("Connection failed:", err));
+db.ready = initializeDatabase().catch((err) => {
+  db.initializationError = err;
+  console.error("Connection failed:", err);
+});
 
 export default db;

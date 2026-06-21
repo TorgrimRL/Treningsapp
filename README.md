@@ -2,8 +2,6 @@
 
 Treningsappen, hostet på [setoptimizer.com](https://setoptimizer.com), er en webapplikasjon utviklet for å lære meg webutvikling sommeren 2025 etter første året på Informatikk ved Universitetet i Tromsø. Appen er primært rettet mot meg selv og andre erfarne treningsentusiaster som trener med vekter på treningssenter. 
 
-OBS! Databaseleverandøren har bestemt seg for å sette databasen i dvale om den ikke blir brukt på 12 timer og dette fører til at funksjonalitet som involverer databasen ikke funker før den har våknet opp noe som tar et minutt.
-
 ## Hva appen gjør
 
 - **Lag dine treningsplaner:** Brukere kan lage og tilpasse egne treningsplaner og øvelser.
@@ -68,6 +66,33 @@ Frontend forventer at `VITE_API_URL` peker på backend, for eksempel i `frontend
 ```bash
 VITE_API_URL=http://localhost:3000/api
 ```
+
+## Lokal seedet database
+
+For lokal utvikling kan backenden kjøres mot en seedet SQLite-database i stedet for SQLite Cloud. Dette bruker `backend/database.sqlite`, som allerede er ignorert av Git.
+
+Seed databasen og start backend lokalt:
+
+```bash
+cd backend
+npm run db:seed
+npm run dev:local
+```
+
+Demo-login for lokal utvikling:
+
+```text
+Bruker: demo@example.com
+Passord: demo1234
+```
+
+For lokal frontend peker `frontend/.env` fortsatt på samme API-base:
+
+```bash
+VITE_API_URL=http://localhost:3000/api
+```
+
+Vanlig `npm run dev` i backend bruker fortsatt SQLite Cloud med mindre `DB_MODE=local` settes eksplisitt.
 
 ## Kjøre tester
 

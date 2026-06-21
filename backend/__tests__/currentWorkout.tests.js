@@ -119,12 +119,12 @@ describe("current workout regression", () => {
 
   it("rejects invalid stored plan JSON", async () => {
     const { agent } = await registerAndLogin(app, "alice");
-    //noinspection SqlNoDataSourceInspection
+    // noinspection SqlNoDataSourceInspection
     const user = await db.get("SELECT * FROM users WHERE username = ?", [
       "alice",
     ]);
 
-    //noinspection SqlNoDataSourceInspection
+    // noinspection SqlNoDataSourceInspection
     await db.run(
       `INSERT INTO mesocycles
         (name, weeks, daysPerWeek, plan, user_id, completedDate, isCurrent)
