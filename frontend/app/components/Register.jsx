@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useApiFetch } from "../utils/apiFetch";
 
@@ -20,14 +20,13 @@ export default function Register() {
     }
 
     try {
-      const { ok, data, hadSleep } = await apiFetch(`${baseUrl}/register`, {
+      const { ok, data } = await apiFetch(`${baseUrl}/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ username, password }),
       });
 
-      console.log("Response:", data);
       console.log(import.meta.env.VITE_API_URL);
 
       if (!ok) {

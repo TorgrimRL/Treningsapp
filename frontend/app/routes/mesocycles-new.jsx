@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import MesocycleForm from "../components/MesocycleForm";
 import { getCookie } from "../utils/cookies";
 import { useNavigate } from "@remix-run/react";
@@ -20,18 +20,15 @@ export default function NewMesocycle() {
       setCSRFToken(data.csrfToken);
     };
     fetchCsrfToken();
-  }, []);
+  }, [baseUrl]);
 
   const handleFormSubmit = async (mesocycle) => {
     try {
       const token = getCookie("token");
-      console.log("Retrieved token:", token);
-      console.log("Mesocycle object in handleFormSubmit:", mesocycle);
 
       const {
         ok: postOk,
         data: postData,
-        hadSleep: postHadSleep,
       } = await apiFetch(`${baseUrl}/mesocycles`, {
         method: "POST",
         headers: {
@@ -44,16 +41,15 @@ export default function NewMesocycle() {
       });
 
       if (!postOk) {
-        throw new Error(
+        console.error(
           "Failed to create mesocycle: " + (postData.message || "Unknown error")
         );
+        return;
       }
-      console.log("Mesocycle created:", postData);
 
       const {
         ok: getOk,
         data: getData,
-        hadSleep: getHadSleep,
       } = await apiFetch(`${baseUrl}/mesocycles/${postData.id}`, {
         method: "GET",
         headers: {
@@ -64,10 +60,11 @@ export default function NewMesocycle() {
       });
 
       if (!getOk) {
-        throw new Error(
+        console.error(
           "Failed to fetch the new mesocycle: " +
             (getData.message || "Unknown error")
         );
+        return;
       }
       console.log("Fetched new mesocycle:", getData);
 

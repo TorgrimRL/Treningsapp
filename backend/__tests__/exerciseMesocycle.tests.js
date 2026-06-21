@@ -179,4 +179,116 @@ describe("exercise and mesocycle regression", () => {
     expect(row.completedDate).toEqual(expect.any(String));
     expect(Number.isNaN(Date.parse(row.completedDate))).toBe(false);
   });
+
+  it("keeps progression mode and weight increment independent during updates", async () => {
+    const { agent } = await registerAndLogin(app, "alice");
+    const { id } = await createMesocycle(agent, {
+      name: "Settings plan",
+      weeks: 1,
+      plan: [
+        {
+          label: "Week 1",
+          exercises: [
+            {
+              exercise: "Bench Press",
+              type: "barbell",
+              progressionMode: "reps",
+              weightIncrement: 5,
+              sets: [
+                {
+                  weight: "50",
+                  reps: "8",
+                  targetWeight: "50",
+                  targetReps: "8",
+                  completed: true,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    await agent
+      .put(`/api/mesocycles/${id}`)
+      .send({
+        name: "Settings plan",
+        weeks: 1,
+        daysPerWeek: 1,
+        plan: [
+          {
+            label: "Week 1",
+            exercises: [
+              {
+                exercise: "Bench Press",
+                type: "barbell",
+                progressionMode: "weight",
+                weightIncrement: 5,
+                sets: [
+                  {
+                    weight: "50",
+                    reps: "8",
+                    targetWeight: "50",
+                    targetReps: "8",
+                    completed: true,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+        isCurrent: true,
+        completedDate: null,
+      })
+      .expect(200);
+
+    // noinspection SqlNoDataSourceInspection
+    const updatedRow = await db.get("SELECT plan FROM mesocycles WHERE id = ?", [id]);
+    const updatedPlan = JSON.parse(updatedRow.plan);
+    expect(updatedPlan[0].exercises[0]).toMatchObject({
+      progressionMode: "weight",
+      weightIncrement: 5,
+    });
+
+    await agent
+      .put(`/api/mesocycles/${id}`)
+      .send({
+        name: "Settings plan",
+        weeks: 1,
+        daysPerWeek: 1,
+        plan: [
+          {
+            label: "Week 1",
+            exercises: [
+              {
+                exercise: "Bench Press",
+                type: "barbell",
+                progressionMode: "weight",
+                weightIncrement: 2.5,
+                sets: [
+                  {
+                    weight: "50",
+                    reps: "8",
+                    targetWeight: "50",
+                    targetReps: "8",
+                    completed: true,
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+        isCurrent: true,
+        completedDate: null,
+      })
+      .expect(200);
+
+    // noinspection SqlNoDataSourceInspection
+    const reupdatedRow = await db.get("SELECT plan FROM mesocycles WHERE id = ?", [id]);
+    const reupdatedPlan = JSON.parse(reupdatedRow.plan);
+    expect(reupdatedPlan[0].exercises[0]).toMatchObject({
+      progressionMode: "weight",
+      weightIncrement: 2.5,
+    });
+  });
 });

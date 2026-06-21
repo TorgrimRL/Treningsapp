@@ -90,6 +90,88 @@ function progressionPlan() {
   ];
 }
 
+function set({
+  weight,
+  reps,
+  completed = false,
+  progressionMode,
+  weightIncrement,
+}) {
+  return {
+    weight: String(weight),
+    reps: String(reps),
+    targetWeight: String(weight),
+    targetReps: String(reps),
+    completed,
+    ...(progressionMode ? { progressionMode } : {}),
+    ...(weightIncrement ? { weightIncrement } : {}),
+  };
+}
+
+function exercise({ exercise, progressionMode, weightIncrement, completed }) {
+  return {
+    exercise,
+    type: "barbell",
+    progressionMode,
+    weightIncrement,
+    sets: [
+      set({
+        weight: 50,
+        reps: 8,
+        completed,
+        progressionMode,
+        weightIncrement,
+      }),
+    ],
+  };
+}
+
+function mixedProgressionPlan() {
+  const firstWeek = {
+    label: "Week 1",
+    exercises: [
+      exercise({ exercise: "Percent Press", completed: true }),
+      exercise({
+        exercise: "Rep Press",
+        progressionMode: "reps",
+        weightIncrement: 2.5,
+        completed: true,
+      }),
+      exercise({
+        exercise: "Weight Press",
+        progressionMode: "weight",
+        weightIncrement: 5,
+        completed: true,
+      }),
+    ],
+  };
+
+  const secondWeek = {
+    label: "Week 2",
+    exercises: firstWeek.exercises.map((item) => ({
+      ...item,
+      sets: [
+        set({
+          weight: 0,
+          reps: 0,
+          progressionMode: item.progressionMode,
+          weightIncrement: item.weightIncrement,
+        }),
+      ],
+    })),
+  };
+
+  const deloadWeek = {
+    label: "Week 3",
+    exercises: firstWeek.exercises.map((item) => ({
+      ...item,
+      sets: [set({ weight: 0, reps: 0 })],
+    })),
+  };
+
+  return [firstWeek, secondWeek, deloadWeek];
+}
+
 describe("current workout regression", () => {
   let db;
   let app;
@@ -163,6 +245,10 @@ describe("current workout regression", () => {
     });
     expect(response.body.plan[0].isCompleted).toBe(true);
     expect(response.body.plan[1].isCompleted).toBe(false);
+    expect(response.body.plan[1].exercises[0]).toMatchObject({
+      progressionMode: "percent",
+      weightIncrement: 2.5,
+    });
     expect(response.body.plan[1].exercises[0].sets[0]).toMatchObject({
       weight: 52.5,
       reps: 8,
@@ -186,4 +272,56 @@ describe("current workout regression", () => {
       }),
     ]);
   });
+
+  it("computes per-exercise progression modes", async () => {
+    const { agent } = await registerAndLogin(app, "alice");
+
+    await agent
+      .post("/api/mesocycles")
+      .send({
+        name: "Mixed progression plan",
+        weeks: 3,
+        daysPerWeek: 1,
+        plan: mixedProgressionPlan(),
+        completedDate: null,
+        isCurrent: true,
+      })
+      .expect(201);
+
+    const response = await agent.get("/api/current-workout").expect(200);
+    const [percentExercise, repExercise, weightExercise] =
+      response.body.plan[1].exercises;
+
+    expect(percentExercise).toMatchObject({
+      progressionMode: "percent",
+      weightIncrement: 2.5,
+    });
+    expect(percentExercise.sets[0]).toMatchObject({
+      weight: 52.5,
+      reps: 8,
+      targetWeight: 52.5,
+      targetReps: 8,
+    });
+    expect(repExercise).toMatchObject({
+      progressionMode: "reps",
+      weightIncrement: 2.5,
+    });
+    expect(repExercise.sets[0]).toMatchObject({
+      weight: 50,
+      reps: 9,
+      targetWeight: 50,
+      targetReps: 9,
+    });
+    expect(weightExercise).toMatchObject({
+      progressionMode: "weight",
+      weightIncrement: 5,
+    });
+    expect(weightExercise.sets[0]).toMatchObject({
+      weight: 55,
+      reps: 8,
+      targetWeight: 55,
+      targetReps: 8,
+    });
+  });
+
 });

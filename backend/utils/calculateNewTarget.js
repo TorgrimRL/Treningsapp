@@ -1,48 +1,66 @@
+export const progressionModes = ["percent", "reps", "weight"];
+export const weightIncrements = [1, 2, 2.5, 5, 10];
+
+export function getDefaultWeightIncrement(type) {
+  return type === "dumbbell" ? 2 : 2.5;
+}
+
+export function normalizeProgressionSettings(exercise = {}) {
+  const progressionMode = progressionModes.includes(exercise.progressionMode)
+    ? exercise.progressionMode
+    : "percent";
+  const parsedIncrement = Number(exercise.weightIncrement);
+  const weightIncrement = weightIncrements.includes(parsedIncrement)
+    ? parsedIncrement
+    : getDefaultWeightIncrement(exercise.type);
+
+  return {
+    progressionMode,
+    weightIncrement,
+  };
+}
+
+function roundToIncrement(value, increment) {
+  return Number((Math.round(value / increment) * increment).toFixed(2));
+}
+
 export default function calculateNewTarget(
   weight,
   reps,
   type,
   previousFactor,
-  currentFactor
+  currentFactor,
+  progressionSettings = {}
 ) {
-  const increaseFactor = currentFactor;
-  const baseWeight = weight / previousFactor;
+  const baseWeightInput = parseFloat(weight);
+  const baseRepsInput = parseInt(reps, 10);
+  const { progressionMode, weightIncrement } = normalizeProgressionSettings({
+    ...progressionSettings,
+    type,
+  });
 
-  let roundedWeight;
-
-  const weightAsFloat = parseFloat(baseWeight);
-
-  if (type === "dumbbell") {
-    roundedWeight = Math.round((weightAsFloat * increaseFactor) / 2) * 2;
-  } else {
-    roundedWeight = Math.round((weightAsFloat * increaseFactor) / 2.5) * 2.5;
+  if (progressionMode === "reps") {
+    return {
+      weight: baseWeightInput,
+      reps: baseRepsInput + 1,
+    };
   }
 
+  if (progressionMode === "weight") {
+    return {
+      weight: roundToIncrement(baseWeightInput + weightIncrement, weightIncrement),
+      reps: baseRepsInput,
+    };
+  }
+
+  const baseWeight = baseWeightInput / previousFactor;
+  const roundedWeight = roundToIncrement(baseWeight * currentFactor, weightIncrement);
   const tolerance = 0.001;
+  const incrementedReps = baseRepsInput + 1;
 
-  const incrementedReps = parseInt(reps, 10) + 1;
-  if (weight === 30) {
-    console.log("=== Debug Calculation ===");
-    console.log(`Base Weight: ${baseWeight.toFixed(2)}`);
-    console.log(`Weight as Float: ${weightAsFloat.toFixed(2)}`);
-    console.log(`Increase Factor: ${increaseFactor}`);
-    console.log(`Rounded Weight: ${roundedWeight.toFixed(2)}`);
-    console.log(`Incremented Reps: ${incrementedReps}`);
-  }
-
-  if (Math.abs(roundedWeight - weight) > tolerance) {
-    if (weight === 30) {
-      console.log(
-        `Returning new target: Weight = ${roundedWeight}, Reps = ${reps}`
-      );
-    }
+  if (Math.abs(roundedWeight - baseWeightInput) > tolerance) {
     return { weight: roundedWeight, reps };
-  } else {
-    if (weight === 30) {
-      console.log(
-        `Returning incremented reps: Weight = ${weight}, Reps = ${incrementedReps}`
-      );
-    }
-    return { weight: weight, reps: incrementedReps };
   }
+
+  return { weight: baseWeightInput, reps: incrementedReps };
 }

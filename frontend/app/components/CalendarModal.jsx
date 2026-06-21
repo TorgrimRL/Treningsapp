@@ -1,4 +1,3 @@
-import React from "react";
 import Modal from "react-modal";
 import { useEffect, useRef } from "react";
 
@@ -80,15 +79,14 @@ export default function CalendarModal({
                     <li
                       key={dayIndex}
                       className={`border p-0 mb-1 cursor-pointer text-xs uppercase min-w-[75px] min-h-[50px] flex items-center justify-center ${dayClass}`}
-                      onClick={() => {
-                        console.log(
-                          "Day item clicked:",
-                          weekIndex * numRows + dayIndex
-                        );
-                        onDayClick(weekIndex * numRows + dayIndex);
-                      }}
                     >
-                      {day.label ? `${day.label}` : `Day ${dayIndex + 1}`}
+                      <button
+                        type="button"
+                        className="w-full min-h-[50px] cursor-pointer uppercase flex items-center justify-center bg-transparent text-white"
+                        onClick={() => onDayClick(weekIndex * numRows + dayIndex)}
+                      >
+                        {day.label ? `${day.label}` : `Day ${dayIndex + 1}`}
+                      </button>
                     </li>
                   );
                 })}
