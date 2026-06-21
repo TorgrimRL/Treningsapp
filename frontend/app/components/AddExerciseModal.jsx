@@ -1,5 +1,4 @@
-import React from "react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { exerciseTypes, muscleGroups } from "../constants/constants";
 import Modal from "react-modal";
 
@@ -9,13 +8,9 @@ const AddExerciseModal = ({ isOpen, onRequestClose, onSave }) => {
   const [muscleGroup, setMuscleGroup] = useState("");
   const [videolink, setVideolink] = useState("");
 
-  useEffect(() => {
-    console.log("AddExerciseModal visibility", isOpen);
-  }, [isOpen]);
 
   const handleSave = () => {
     const exercise = { name, type, muscleGroup, videolink };
-    console.log("Saving exercise:", exercise);
     onSave(exercise);
     onRequestClose();
   };
@@ -24,8 +19,8 @@ const AddExerciseModal = ({ isOpen, onRequestClose, onSave }) => {
     <Modal
       isOpen={isOpen}
       onRequestClose={onRequestClose}
-      contentlabel="Custom exercises"
-      className=" relative mx-4 md:mx-auto  bg-darkGray text-white rounded focus:outline-none shadow-lg  p-0 max-w-3xl mx-auto mt-20 text-2sm "
+      contentLabel="Custom exercises"
+      className="relative mx-auto bg-darkGray text-white rounded focus:outline-none shadow-lg p-0 max-w-3xl mt-20 text-2sm"
       overlayClassName="fixed inset-0 flex items-start justify-center bg-black bg-opacity-50 z-50"
     >
       <button
@@ -40,8 +35,10 @@ const AddExerciseModal = ({ isOpen, onRequestClose, onSave }) => {
           Add a custom exercise
         </header>
         <form>
-          <label className="mb-4 block">
+          <div className="mb-4 block">
+            <label htmlFor="custom-exercise-name">Exercise name</label>
             <input
+              id="custom-exercise-name"
               type="text"
               value={name}
               placeholder="Enter name of exercise here"
@@ -49,10 +46,11 @@ const AddExerciseModal = ({ isOpen, onRequestClose, onSave }) => {
               required
               className="bg-inputBGGray text-center w-full p-1"
             />
-          </label>
-          <label>
-            Exercise type:
+          </div>
+          <div className="mb-4 block">
+            <label htmlFor="custom-exercise-type">Exercise type</label>
             <select
+              id="custom-exercise-type"
               value={type}
               onChange={(e) => setType(e.target.value)}
               required
@@ -67,10 +65,11 @@ const AddExerciseModal = ({ isOpen, onRequestClose, onSave }) => {
                 </option>
               ))}
             </select>
-          </label>
-          <label>
-            Muscle Group
+          </div>
+          <div className="mb-4 block">
+            <label htmlFor="custom-exercise-muscle-group">Muscle Group</label>
             <select
+              id="custom-exercise-muscle-group"
               value={muscleGroup}
               onChange={(e) => setMuscleGroup(e.target.value)}
               required
@@ -85,17 +84,18 @@ const AddExerciseModal = ({ isOpen, onRequestClose, onSave }) => {
                 </option>
               ))}
             </select>
-          </label>
-          <label className="mb-4 block">
-            Video Link
+          </div>
+          <div className="mb-4 block">
+            <label htmlFor="custom-exercise-video">Video Link</label>
             <input
+              id="custom-exercise-video"
               type="url"
               value={videolink}
               onChange={(e) => setVideolink(e.target.value)}
               required
               className="bg-inputBGGray text-center w-full p-1"
-            ></input>
-          </label>
+            />
+          </div>
           <div className="p-4 flex justify-center">
             <button
               onClick={handleSave}

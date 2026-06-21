@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { FaCalendarAlt } from "react-icons/fa";
 import Modal from "react-modal";
 import CalendarModal from "./CalendarModal";
@@ -13,7 +13,10 @@ import {
 import NoteModal from "./NoteModal";
 import ProgressBar from "./ProgressBar";
 import ChooseExerciseModal from "./ChooseExerciseModal";
+import ProgressionModeModal from "./ProgressionModeModal";
+import WeightIncrementModal from "./WeightIncrementModal";
 import { useApiFetch } from "../utils/apiFetch";
+import { normalizeProgressionSettings } from "../constants/constants";
 Modal.setAppElement("#root");
 
 export default function CurrentWorkout() {
@@ -34,10 +37,20 @@ export default function CurrentWorkout() {
   const [applyToFutureWeeks, setApplyToFutureWeeks] = useState(false);
   const [isChooseExerciseModalOpen, setIsChooseExerciseModalOpen] =
     useState(false);
+  const [isProgressionModeModalOpen, setIsProgressionModeModalOpen] =
+    useState(false);
+  const [isWeightIncrementModalOpen, setIsWeightIncrementModalOpen] =
+    useState(false);
+  const [progressionModeDrafts, setProgressionModeDrafts] = useState({});
+  const [weightIncrementDrafts, setWeightIncrementDrafts] = useState({});
+  const [applyProgressionModeToFutureWeeks, setApplyProgressionModeToFutureWeeks] =
+    useState({});
+  const [applyWeightIncrementToFutureWeeks, setApplyWeightIncrementToFutureWeeks] =
+    useState({});
   const baseUrl = import.meta.env.VITE_API_URL;
   const { apiFetch } = useApiFetch();
 
-  const calculateProgress = () => {
+  const calculateProgress = useCallback(() => {
     if (!sets[currentDayIndex]) {
       return 0;
     }
@@ -53,15 +66,11 @@ export default function CurrentWorkout() {
       });
     });
     return totalSets === 0 ? 0 : (completeSets / totalSets) * 100;
-  };
+  }, [currentMesocycle, currentDayIndex, sets]);
   const [progress, setProgress] = useState(calculateProgress());
   useEffect(() => {
     setProgress(calculateProgress());
-  }, [
-    currentMesocycle,
-    currentDayIndex,
-    currentMesocycle?.plan?.[currentDayIndex]?.exercises,
-  ]);
+  }, [calculateProgress]);
 
   const handleSetCompletionChange = (
     dayIndex,
@@ -116,19 +125,13 @@ export default function CurrentWorkout() {
 
           if (!ok) {
             const errorText = data.message || "Unknown error";
-            throw new Error(`Failed to update mesocycle: ${errorText}`);
-          }
-
-          if (hadSleep) {
-            console.log(
-              "Database went to sleep, so the update took extra time."
-            );
-            // Ventemodalen vil trigges automatisk via apiFetch.
-            // Ingen redirect eller videre handling trigges her.
+            console.error(`Failed to update mesocycle: ${errorText}`);
             return;
           }
 
-          console.log("Successfully updated mesocycle");
+          if (hadSleep) {
+            console.log("Database was sleeping; update took extra time");
+          }
         } catch (error) {
           console.error("Error updating mesocycle:", error);
         }
@@ -217,7 +220,8 @@ export default function CurrentWorkout() {
 
         if (!ok) {
           const errorText = data.message || "Unknown error";
-          throw new Error(`Failed to update mesocycle: ${errorText}`);
+          console.error(`Failed to update mesocycle: ${errorText}`);
+          return;
         }
 
         if (hadSleep) {
@@ -286,18 +290,17 @@ export default function CurrentWorkout() {
 
           if (!ok) {
             const errorText = data.message || "Unknown error";
-            throw new Error(`Failed to update mesocycle: ${errorText}`);
+            console.error(`Failed to update mesocycle: ${errorText}`);
+            return;
           }
 
           if (hadSleep) {
             console.log(
               "Database went to sleep, so the update took extra time."
             );
-
-            return;
+          } else {
+            console.log("Successfully updated mesocycle");
           }
-
-          console.log("Successfully updated mesocycle");
         } catch (error) {
           console.error("Error updating mesocycle:", error);
         }
@@ -307,24 +310,189 @@ export default function CurrentWorkout() {
     }
   };
 
+  const getProgressionKey = (dayIndex, exerciseIndex) =>
+    `${dayIndex}-${exerciseIndex}`;
+
+  const getCurrentExerciseAtSlot = (dayIndex, exerciseIndex) =>
+    currentMesocycle.plan[dayIndex]?.exercises?.[exerciseIndex] || null;
+
+  const getProgressionModeDraft = (dayIndex, exerciseIndex, exercise) => {
+    const key = getProgressionKey(dayIndex, exerciseIndex);
+    return (
+      progressionModeDrafts[key] ||
+      normalizeProgressionSettings(exercise).progressionMode
+    );
+  };
+
+  const getWeightIncrementDraft = (dayIndex, exerciseIndex, exercise) => {
+    const key = getProgressionKey(dayIndex, exerciseIndex);
+    return (
+      weightIncrementDrafts[key] ||
+      normalizeProgressionSettings(exercise).weightIncrement
+    );
+  };
+
+  const handleProgressionModeDraftChange = (
+    dayIndex,
+    exerciseIndex,
+    exercise,
+    value
+  ) => {
+    const key = getProgressionKey(dayIndex, exerciseIndex);
+    const currentSettings = normalizeProgressionSettings(exercise);
+    setProgressionModeDrafts((prev) => ({
+      ...prev,
+      [key]: value || currentSettings.progressionMode,
+    }));
+  };
+
+  const handleWeightIncrementDraftChange = (
+    dayIndex,
+    exerciseIndex,
+    exercise,
+    value
+  ) => {
+    const key = getProgressionKey(dayIndex, exerciseIndex);
+    const currentSettings = normalizeProgressionSettings(exercise);
+    setWeightIncrementDrafts((prev) => ({
+      ...prev,
+      [key]: Number.isFinite(Number(value))
+        ? Number(value)
+        : currentSettings.weightIncrement,
+    }));
+  };
+
+  const saveProgressionSetting = async ({
+    dayIndex,
+    exerciseIndex,
+    field,
+    value,
+    applyToFutureWeeks,
+    onClose,
+  }) => {
+    const currentExercise = getCurrentExerciseAtSlot(dayIndex, exerciseIndex);
+    if (!currentExercise) {
+      return;
+    }
+
+    const daysPerWeek = currentMesocycle.daysPerWeek;
+    const normalizedValue =
+      field === "weightIncrement" ? Number(value) : value;
+
+    const updatedMesocycle = {
+      ...currentMesocycle,
+      plan: currentMesocycle.plan.map((day, dIndex) => {
+        const shouldUpdateDay = applyToFutureWeeks
+          ? dIndex >= dayIndex && dIndex % daysPerWeek === dayIndex % daysPerWeek
+          : dIndex === dayIndex;
+
+        if (!shouldUpdateDay) return day;
+
+        return {
+          ...day,
+          exercises: day.exercises.map((exercise, eIndex) =>
+            eIndex === exerciseIndex
+              ? {
+                  ...exercise,
+                  [field]: normalizedValue,
+                }
+              : exercise
+          ),
+        };
+      }),
+    };
+
+    try {
+      const { ok, data, hadSleep } = await apiFetch(
+        `${baseUrl}/mesocycles/${currentMesocycle.id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(updatedMesocycle),
+        }
+      );
+
+      if (!ok) {
+        const errorText = data.message || "Unknown error";
+        console.error(`Failed to update ${field}: ${errorText}`);
+        return;
+      }
+
+      if (hadSleep) {
+        console.log("Database was sleeping; update took extra time");
+      }
+
+      const { ok: workoutOk, data: workoutData } = await apiFetch(
+        `${baseUrl}/current-workout`,
+        {
+          method: "GET",
+          credentials: "include",
+        }
+      );
+
+      if (workoutOk) {
+        setCurrentMesocycle(workoutData);
+        const refreshedSets = {};
+        const refreshedNotes = {};
+        workoutData.plan.forEach((day, refreshedDayIndex) => {
+          refreshedSets[refreshedDayIndex] = {};
+          refreshedNotes[refreshedDayIndex] = {};
+          day.exercises.forEach((exercise, refreshedExerciseIndex) => {
+            refreshedSets[refreshedDayIndex][refreshedExerciseIndex] =
+              exercise.sets || [];
+            refreshedNotes[refreshedDayIndex][refreshedExerciseIndex] =
+              exercise.note || "";
+          });
+        });
+        setSets(refreshedSets);
+        setNotes(refreshedNotes);
+      } else {
+        setCurrentMesocycle(updatedMesocycle);
+      }
+
+      const key = getProgressionKey(dayIndex, exerciseIndex);
+      if (field === "progressionMode") {
+        setProgressionModeDrafts((prev) => {
+          const updated = { ...prev };
+          delete updated[key];
+          return updated;
+        });
+        setApplyProgressionModeToFutureWeeks((prev) => ({
+          ...prev,
+          [key]: false,
+        }));
+      } else if (field === "weightIncrement") {
+        setWeightIncrementDrafts((prev) => {
+          const updated = { ...prev };
+          delete updated[key];
+          return updated;
+        });
+        setApplyWeightIncrementToFutureWeeks((prev) => ({
+          ...prev,
+          [key]: false,
+        }));
+      }
+
+      onClose();
+      setOpenMenus((prev) => ({ ...prev, [exerciseIndex]: false }));
+    } catch (error) {
+      console.error(`Error updating ${field}:`, error);
+    }
+  };
+
   const toggleSetMeny = useCallback((id) => {
-    setOpenSetMenus((prevState) => {
-      const newState = {
-        ...prevState,
-        [id]: !prevState[id],
-      };
-      return newState;
-    });
+    setOpenSetMenus((prevState) => ({
+      ...prevState,
+      [id]: !prevState[id],
+    }));
   }, []);
 
   const toggleMenu = useCallback((id) => {
-    setOpenMenus((prevState) => {
-      const newState = {
-        ...prevState,
-        [id]: !prevState[id],
-      };
-      return newState;
-    });
+    setOpenMenus((prevState) => ({
+      ...prevState,
+      [id]: !prevState[id],
+    }));
   }, []);
 
   useEffect(() => {
@@ -384,10 +552,10 @@ export default function CurrentWorkout() {
     exerciseIndex,
     setIndex,
     value,
-    exerciseType
+    exercise
   ) => {
     const currentWeight = parseFloat(value);
-    const incrementSize = exerciseType === "dumbbell" ? 2 : 2.5;
+    const incrementSize = normalizeProgressionSettings(exercise).weightIncrement;
 
     const { week } = getWeekAndDay(dayIndex, currentMesocycle.daysPerWeek);
 
@@ -513,7 +681,7 @@ export default function CurrentWorkout() {
       );
 
       try {
-        const { ok, data, hadSleep } = await apiFetch(
+        const { ok, data } = await apiFetch(
           `${baseUrl}/mesocycles/${currentMesocycle.id}`,
           {
             method: "PUT",
@@ -526,12 +694,7 @@ export default function CurrentWorkout() {
         if (!ok) {
           const errorText = data.message || "Unknown error";
           console.error("Error response from server:", errorText);
-          throw new Error(`Failed to update mesocycle: ${errorText}`);
-        }
-
-        // Du kan logge hadSleep hvis du ønsker, men her fortsetter vi uansett
-        if (hadSleep) {
-          console.log("Database was sleeping, update took extra time.");
+          return;
         }
 
         console.log("Successfully updated mesocycle with new sets");
@@ -605,7 +768,7 @@ export default function CurrentWorkout() {
       );
 
       try {
-        const { ok, data, hadSleep } = await apiFetch(
+        const { ok, data } = await apiFetch(
           `${baseUrl}/mesocycles/${currentMesocycle.id}`,
           {
             method: "PUT",
@@ -618,11 +781,7 @@ export default function CurrentWorkout() {
         if (!ok) {
           const errorText = data.message || "Unknown error";
           console.error("Error response from server:", errorText);
-          throw new Error(`Failed to update mesocycle: ${errorText}`);
-        }
-
-        if (hadSleep) {
-          console.log("Database was sleeping; update took extra time.");
+          return;
         }
 
         console.log("Successfully updated mesocycle after removing set");
@@ -634,7 +793,6 @@ export default function CurrentWorkout() {
   };
 
   const openCalendarModal = () => setIsCalendarModalOpen(true);
-  const openChooseExerciseModal = () => setIsChooseExerciseModalOpen(true);
 
   useEffect(() => {
     const fetchMesocycle = async () => {
@@ -646,7 +804,13 @@ export default function CurrentWorkout() {
             credentials: "include",
           }
         );
-        console.log("Mesocycle Data:", data);
+        if (!ok) {
+          console.error("Failed to fetch current workout");
+          return;
+        }
+        if (hadSleep) {
+          console.log("Database was sleeping; update took extra time");
+        }
         setCurrentMesocycle(data);
 
         if (data.firstIncompleteDayIndex !== undefined) {
@@ -676,7 +840,7 @@ export default function CurrentWorkout() {
       }
     };
     fetchMesocycle();
-  }, []);
+  }, [apiFetch, baseUrl]);
 
   if (loading) {
     return (
@@ -699,7 +863,13 @@ export default function CurrentWorkout() {
           credentials: "include",
         }
       );
-      console.log("Updated Mesocycle Data:", data);
+      if (!ok) {
+        console.error("Failed to fetch workout data");
+        return;
+      }
+      if (hadSleep) {
+        console.log("Database was sleeping; update took extra time");
+      }
       setCurrentMesocycle(data);
       setCurrentDayIndex(index); // index bør være definert i konteksten
       const setsData = {};
@@ -745,18 +915,30 @@ export default function CurrentWorkout() {
     repRange.push(i);
   }
 
-  const dumbbellWeights = [];
-  for (let weight = 2; weight < 100; weight += 2) {
-    dumbbellWeights.push(weight);
-  }
+  const getWeightOptions = (exercise, selectedWeight) => {
+    const increment = normalizeProgressionSettings(exercise).weightIncrement;
+    const maxWeight = exercise.type === "dumbbell" ? 100 : 400;
+    const weights = [];
+    for (let weight = increment; weight <= maxWeight; weight += increment) {
+      weights.push(Number(weight.toFixed(2)));
+    }
 
-  const barbellWeights = [];
-  for (let weight = 2.5; weight <= 400; weight += 2.5) {
-    barbellWeights.push(weight);
-  }
+    const parsedSelectedWeight = Number(selectedWeight);
+    if (Number.isFinite(parsedSelectedWeight) && parsedSelectedWeight > 0) {
+      const snappedSelectedWeight = Number(
+        (Math.ceil(parsedSelectedWeight / increment) * increment).toFixed(2)
+      );
+      if (!weights.includes(snappedSelectedWeight)) {
+        weights.push(snappedSelectedWeight);
+        weights.sort((a, b) => a - b);
+      }
+    }
+
+    return weights;
+  };
   const getPerformanceStatus = (
     set,
-    exerciseType,
+    exercise,
     dayIndex,
     weekIndex,
     setIndex,
@@ -794,7 +976,7 @@ export default function CurrentWorkout() {
       return "noIndicator";
     }
 
-    const incrementSize = exerciseType === "dumbbell" ? 2 : 2.5;
+    const incrementSize = normalizeProgressionSettings(exercise).weightIncrement;
     const targetWeight = parseFloat(set.targetWeight);
     const targetReps = parseInt(set.targetReps, 10);
     const currentWeight = parseFloat(set.weight);
@@ -817,8 +999,6 @@ export default function CurrentWorkout() {
     const roundedAdjustedReps = Math.round(adjustedReps);
 
     const isWeightInRange = Math.abs(weightDifference) <= maxIncrementDeviation;
-    const isRepsInRange = currentReps >= roundedAdjustedReps;
-
     if (isWeightInRange && currentReps === roundedAdjustedReps) {
       return "target";
     } else if (isWeightInRange && currentReps > roundedAdjustedReps) {
@@ -885,7 +1065,7 @@ export default function CurrentWorkout() {
                       <FontAwesomeIcon icon={faEllipsisV} />
                     </button>
                     {openMenus[exIndex] && (
-                      <div className="absolute right-0 top-full mt-1 w-48 rounded-md shadow-lg z-10">
+                      <div className="absolute right-0 top-full mt-1 w-64 rounded-md shadow-lg z-10">
                         <ul className="py-1 bg-hamburgerbackground ">
                           <li className="block px-4 py-2 hover:!bg-darkestGray">
                             <button
@@ -922,6 +1102,50 @@ export default function CurrentWorkout() {
                               Change exercise
                             </button>
                           </li>
+                          <li className="block px-4 py-2 hover:!bg-darkestGray">
+                            <button
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                const key = getProgressionKey(
+                                  currentDayIndex,
+                                  exIndex
+                                );
+                                setCurrentExercise({
+                                  dayIndex: currentDayIndex,
+                                  exerciseIndex: exIndex,
+                                });
+                                setApplyProgressionModeToFutureWeeks((prev) => ({
+                                  ...prev,
+                                  [key]: false,
+                                }));
+                                setIsProgressionModeModalOpen(true);
+                              }}
+                            >
+                              Progression mode
+                            </button>
+                          </li>
+                          <li className="block px-4 py-2 hover:!bg-darkestGray">
+                            <button
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                const key = getProgressionKey(
+                                  currentDayIndex,
+                                  exIndex
+                                );
+                                setCurrentExercise({
+                                  dayIndex: currentDayIndex,
+                                  exerciseIndex: exIndex,
+                                });
+                                setApplyWeightIncrementToFutureWeeks((prev) => ({
+                                  ...prev,
+                                  [key]: false,
+                                }));
+                                setIsWeightIncrementModalOpen(true);
+                              }}
+                            >
+                              Weight increment
+                            </button>
+                          </li>
                         </ul>
                       </div>
                     )}
@@ -941,7 +1165,7 @@ export default function CurrentWorkout() {
                   {sets[currentDayIndex]?.[exIndex]?.map((set, setIndex) => (
                     <div
                       key={setIndex}
-                      className="flex flex-row items-stretch items-center space-y-0 mb-4 border-b border-gray-600 pb-2"
+                      className="flex flex-row items-center space-y-0 mb-4 border-b border-gray-600 pb-2"
                     >
                       <div className="relative ">
                         <button
@@ -963,8 +1187,9 @@ export default function CurrentWorkout() {
                           >
                             <ul className="py-1 bg-hamburgerbackground text-white ">
                               <li className="block px-4 py-2 bg-inputBGGray hover:!bg-darkestGray z-20">
-                                <label className="inline-flex items-center">
+                                <label htmlFor={`future-weeks-${exIndex}-${setIndex}`} className="inline-flex items-center">
                                   <input
+                                    id={`future-weeks-${exIndex}-${setIndex}`}
                                     type="checkbox"
                                     className="form-checkbox"
                                     checked={applyToFutureWeeks}
@@ -1022,9 +1247,9 @@ export default function CurrentWorkout() {
                         )}
                       </div>
                       <div className="flex flex-col items-center space-y-1 flex-grow">
-                        <label className="text-center h-6 flex items-center justify-center">
+                        <div className="text-center h-6 flex items-center justify-center">
                           WEIGHT
-                        </label>
+                        </div>
                         <select
                           value={set.weight || set.targetWeight || ""}
                           onChange={(e) => {
@@ -1033,29 +1258,26 @@ export default function CurrentWorkout() {
                               exIndex,
                               setIndex,
                               e.target.value,
-                              exercise.type
+                              exercise
                             );
                           }}
                           className="bg-inputBGGray text-center border-black w-20 rounded p-1"
                         >
                           <option value={"Choose weight"} />
-                          {exercise.type === "dumbbell"
-                            ? dumbbellWeights.map((weight) => (
-                                <option key={weight} value={weight}>
-                                  {weight}
-                                </option>
-                              ))
-                            : barbellWeights.map((weight) => (
-                                <option key={weight} value={weight}>
-                                  {weight}
-                                </option>
-                              ))}
+                          {getWeightOptions(
+                            exercise,
+                            set.weight || set.targetWeight
+                          ).map((weight) => (
+                            <option key={weight} value={weight}>
+                              {weight}
+                            </option>
+                          ))}
                         </select>
                       </div>
                       <div className="flex flex-col items-center space-y-1 flex-grow relative">
-                        <label className="text-center h-6 flex items-center justify-center ">
+                        <div className="text-center h-6 flex items-center justify-center">
                           REPS
-                        </label>
+                        </div>
                         <select
                           value={
                             typeof set.reps === "string"
@@ -1104,7 +1326,7 @@ export default function CurrentWorkout() {
                           );
                           const status = getPerformanceStatus(
                             set,
-                            exercise.type,
+                            exercise,
                             currentDayIndex,
                             weekIndex,
                             setIndex,
@@ -1150,9 +1372,9 @@ export default function CurrentWorkout() {
                         })()}
                       </div>
                       <div className="flex flex-col items-center space-y-1 flex-grow">
-                        <label className="text-center h-6 flex items-center justify-center">
+                        <div className="text-center h-6 flex items-center justify-center">
                           LOG
-                        </label>
+                        </div>
                         <input
                           type="checkbox"
                           checked={
@@ -1206,6 +1428,158 @@ export default function CurrentWorkout() {
         onNoteChange={handleNoteChange}
         onSave={handleSaveNote}
       />
+      <ProgressionModeModal
+        isOpen={isProgressionModeModalOpen}
+        onRequestClose={() => setIsProgressionModeModalOpen(false)}
+        exercise={
+          currentExercise
+            ? currentMesocycle.plan[currentExercise.dayIndex]?.exercises?.[
+                currentExercise.exerciseIndex
+              ]
+            : null
+        }
+        progressionMode={
+          currentExercise
+            ? getProgressionModeDraft(
+                currentExercise.dayIndex,
+                currentExercise.exerciseIndex,
+                currentMesocycle.plan[currentExercise.dayIndex]?.exercises?.[
+                  currentExercise.exerciseIndex
+                ]
+              )
+            : null
+        }
+        applyToFutureWeeks={
+          currentExercise
+            ? !!applyProgressionModeToFutureWeeks[
+                getProgressionKey(
+                  currentExercise.dayIndex,
+                  currentExercise.exerciseIndex
+                )
+              ]
+            : false
+        }
+        onProgressionModeChange={(value) => {
+          if (!currentExercise) return;
+          handleProgressionModeDraftChange(
+            currentExercise.dayIndex,
+            currentExercise.exerciseIndex,
+            currentMesocycle.plan[currentExercise.dayIndex]?.exercises?.[
+              currentExercise.exerciseIndex
+            ],
+            value
+          );
+        }}
+        onApplyToFutureWeeksChange={(checked) => {
+          if (!currentExercise) return;
+          setApplyProgressionModeToFutureWeeks((prev) => ({
+            ...prev,
+            [getProgressionKey(
+              currentExercise.dayIndex,
+              currentExercise.exerciseIndex
+            )]: checked,
+          }));
+        }}
+        onSave={() => {
+          if (!currentExercise) return;
+          saveProgressionSetting({
+            dayIndex: currentExercise.dayIndex,
+            exerciseIndex: currentExercise.exerciseIndex,
+            field: "progressionMode",
+            value: getProgressionModeDraft(
+              currentExercise.dayIndex,
+              currentExercise.exerciseIndex,
+              currentMesocycle.plan[currentExercise.dayIndex]?.exercises?.[
+                currentExercise.exerciseIndex
+              ]
+            ),
+            applyToFutureWeeks: !!applyProgressionModeToFutureWeeks[
+              getProgressionKey(
+                currentExercise.dayIndex,
+                currentExercise.exerciseIndex
+              )
+            ],
+            onClose: () => setIsProgressionModeModalOpen(false),
+          });
+        }}
+      />
+
+      <WeightIncrementModal
+        isOpen={isWeightIncrementModalOpen}
+        onRequestClose={() => setIsWeightIncrementModalOpen(false)}
+        exercise={
+          currentExercise
+            ? currentMesocycle.plan[currentExercise.dayIndex]?.exercises?.[
+                currentExercise.exerciseIndex
+              ]
+            : null
+        }
+        weightIncrement={
+          currentExercise
+            ? getWeightIncrementDraft(
+                currentExercise.dayIndex,
+                currentExercise.exerciseIndex,
+                currentMesocycle.plan[currentExercise.dayIndex]?.exercises?.[
+                  currentExercise.exerciseIndex
+                ]
+              )
+            : null
+        }
+        applyToFutureWeeks={
+          currentExercise
+            ? !!applyWeightIncrementToFutureWeeks[
+                getProgressionKey(
+                  currentExercise.dayIndex,
+                  currentExercise.exerciseIndex
+                )
+              ]
+            : false
+        }
+        onWeightIncrementChange={(value) => {
+          if (!currentExercise) return;
+          handleWeightIncrementDraftChange(
+            currentExercise.dayIndex,
+            currentExercise.exerciseIndex,
+            currentMesocycle.plan[currentExercise.dayIndex]?.exercises?.[
+              currentExercise.exerciseIndex
+            ],
+            value
+          );
+        }}
+        onApplyToFutureWeeksChange={(checked) => {
+          if (!currentExercise) return;
+          setApplyWeightIncrementToFutureWeeks((prev) => ({
+            ...prev,
+            [getProgressionKey(
+              currentExercise.dayIndex,
+              currentExercise.exerciseIndex
+            )]: checked,
+          }));
+        }}
+        onSave={() => {
+          if (!currentExercise) return;
+          saveProgressionSetting({
+            dayIndex: currentExercise.dayIndex,
+            exerciseIndex: currentExercise.exerciseIndex,
+            field: "weightIncrement",
+            value: getWeightIncrementDraft(
+              currentExercise.dayIndex,
+              currentExercise.exerciseIndex,
+              currentMesocycle.plan[currentExercise.dayIndex]?.exercises?.[
+                currentExercise.exerciseIndex
+              ]
+            ),
+            applyToFutureWeeks: !!applyWeightIncrementToFutureWeeks[
+              getProgressionKey(
+                currentExercise.dayIndex,
+                currentExercise.exerciseIndex
+              )
+            ],
+            onClose: () => setIsWeightIncrementModalOpen(false),
+          });
+        }}
+      />
+
       <ChooseExerciseModal
         isOpen={isChooseExerciseModalOpen}
         onRequestClose={() => setIsChooseExerciseModalOpen(false)}

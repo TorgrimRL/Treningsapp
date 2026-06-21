@@ -1,5 +1,5 @@
 import express from "express";
-import { authenticateToken, csrfProtection } from "../middleware.js";
+import { authenticateToken } from "../middleware.js";
 import { safeQuery } from "../utils/safeQuery.js";
 import { buildResponsePayload } from "../utils/buildResponsePayload.js";
 const router = express.Router();
@@ -37,7 +37,6 @@ router.get("/exercises", authenticateToken, async (req, res) => {
       : rows;
     res.json(responsePayload);
   } catch (err) {
-    console.log("Error fetching exercises:", err);
     res.status(500).json({ error: err.message });
   }
 });

@@ -1,10 +1,10 @@
-import calculateNewTarget from "../utils/calculateNewTarget.js";
+import calculateNewTarget, { normalizeProgressionSettings } from "../utils/calculateNewTarget.js";
 import createDeloadWeek from "../utils/createDeloadWeek.js";
 import processPlan from "../utils/processPlan.js";
 import { buildResponsePayload } from "../utils/buildResponsePayload.js";
 
 describe("backend utility regression", () => {
-  it("calculates rounded barbell and dumbbell targets", () => {
+  it("calculates default percent targets for legacy plans", () => {
     expect(calculateNewTarget(50, 8, "barbell", 1, 1.05)).toEqual({
       weight: 52.5,
       reps: 8,
@@ -12,6 +12,56 @@ describe("backend utility regression", () => {
     expect(calculateNewTarget(32, 8, "dumbbell", 1, 1)).toEqual({
       weight: 32,
       reps: 9,
+    });
+  });
+
+  it("calculates rep and fixed weight progression targets", () => {
+    expect(
+      calculateNewTarget(50, 8, "barbell", 1, 1.05, {
+        progressionMode: "reps",
+        weightIncrement: 5,
+      })
+    ).toEqual({
+      weight: 50,
+      reps: 9,
+    });
+    expect(
+      calculateNewTarget(50, 8, "barbell", 1, 1.05, {
+        progressionMode: "weight",
+        weightIncrement: 5,
+      })
+    ).toEqual({
+      weight: 55,
+      reps: 8,
+    });
+  });
+
+  it("snaps fixed weight progression to the selected increment grid", () => {
+    expect(
+      calculateNewTarget(62, 8, "barbell", 1, 1, {
+        progressionMode: "weight",
+        weightIncrement: 2.5,
+      })
+    ).toEqual({
+      weight: 65,
+      reps: 8,
+    });
+  });
+
+  it("normalizes invalid progression settings to safe defaults", () => {
+    expect(
+      normalizeProgressionSettings({
+        type: "barbell",
+        progressionMode: "bad-mode",
+        weightIncrement: 3,
+      })
+    ).toEqual({
+      progressionMode: "percent",
+      weightIncrement: 2.5,
+    });
+    expect(normalizeProgressionSettings({ type: "dumbbell" })).toEqual({
+      progressionMode: "percent",
+      weightIncrement: 2,
     });
   });
 

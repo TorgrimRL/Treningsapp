@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useAuth } from "../utils/AuthContext";
 import { useApiFetch } from "../utils/apiFetch";
 import GlobalWaitModal from "./GlobalWaitModal";
@@ -30,8 +30,6 @@ export default function Login() {
           setMessage(
             "Database went to sleep! Please wait... try again after timer"
           );
-          console.log("hadSleep was true\n");
-          return;
         } else if (data.token) {
           setMessage("Login successful");
           setAuthStatus(true);

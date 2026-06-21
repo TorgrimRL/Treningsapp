@@ -1,7 +1,4 @@
 import express from "express";
-import pkg from "body-parser";
-const { json } = pkg;
-import db from "./remoteDatabase.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import cookieParser from "cookie-parser";
@@ -59,7 +56,6 @@ app.use("/api", mesocycleRoutes);
 csrfTokenRoute(app);
 
 app.use((req, res, next) => {
-  console.log(`Request URL: ${req.url}`);
   next();
 });
 
@@ -70,7 +66,6 @@ app.get("/api/", (req, res) => {
 app.get("/api/ping", async (req, res) => {
   try {
     await safeQuery`SELECT 1`;
-    console.log(`${new Date().toISOString()} – ping OK`);
     return res.status(200).send("OK");
   } catch (err) {
     console.error(`${new Date().toISOString()} – ping FEILET:`, err);
@@ -106,16 +101,13 @@ app.post("/api/login", async (req, res) => {
       await safeQuery`SELECT * FROM users WHERE username = ${username}`;
     const user = userResult[0];
     if (!user) {
-      console.log("Username not found");
       return res.status(400).send("Username or password is incorrect");
     }
     const validPass = await bcrypt.compare(password, user.password);
     if (!validPass) {
-      console.log("Invalid password");
       return res.status(400).send("Username or password is incorrect");
     }
     const token = jwt.sign({ id: user.id }, secretKey, { expiresIn: "30d" });
-    console.log("Generated Token:", token);
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -141,8 +133,8 @@ app.get("/api/check-auth", authenticateToken, (req, res) => {
   }
 
   try {
-    const verified = jwt.verify(token, secretKey);
-    console.log("Token verification successful:", verified); // Logging av verifisert token
+    jwt.verify(token, secretKey);
+    console.log("Token verification successful");
     res.json({ isLoggedIn: true });
   } catch (error) {
     console.log("Token verification failed:", error.message); // Logging ved feil i verifisering

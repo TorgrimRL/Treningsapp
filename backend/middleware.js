@@ -11,22 +11,15 @@ const secretKey = process.env.JWT_SECRET_KEY;
 export const authenticateToken = (req, res, next) => {
   const token = req.cookies.token;
 
-  console.log("Token from cookies:", token);
-
   if (!token) {
     return res.status(401).send("Access Denied");
   }
 
   try {
-    const verified = jwt.verify(token, secretKey);
-
-    req.user = verified;
-
-    console.log("Verified user:", req.user);
+    req.user = jwt.verify(token, secretKey);
 
     next();
   } catch (error) {
-    console.log("Token verification error:", error.message);
 
     res.status(403).send("Invalid Token");
   }

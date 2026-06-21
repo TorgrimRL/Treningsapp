@@ -1,6 +1,6 @@
 import express from "express";
 import { authenticateToken, csrfProtection } from "../middleware.js";
-import calculateNewTarget from "../utils/calculateNewTarget.js";
+import calculateNewTarget, { normalizeProgressionSettings } from "../utils/calculateNewTarget.js";
 import createDeloadWeek from "../utils/createDeloadWeek.js";
 import processPlan from "../utils/processPlan.js";
 import { safeQuery } from "../utils/safeQuery.js";
@@ -11,8 +11,7 @@ const router = express.Router();
 router.post("/mesocycles", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { name, weeks, daysPerWeek, plan, completedDate, isCurrent } =
-      req.body;
+    const { name, weeks, daysPerWeek, plan, completedDate } = req.body;
 
     const { hadRetry: updateHadRetry } = await safeQuery`
       UPDATE mesocycles 
@@ -143,6 +142,92 @@ router.get("/mesocycle-names", authenticateToken, async (req, res) => {
   }
 });
 
+function getUpdatedSets(exercise, previousWeekExercise, currentWeek, progressionSettings) {
+  return exercise.sets.map((set, setIndex) => {
+    const prevWeekset = previousWeekExercise.sets[setIndex];
+    if (!prevWeekset) return set;
+    const lastWeekWeight = prevWeekset.completed
+        ? parseFloat(prevWeekset.weight)
+        : parseFloat(prevWeekset.targetWeight);
+    const lastWeekReps = prevWeekset.completed
+        ? parseInt(prevWeekset.reps, 10)
+        : parseInt(prevWeekset.targetReps, 10);
+    const previousFactor =
+        [1.0, 1.05, 1.075, 1.1, 1.125][currentWeek - 2] || 1.0;
+    const currentFactor = [1.0, 1.05, 1.075, 1.1, 1.125][
+    currentWeek - 1
+        ];
+    const newTarget = calculateNewTarget(
+        lastWeekWeight,
+        lastWeekReps,
+        previousWeekExercise.type,
+        previousFactor,
+        currentFactor,
+        progressionSettings
+    );
+    const weightToUse =
+        !prevWeekset.completed || set.completed
+            ? set.weight
+            : newTarget.weight;
+    const repsToUse =
+        !prevWeekset.completed || set.completed
+            ? set.reps
+            : newTarget.reps;
+    return {
+      ...set,
+      weight: weightToUse,
+      reps: repsToUse,
+      targetWeight: newTarget.weight,
+      targetReps: newTarget.reps,
+    };
+  });
+}
+
+function getExercises(day, dayIndex, daysPerWeek, plan, currentWeek, totalWeeks, firstWeekExercises) {
+  return day.exercises.map((exercise, exerciseIndex) => {
+    const progressionSettings = normalizeProgressionSettings(exercise);
+    const exerciseWithProgression = {
+      ...exercise,
+      ...progressionSettings,
+    };
+
+    // For week 2+, apply progression relative to the same exercise from the previous week.
+    // On the final (deload) week, reset to first-week loads instead of progressing further.
+    if (dayIndex >= daysPerWeek) {
+      const previousWeekIndex = dayIndex - daysPerWeek;
+      const previousWeekExercise =
+          plan[previousWeekIndex].exercises[exerciseIndex];
+      if (!previousWeekExercise) return exerciseWithProgression;
+      if (!Array.isArray(exercise.sets)) return exerciseWithProgression;
+      const isDeloadWeek = currentWeek === totalWeeks;
+      if (isDeloadWeek) {
+        const deloadExercise = createDeloadWeek(
+            firstWeekExercises,
+            plan[dayIndex].exercises
+        )[exerciseIndex];
+        return {
+          ...deloadExercise,
+          ...progressionSettings,
+        };
+      }
+      const updatedSets = getUpdatedSets(exercise, previousWeekExercise, currentWeek, progressionSettings);
+      return {...exerciseWithProgression, sets: updatedSets};
+    }
+    return exerciseWithProgression;
+  });
+}
+
+function getFinalPlan(updatedPlan, daysPerWeek, plan, totalWeeks) {
+  return updatedPlan.map((day, dayIndex) => {
+    const currentWeek = Math.floor(dayIndex / daysPerWeek) + 1;
+    const firstWeekExercises = plan[dayIndex % daysPerWeek].exercises;
+    return {
+      ...day,
+      exercises: getExercises(day, dayIndex, daysPerWeek, plan, currentWeek, totalWeeks, firstWeekExercises),
+    };
+  });
+}
+
 // Endpoint to fetch the current workout
 router.get(
   "/current-workout",
@@ -168,68 +253,7 @@ router.get(
       const { updatedPlan, firstIncompleteDayIndex } = processPlan(plan);
       const daysPerWeek = row.daysPerWeek;
       const totalWeeks = row.weeks;
-      const finalPlan = updatedPlan.map((day, dayIndex) => {
-        const currentWeek = Math.floor(dayIndex / daysPerWeek) + 1;
-        const firstWeekExercises = plan[dayIndex % daysPerWeek].exercises;
-        return {
-          ...day,
-          exercises: day.exercises.map((exercise, exerciseIndex) => {
-            if (dayIndex >= daysPerWeek) {
-              const previousWeekIndex = dayIndex - daysPerWeek;
-              const previousWeekExercise =
-                plan[previousWeekIndex].exercises[exerciseIndex];
-              if (!previousWeekExercise) return exercise;
-              if (!Array.isArray(exercise.sets)) return exercise;
-              const isDeloadWeek = currentWeek === totalWeeks;
-              if (isDeloadWeek) {
-                return createDeloadWeek(
-                  firstWeekExercises,
-                  plan[dayIndex].exercises
-                )[exerciseIndex];
-              }
-              const updatedSets = exercise.sets.map((set, setIndex) => {
-                const prevWeekset = previousWeekExercise.sets[setIndex];
-                if (!prevWeekset) return set;
-                const lastWeekWeight = prevWeekset.completed
-                  ? parseFloat(prevWeekset.weight)
-                  : parseFloat(prevWeekset.targetWeight);
-                const lastWeekReps = prevWeekset.completed
-                  ? parseInt(prevWeekset.reps, 10)
-                  : parseInt(prevWeekset.targetReps, 10);
-                const previousFactor =
-                  [1.0, 1.05, 1.075, 1.1, 1.125][currentWeek - 2] || 1.0;
-                const currentFactor = [1.0, 1.05, 1.075, 1.1, 1.125][
-                  currentWeek - 1
-                ];
-                const newTarget = calculateNewTarget(
-                  lastWeekWeight,
-                  lastWeekReps,
-                  previousWeekExercise.type,
-                  previousFactor,
-                  currentFactor
-                );
-                const weightToUse =
-                  !prevWeekset.completed || set.completed
-                    ? set.weight
-                    : newTarget.weight;
-                const repsToUse =
-                  !prevWeekset.completed || set.completed
-                    ? set.reps
-                    : newTarget.reps;
-                return {
-                  ...set,
-                  weight: weightToUse,
-                  reps: repsToUse,
-                  targetWeight: newTarget.weight,
-                  targetReps: newTarget.reps,
-                };
-              });
-              return { ...exercise, sets: updatedSets };
-            }
-            return exercise;
-          }),
-        };
-      });
+      const finalPlan = getFinalPlan(updatedPlan, daysPerWeek, plan, totalWeeks);
 
       const finalResponse = {
         ...row,

@@ -69,12 +69,12 @@ function currentPlan() {
       label: "Monday",
       exercises: [
         exercise("Paused Bench Press", "barbell", "Chest", [
-          set(80, 8, false),
-          set(80, 8, false),
+          set(82.5, 8, true),
+          set(82.5, 8, true),
         ]),
         exercise("Chest Supported Row", "machine", "Back", [
-          set(60, 10, false),
-          set(60, 10, false),
+          set(62, 10, true),
+          set(62, 10, true),
         ]),
       ],
     },
@@ -82,12 +82,64 @@ function currentPlan() {
       label: "Wednesday",
       exercises: [
         exercise("Hack Squat", "machine", "Quads", [
-          set(110, 8, false),
-          set(110, 8, false),
+          set(112.5, 8, true),
+          set(112.5, 8, true),
         ]),
         exercise("Romanian Deadlift", "barbell", "Hamstrings", [
-          set(100, 8, false),
-          set(100, 8, false),
+          set(102.5, 8, true),
+          set(102.5, 8, true),
+        ]),
+      ],
+    },
+    {
+      label: "Monday",
+      exercises: [
+        exercise("Paused Bench Press", "barbell", "Chest", [
+          set(85, 8, false),
+          set(85, 8, false),
+        ]),
+        exercise("Chest Supported Row", "machine", "Back", [
+          set(64, 10, false),
+          set(64, 10, false),
+        ]),
+      ],
+    },
+    {
+      label: "Wednesday",
+      exercises: [
+        exercise("Hack Squat", "machine", "Quads", [
+          set(115, 8, false),
+          set(115, 8, false),
+        ]),
+        exercise("Romanian Deadlift", "barbell", "Hamstrings", [
+          set(105, 8, false),
+          set(105, 8, false),
+        ]),
+      ],
+    },
+    {
+      label: "Monday",
+      exercises: [
+        exercise("Paused Bench Press", "barbell", "Chest", [
+          set(0, 0, false),
+          set(0, 0, false),
+        ]),
+        exercise("Chest Supported Row", "machine", "Back", [
+          set(0, 0, false),
+          set(0, 0, false),
+        ]),
+      ],
+    },
+    {
+      label: "Wednesday",
+      exercises: [
+        exercise("Hack Squat", "machine", "Quads", [
+          set(0, 0, false),
+          set(0, 0, false),
+        ]),
+        exercise("Romanian Deadlift", "barbell", "Hamstrings", [
+          set(0, 0, false),
+          set(0, 0, false),
         ]),
       ],
     },
@@ -119,7 +171,6 @@ function currentPlan() {
     },
   ];
 }
-
 function completedPlan() {
   return currentPlan().slice(0, 2).map((day) => ({
     ...day,
@@ -201,7 +252,7 @@ export async function seedLocalDatabase({
     // noinspection SqlNoDataSourceInspection
     await db.sql`
       INSERT INTO Mesocycles (name, weeks, daysPerWeek, plan, completedDate, isCurrent, user_id)
-      VALUES (${"Demo Current Block"}, ${3}, ${2}, ${JSON.stringify(
+      VALUES (${"Demo Current Block"}, ${5}, ${2}, ${JSON.stringify(
         currentPlan()
       )}, ${null}, ${1}, ${userId})
     `;

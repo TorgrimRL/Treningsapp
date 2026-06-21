@@ -24,15 +24,11 @@ const db =
 async function initializeDatabase() {
   if (dbMode === "cloud") {
     await db.sql("USE DATABASE database.sqlite");
-    console.log("Database selected successfully");
   } else {
     console.log(`Using local SQLite database: ${db.path}`);
   }
 
   await ensureSchema((sql, ...values) => db.sql(sql, ...values));
-  console.log(
-    dbMode === "local" ? "Connected to local SQLite" : "Connected to SQLite Cloud"
-  );
 }
 
 db.ready = initializeDatabase().catch((err) => {

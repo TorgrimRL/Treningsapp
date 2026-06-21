@@ -81,10 +81,10 @@ describe("local database seed script", () => {
     expect(mesocycles[0]).toMatchObject({
       id: 1,
       name: "Demo Current Block",
-      weeks: 3,
+      weeks: 5,
       daysPerWeek: 2,
       user_id: 1,
     });
-    expect(JSON.parse(mesocycles[0].plan)).toHaveLength(6);
+    expect(JSON.parse(mesocycles[0].plan)).toHaveLength(10);
   });
 });

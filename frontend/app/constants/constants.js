@@ -28,6 +28,35 @@ export const exerciseTypes = [
   "cable",
 ];
 
+export const progressionModes = [
+  { value: "percent", label: "2.5% per week" },
+  { value: "reps", label: "+1 rep per week" },
+  { value: "weight", label: "Add weight per week" },
+];
+
+export const weightIncrementOptions = [1, 2, 2.5, 5, 10];
+
+export function getDefaultWeightIncrement(type) {
+  return type === "dumbbell" ? 2 : 2.5;
+}
+
+export function normalizeProgressionSettings(exercise = {}) {
+  const progressionMode = progressionModes.some(
+    (mode) => mode.value === exercise.progressionMode
+  )
+    ? exercise.progressionMode
+    : "percent";
+  const parsedIncrement = Number(exercise.weightIncrement);
+  const weightIncrement = weightIncrementOptions.includes(parsedIncrement)
+    ? parsedIncrement
+    : getDefaultWeightIncrement(exercise.type);
+
+  return {
+    progressionMode,
+    weightIncrement,
+  };
+}
+
 export const exercises = {
   Abs: [
     { name: "Machine Crunch", type: "machine" },
