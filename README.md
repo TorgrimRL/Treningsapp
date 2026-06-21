@@ -17,9 +17,75 @@ Prosjektet er delt opp i to hoveddeler:
 
 - **Frontend:**  
   Utviklet med React.js. Frontend-delen håndterer brukergrensesnittet, og lar brukere interagere med appens funksjonalitet gjennom en moderne og responsiv webapplikasjon. Se - [Frontend README](./frontend/README.md)
-  
 
 - **Backend:**  
   En Node.js Express-server med en SQLite-database. Backenden håndterer forretningslogikk, datalagring, API-kall og generering av progresjonsmål basert på treningsdata. Se - [Backend README](./backend/README.md)
 
+## Kom i gang lokalt
 
+Krav:
+
+- Node.js 20 eller nyere
+- npm
+
+Installer dependencies:
+
+```bash
+cd backend
+npm install
+
+cd ../frontend
+npm install
+```
+
+Backenden trenger en lokal `backend/.env` for vanlig kjøring:
+
+```bash
+DB_URI=<sqlite-cloud-uri>
+JWT_SECRET_KEY=<valgfri-lang-hemmelighet>
+```
+
+Testene bruker mock/in-memory database og trenger ikke `DB_URI`.
+
+## Starte appen
+
+Start backend i en terminal:
+
+```bash
+cd backend
+npm run dev
+```
+
+Start frontend i en annen terminal:
+
+```bash
+cd frontend
+npm run dev
+```
+
+Frontend forventer at `VITE_API_URL` peker på backend, for eksempel i `frontend/.env`:
+
+```bash
+VITE_API_URL=http://localhost:3000/api
+```
+
+## Kjøre tester
+
+Backend-testene kjøres slik:
+
+```bash
+cd backend
+npm test -- --runInBand
+```
+
+Dette kjører Jest-testene for backend med isolert testdatabase. Frontend har forelopig ikke eget testscript.
+
+## Pre-commit hook
+
+Repoet bruker en lokal Git hook i `.githooks/pre-commit` som kjører backend-testene før hver commit. Hooken aktiveres med:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+Hvis testene feiler, stoppes commiten. Dette er bevisst strengt siden repoet hovedsakelig utvikles av en person.
