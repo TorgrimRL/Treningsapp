@@ -35,6 +35,79 @@ test("logged-in user can open current workout and log a set", async ({ page }) =
   ).toBeChecked();
 });
 
+test("logging a bodyweight set keeps target reps when target weight is zero", async ({ page }) => {
+  await loginAsDemoUser(page);
+
+  await page.evaluate(async () => {
+    const apiBase = "http://127.0.0.1:3001/api";
+    const response = await fetch(apiBase + "/current-workout", {
+      credentials: "include",
+    });
+    if (!response.ok) {
+      throw new Error(await response.text());
+    }
+
+    const workout = await response.json();
+    const dayIndex = workout.firstIncompleteDayIndex;
+    workout.plan[dayIndex].exercises.push({
+      exercise: "Pushup",
+      type: "bodyweight",
+      muscleGroup: "Chest",
+      priority: "Chest",
+      videoLink: "",
+      sets: [
+        {
+          weight: 0,
+          reps: 0,
+          targetWeight: 0,
+          targetReps: 11,
+          completed: false,
+        },
+      ],
+    });
+
+    const updateResponse = await fetch(apiBase + "/mesocycles/" + workout.id, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(workout),
+    });
+    if (!updateResponse.ok) {
+      throw new Error(await updateResponse.text());
+    }
+  });
+
+  await page.goto("/currentworkout");
+
+  const bodyweightExercise = page.getByTestId("workout-exercise-2");
+  const bodyweightSet = page.getByTestId("workout-set-2-0");
+  await expect(bodyweightExercise).toContainText("Pushup");
+  await expect(bodyweightSet.getByTestId("set-weight-select")).toHaveValue("0");
+  await expect(bodyweightSet.getByTestId("set-reps-select")).toHaveValue("11");
+
+  await Promise.all([
+    page.waitForResponse(
+      (response) =>
+        /\/api\/mesocycles\/\d+$/.test(response.url()) &&
+        response.request().method() === "PUT" &&
+        response.status() === 200
+    ),
+    bodyweightSet.getByTestId("set-log-checkbox").check(),
+  ]);
+
+  await page.reload();
+  const reloadedBodyweightSet = page.getByTestId("workout-set-2-0");
+  await expect(
+    reloadedBodyweightSet.getByTestId("set-log-checkbox")
+  ).toBeChecked();
+  await expect(
+    reloadedBodyweightSet.getByTestId("set-weight-select")
+  ).toHaveValue("0");
+  await expect(
+    reloadedBodyweightSet.getByTestId("set-reps-select")
+  ).toHaveValue("11");
+});
+
 
 test("changing exercise updates the muscle group display", async ({ page }) => {
   await loginAsDemoUser(page);
