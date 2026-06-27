@@ -5,12 +5,14 @@ import {
   muscleGroups as predefinedMuscleGroups,
 } from "../constants/constants";
 import { useApiFetch } from "../utils/apiFetch";
+import AddExerciseModal from "./AddExerciseModal";
 
 const ChooseExerciseModal = ({ isOpen, onRequestClose, onSave }) => {
   const [selectedExerciseId, setSelectedExerciseId] = useState(null);
   const [availableExercises, setAvailableExercises] = useState({});
   const [selectedMuscleGroup, setSelectedMuscleGroup] = useState("");
   const [applyToFutureWeeks, setApplyToFutureWeeks] = useState(false);
+  const [isAddExerciseModalOpen, setIsAddExerciseModalOpen] = useState(false);
   const { apiFetch } = useApiFetch();
   const baseUrl = import.meta.env.VITE_API_URL;
 
@@ -76,6 +78,52 @@ const ChooseExerciseModal = ({ isOpen, onRequestClose, onSave }) => {
     }
   };
 
+  const handleSaveCustomExercise = async (newExercise) => {
+    if (!newExercise) {
+      return;
+    }
+
+    const exerciseToSave = {
+      name: newExercise.name,
+      muscleGroup: newExercise.muscleGroup,
+      type: newExercise.type,
+      videoLink: newExercise.videoLink || newExercise.videolink || "",
+      videolink: newExercise.videoLink || newExercise.videolink || "",
+    };
+
+    setAvailableExercises((currentExercises) => ({
+      ...currentExercises,
+      [exerciseToSave.muscleGroup]: [
+        ...(currentExercises[exerciseToSave.muscleGroup] || []),
+        {
+          name: exerciseToSave.name,
+          type: exerciseToSave.type,
+          videoLink: exerciseToSave.videoLink,
+        },
+      ],
+    }));
+    setSelectedMuscleGroup(exerciseToSave.muscleGroup);
+    setSelectedExerciseId(exerciseToSave.name);
+
+    try {
+      const { ok, data } = await apiFetch(baseUrl + "/exercises", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(exerciseToSave),
+      });
+
+      if (!ok) {
+        console.error(
+          "Failed to update custom exercises: " +
+            (data.message || "Unknown error")
+        );
+      }
+    } catch (error) {
+      console.error("Error trying to send exercise to backend", error);
+    }
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -137,6 +185,14 @@ const ChooseExerciseModal = ({ isOpen, onRequestClose, onSave }) => {
               ))}
           </select>
         </div>
+        <button
+          type="button"
+          data-testid="choose-exercise-add-custom"
+          onClick={() => setIsAddExerciseModalOpen(true)}
+          className="text-sm text-left mb-4"
+        >
+          Add custom exercise
+        </button>
         <input
           id="choose-exercise-apply-future"
           type="checkbox"
@@ -165,6 +221,11 @@ const ChooseExerciseModal = ({ isOpen, onRequestClose, onSave }) => {
             Save
           </button>
         </div>
+        <AddExerciseModal
+          isOpen={isAddExerciseModalOpen}
+          onRequestClose={() => setIsAddExerciseModalOpen(false)}
+          onSave={handleSaveCustomExercise}
+        />
       </div>
     </Modal>
   );

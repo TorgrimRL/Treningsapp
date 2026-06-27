@@ -98,6 +98,8 @@ const AddExerciseModal = ({ isOpen, onRequestClose, onSave }) => {
           </div>
           <div className="p-4 flex justify-center">
             <button
+              type="button"
+              data-testid="custom-exercise-save"
               onClick={handleSave}
               className="bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-large flex justify center"
             >

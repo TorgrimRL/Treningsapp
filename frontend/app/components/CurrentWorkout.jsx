@@ -19,6 +19,26 @@ import { useApiFetch } from "../utils/apiFetch";
 import { normalizeProgressionSettings } from "../constants/constants";
 Modal.setAppElement("#root");
 
+const isBlankValue = (value) =>
+  value === undefined || value === null || value === "";
+
+const isUnsetRepValue = (value) =>
+  isBlankValue(value) || Number(value) === 0;
+
+const getSetLogWeight = (set) =>
+  isBlankValue(set.weight) ? set.targetWeight ?? "" : set.weight;
+
+const getSetLogReps = (set) =>
+  isUnsetRepValue(set.reps) ? set.targetReps ?? "" : set.reps;
+
+const getSetRepsSelectValue = (set) => {
+  if (!isUnsetRepValue(set.reps)) {
+    return set.reps;
+  }
+
+  return isUnsetRepValue(set.targetReps) ? "" : set.targetReps;
+};
+
 export default function CurrentWorkout() {
   const [currentMesocycle, setCurrentMesocycle] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -76,9 +96,7 @@ export default function CurrentWorkout() {
     dayIndex,
     exerciseIndex,
     setIndex,
-    value,
-    weightValue,
-    repsValue
+    value
   ) => {
     setSets((prev) => {
       const updatedSets = {
@@ -90,8 +108,8 @@ export default function CurrentWorkout() {
               return {
                 ...set,
                 completed: value,
-                weight: value ? weightValue : set.targetWeight,
-                reps: value ? repsValue : set.targetReps,
+                weight: value ? getSetLogWeight(set) : set.targetWeight,
+                reps: value ? getSetLogReps(set) : set.targetReps,
               };
             }
             return set;
@@ -945,11 +963,20 @@ export default function CurrentWorkout() {
       weights.push(Number(weight.toFixed(2)));
     }
 
+    if (isBlankValue(selectedWeight)) {
+      return weights;
+    }
+
     const parsedSelectedWeight = Number(selectedWeight);
-    if (Number.isFinite(parsedSelectedWeight) && parsedSelectedWeight > 0) {
-      const snappedSelectedWeight = Number(
-        (Math.ceil(parsedSelectedWeight / increment) * increment).toFixed(2)
-      );
+    if (Number.isFinite(parsedSelectedWeight) && parsedSelectedWeight >= 0) {
+      const snappedSelectedWeight =
+        parsedSelectedWeight === 0
+          ? 0
+          : Number(
+              (Math.ceil(parsedSelectedWeight / increment) * increment).toFixed(
+                2
+              )
+            );
       if (!weights.includes(snappedSelectedWeight)) {
         weights.push(snappedSelectedWeight);
         weights.sort((a, b) => a - b);
@@ -968,10 +995,10 @@ export default function CurrentWorkout() {
   ) => {
     // Week index er ikke nullindeksert, så sjekk om vi er i uke 1 (weekIndex === 1)
     if (weekIndex === 1) {
-      if (!set.targetReps || !set.targetWeight) {
+      if (isUnsetRepValue(set.targetReps) || isBlankValue(set.targetWeight)) {
         // Hvis vi ikke har target verdier, returner noIndicator
         return "noIndicator";
-      } else if (set.reps === 0 && set.weight === 0) {
+      } else if (isUnsetRepValue(set.reps) && Number(set.weight) === 0) {
         // Hvis vi har target verdier men reps og vekt ikke er satt, oppdater dem
         setSets((prev) => ({
           ...prev,
@@ -994,7 +1021,7 @@ export default function CurrentWorkout() {
     }
 
     // Fortsett med evalueringen bare hvis reps og vekt er logget
-    if (set.reps === 0) {
+    if (isUnsetRepValue(set.reps)) {
       return "noIndicator";
     }
 
@@ -1002,13 +1029,23 @@ export default function CurrentWorkout() {
     const targetWeight = parseFloat(set.targetWeight);
     const targetReps = parseInt(set.targetReps, 10);
     const currentWeight = parseFloat(set.weight);
-    const currentReps = parseInt(set.reps, 10);
 
     // Hvis reps inneholder RIR-verdier, skal vi ikke evaluere statusen
     if (
-      currentReps === "3 RIR" ||
-      currentReps === "2 RIR" ||
-      currentReps === "0/1 RIR"
+      set.reps === "3 RIR" ||
+      set.reps === "2 RIR" ||
+      set.reps === "0/1 RIR"
+    ) {
+      return "noIndicator";
+    }
+
+    const currentReps = parseInt(set.reps, 10);
+
+    if (
+      !Number.isFinite(targetWeight) ||
+      !Number.isFinite(targetReps) ||
+      !Number.isFinite(currentWeight) ||
+      !Number.isFinite(currentReps)
     ) {
       return "noIndicator";
     }
@@ -1284,7 +1321,7 @@ export default function CurrentWorkout() {
                         </div>
                         <select
                           data-testid="set-weight-select"
-                          value={set.weight || set.targetWeight || ""}
+                          value={getSetLogWeight(set)}
                           onChange={(e) => {
                             handleWeightChange(
                               currentDayIndex,
@@ -1296,10 +1333,10 @@ export default function CurrentWorkout() {
                           }}
                           className="bg-inputBGGray text-center border-black w-20 rounded p-1"
                         >
-                          <option value={"Choose weight"} />
+                          <option value="">Choose weight</option>
                           {getWeightOptions(
                             exercise,
-                            set.weight || set.targetWeight
+                            getSetLogWeight(set)
                           ).map((weight) => (
                             <option key={weight} value={weight}>
                               {weight}
@@ -1313,13 +1350,7 @@ export default function CurrentWorkout() {
                         </div>
                         <select
                           data-testid="set-reps-select"
-                          value={
-                            typeof set.reps === "string"
-                              ? set.reps
-                              : set.reps ||
-                                (!set.completed && set.targetReps) ||
-                                ""
-                          }
+                          value={getSetRepsSelectValue(set)}
                           onChange={(e) =>
                             handleRepsChange(
                               currentDayIndex,
@@ -1330,6 +1361,7 @@ export default function CurrentWorkout() {
                           }
                           className="bg-inputBGGray text-center border-black w-full rounded p-1"
                         >
+                          <option value="">Choose reps</option>
                           {week <= 2 && (
                             <option value="3 RIR" disabled>
                               3 RIR
@@ -1421,11 +1453,7 @@ export default function CurrentWorkout() {
                               currentDayIndex,
                               exIndex,
                               setIndex,
-                              e.target.checked,
-                              sets[currentDayIndex]?.[exIndex]?.[setIndex]
-                                ?.weight || "",
-                              sets[currentDayIndex]?.[exIndex]?.[setIndex]
-                                ?.reps || ""
+                              e.target.checked
                             )
                           }
                           className="scale-125"
