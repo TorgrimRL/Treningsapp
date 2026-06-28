@@ -13,6 +13,10 @@ export default function Login() {
   const { apiFetch } = useApiFetch();
   const baseUrl = import.meta.env.VITE_API_URL;
 
+  const handleAuth0Login = () => {
+    window.location.href = `${baseUrl}/auth0/login`;
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setLoading(true);
@@ -103,6 +107,14 @@ export default function Login() {
           style={{ padding: "8px 16px" }}
         >
           {loading ? "Loading..." : "Log In"}
+        </button>
+        <button
+          data-testid="auth0-login"
+          type="button"
+          onClick={handleAuth0Login}
+          className="bg-white text-black border-none py-2 px-4 cursor-pointer text-lg mt-3 w-full"
+        >
+          Continue with Auth0
         </button>
         {message && <p>{message}</p>}
       </form>

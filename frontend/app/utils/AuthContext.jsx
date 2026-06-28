@@ -1,28 +1,52 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
   const [authCheckInProgress, setAuthCheckInProgress] = useState(true);
   const baseUrl = import.meta.env.VITE_API_URL;
 
   const login = () => setIsLoggedIn(true);
-  const logout = () => setIsLoggedIn(false);
-  const setAuthStatus = (status) => setIsLoggedIn(status);
+  const logout = () => {
+    setIsLoggedIn(false);
+    setCurrentUser(null);
+  };
+  const setAuthStatus = (status) => {
+    setIsLoggedIn(status);
+    if (!status) {
+      setCurrentUser(null);
+    }
+  };
+
+  const fetchCurrentUser = async () => {
+    const response = await fetch(`${baseUrl}/me`, {
+      credentials: "include",
+    });
+
+    if (!response.ok) {
+      setCurrentUser(null);
+      return null;
+    }
+
+    const data = await response.json();
+    setCurrentUser(data.user || null);
+    return data.user || null;
+  };
 
   const checkAuthStatus = async () => {
     try {
       const response = await fetch(`${baseUrl}/check-auth`, {
-        credentials: "include", // Pass på at cookies inkluderes
+        credentials: "include",
       });
 
-      console.log("Cookies available:", document.cookie); // Sjekk hvilke cookies som sendes
+      console.log("Cookies available:", document.cookie);
 
       if (!response.ok) {
         console.error("Server error:", response.status);
         setIsLoggedIn(false);
+        setCurrentUser(null);
         return;
       }
 
@@ -31,10 +55,16 @@ export const AuthProvider = ({ children }) => {
 
       const data = JSON.parse(responseText);
       setIsLoggedIn(data.isLoggedIn);
+      if (data.isLoggedIn) {
+        await fetchCurrentUser();
+      } else {
+        setCurrentUser(null);
+      }
       console.log("Auth status checked:", data.isLoggedIn);
     } catch (error) {
       console.error("Failed to check auth status:", error);
       setIsLoggedIn(false);
+      setCurrentUser(null);
     } finally {
       setAuthCheckInProgress(false);
     }
@@ -46,7 +76,15 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ isLoggedIn, login, logout, setAuthStatus, authCheckInProgress }}
+      value={{
+        isLoggedIn,
+        currentUser,
+        login,
+        logout,
+        setAuthStatus,
+        checkAuthStatus,
+        authCheckInProgress,
+      }}
     >
       {children}
     </AuthContext.Provider>

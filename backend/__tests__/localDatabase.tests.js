@@ -23,14 +23,14 @@ describe("local SQLite database adapter", () => {
       logger: null,
     });
 
-    // noinspection SqlNoDataSourceInspection
+    // noinspection SqlNoDataSourceInspection,SqlDialectInspection
     const insert = await db.sql`
       INSERT INTO users (username, password)
       VALUES (${"local@example.com"}, ${"hashed-password"})
     `;
     expect(insert).toMatchObject({ lastID: 1, changes: 1 });
 
-    // noinspection SqlNoDataSourceInspection
+    // noinspection SqlNoDataSourceInspection,SqlDialectInspection
     const users = await db.sql`
       SELECT * FROM users WHERE username = ${"local@example.com"}
     `;
@@ -39,16 +39,21 @@ describe("local SQLite database adapter", () => {
         id: 1,
         username: "local@example.com",
         password: "hashed-password",
+        auth_provider: "local",
+        auth0_sub: null,
+        email: null,
+        email_verified: 0,
+        picture: null,
       },
     ]);
 
-    // noinspection SqlNoDataSourceInspection
+    // noinspection SqlNoDataSourceInspection,SqlDialectInspection
     const update = await db.sql`
       UPDATE users SET password = ${"new-hash"} WHERE id = ${1}
     `;
     expect(update.changes).toBe(1);
 
-    // noinspection SqlNoDataSourceInspection
+    // noinspection SqlNoDataSourceInspection,SqlDialectInspection
     const remove = await db.sql`
       DELETE FROM users WHERE id = ${1}
     `;
@@ -56,12 +61,12 @@ describe("local SQLite database adapter", () => {
   });
 
   it("supports raw SQL strings for schema and maintenance commands", async () => {
-    // noinspection SqlNoDataSourceInspection
+    // noinspection SqlNoDataSourceInspection,SqlDialectInspection
     await db.sql("CREATE TABLE example (id INTEGER PRIMARY KEY, name TEXT)");
-    // noinspection SqlNoDataSourceInspection
+    // noinspection SqlNoDataSourceInspection,SqlDialectInspection
     await db.sql("INSERT INTO example (name) VALUES (?)", "raw");
 
-    // noinspection SqlNoDataSourceInspection
+    // noinspection SqlNoDataSourceInspection,SqlDialectInspection
     const rows = await db.sql("SELECT * FROM example");
 
     expect(rows).toEqual([{ id: 1, name: "raw" }]);
