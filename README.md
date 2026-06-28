@@ -41,6 +41,12 @@ Backenden trenger en lokal `backend/.env` for vanlig kjøring:
 ```bash
 DB_URI=<sqlite-cloud-uri>
 JWT_SECRET_KEY=<valgfri-lang-hemmelighet>
+AUTH0_DOMAIN=auth-setoptimizer.eu.auth0.com
+AUTH0_CLIENT_ID=<auth0-client-id>
+AUTH0_CLIENT_SECRET=<auth0-client-secret>
+AUTH0_SECRET=<lang-random-verdi>
+AUTH0_BASE_URL=http://localhost:3000
+FRONTEND_URL=http://localhost:5173
 ```
 
 Testene bruker mock/in-memory database og trenger ikke `DB_URI`.
@@ -79,12 +85,7 @@ npm run db:seed
 npm run dev:local
 ```
 
-Demo-login for lokal utvikling:
-
-```text
-Bruker: demo@example.com
-Passord: demo1234
-```
+Lokal login går via Auth0. Den seedede demo-brukeren brukes av E2E-testene via en signert app-cookie, ikke via password-login.
 
 For lokal frontend peker `frontend/.env` fortsatt på samme API-base:
 

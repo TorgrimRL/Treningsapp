@@ -54,52 +54,52 @@ En Node.js Express-server tar imot forespørsler fra frontenden, behandler dem o
 Overnevnte filstruktur viser prosjektets kjernefiler. `node_modules` er utelatt for oversiktens skyld.
 
 ## Hovedfunksjonalitet
-- **Brukerhåndtering:**  
+- **Brukerhåndtering:**
   Registrering, innlogging og sletting av brukere via JWT-basert autentisering.
-- **Treningsplaner (Mesocycles):**  
-  Opprette, hente, oppdatere og markere planer som fullførte eller gjeldende.  
+- **Treningsplaner (Mesocycles):**
+  Opprette, hente, oppdatere og markere planer som fullførte eller gjeldende.
   Inneholder også logikk for å håndtere progresjon (f.eks. økende vekter og repetisjoner) og “deload”-uker.
-- **Øvelser:**  
+- **Øvelser:**
   Opprette og hente tilpassede øvelser for hver bruker.
-- **Progresjonsberegning:**  
+- **Progresjonsberegning:**
   Regner ut nye vekt- og repetisjonsmål basert på tidligere prestasjoner.
 
 ## Teknologistack
 - **Node.js & Express:** Serverrammeverk for HTTP-håndtering.
 - **SQLite (via [@sqlitecloud/drivers])**: Database for å lagre brukere, mesocycles og øvelser.
-- **JWT & bcrypt:** For autentisering og trygg oppbevaring av passord.
+- **Auth0 & JWT:** Auth0 håndterer login/signup/logout, mens en lokal httpOnly JWT-cookie autoriserer appens API-ruter.
 - **CORS & Body-Parser:** Tillater forespørsler fra definerte domener og parsing av JSON-data fra klienten.
 
 ## Viktige Filer og Mapper
 
-1. **`index.js`**  
+1. **`index.js`**
    - Applikasjonens inngangspunkt. Setter opp Express, CORS, Body-Parser, ruter og kobler til databasen.
-   - Oppretter Endepunkter for blant annet `/api/register`, `/api/login`, `/api/logout` og `/api/check-auth`.
+   - Oppretter Auth0-ruter, `/api/me`, CORS, CSRF-tokenrute og kobler til domenespesifikke API-ruter.
 
-2. **`remoteDatabase.js`**  
-   - Initialiserer koblingen til en “fjern” SQLite-database.  
+2. **`remoteDatabase.js`**
+   - Initialiserer koblingen til en “fjern” SQLite-database.
    - Oppretter tabeller (`users`, `Mesocycles`, `exercises`) ved oppstart.
 
-3. **`middleware.js`**  
+3. **`middleware.js`**
    - **`authenticateToken`**: Middleware for å verifisere JWT-tokens.
    - **`csrfProtection`**: Bruker `csurf` for CSRF-beskyttelse.
    - **`csrfTokenRoute`**: Endepunkt for å hente CSRF-token.
 
-4. **`routes/`**  
-   - **`exerciseRoutes.js`**: Ruter for oppretting og henting av øvelser (f.eks. `POST /exercises`, `GET /exercises`).  
+4. **`routes/`**
+   - **`exerciseRoutes.js`**: Ruter for oppretting og henting av øvelser (f.eks. `POST /exercises`, `GET /exercises`).
    - **`mesocycleRoutes.js`**: Ruter for treningsplaner (oppretting, henting, oppdatering).
 
-5. **`utils/`**  
-   - **`calculateNewTarget.js`**: Beregner ny vekt/repetisjonsmål basert på forrige trening.  
-   - **`createDeloadWeek.js`**: Lager en “deload”-uke med lavere belastning.  
+5. **`utils/`**
+   - **`calculateNewTarget.js`**: Beregner ny vekt/repetisjonsmål basert på forrige trening.
+   - **`createDeloadWeek.js`**: Lager en “deload”-uke med lavere belastning.
    - **`processPlan.js`**: Identifiserer fullførte dager i en treningsplan, m.m.
 
 ## Autentisering og Sikkerhet
-- **JWT-baserte Tokens:**  
-  Brukere får et token ved innlogging, som lagres i en cookie. Tokenet verifiseres med `authenticateToken`-middleware.
-- **Bcrypt**  
-  Hashing av passord for trygg lagring i databasen.
-- **CSRF-beskyttelse**  
+- **Auth0-login:**
+  Login, signup og logout går via Auth0-rutene under `/api/auth0`.
+- **JWT-baserte app-tokens:**
+  Auth0 callback setter en lokal httpOnly JWT-cookie. Tokenet verifiseres med `authenticateToken`-middleware.
+- **CSRF-beskyttelse**
   Gjennom `csurf` for å sikre skriveoperasjoner mot uautorisert tilgang.
 
 ## API-ruter
@@ -107,9 +107,10 @@ Eksempler på nøkkelruter (flere finnes i filene `exerciseRoutes.js` og `mesocy
 
 | Metode  | Rute               | Formål                                                                                  |
 |---------|--------------------|-----------------------------------------------------------------------------------------|
-| `POST`  | `/api/register`    | Opprett ny bruker (lagrer kryptert passord)                                            |
-| `POST`  | `/api/login`       | Logg inn, motta JWT-token via cookie                                                   |
-| `GET`   | `/api/check-auth`  | Verifiserer at brukeren har en gyldig token                                            |
+| `GET`   | `/api/auth0/login` | Starter Auth0-login                                                                    |
+| `GET`   | `/api/auth0/register` | Starter Auth0-signup                                                                |
+| `GET`   | `/api/auth0/logout` | Logger ut av Auth0 og clearer lokal app-cookie                                        |
+| `GET`   | `/api/me`          | Henter current user fra lokal app-cookie                                               |
 | `GET`   | `/api/exercises`   | Henter alle øvelser for pålogget bruker                                               |
 | `POST`  | `/api/exercises`   | Oppretter ny øvelse for pålogget bruker                                               |
 | `POST`  | `/api/mesocycles`  | Oppretter ny treningsplan                                                              |
@@ -118,11 +119,11 @@ Eksempler på nøkkelruter (flere finnes i filene `exerciseRoutes.js` og `mesocy
 | `GET`   | `/api/current-workout` | Henter gjeldende treningsplan og håndterer progresjonsberegning i sanntid        |
 
 ## Mulige Forbedringer
-- **Omfattende enhetstester:**  
+- **Omfattende enhetstester:**
   Flere tester kunne implementeres for å sikre robusthet, særlig rundt kritiske API-endepunkter.
-- **Mer robust feil- og logginghåndtering:**  
+- **Mer robust feil- og logginghåndtering:**
   Forenkler feilsøking i produksjonsmiljø ved å ha mer utfyllende loggmeldinger.
-- **Mer utfyllende dokumentasjon:**  
+- **Mer utfyllende dokumentasjon:**
   Enda mer detaljerte beskrivelser av rutene (med eksempler på forespørsler og svar) i en egen API-dokumentasjon.
 
 ---

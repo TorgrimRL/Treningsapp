@@ -1,10 +1,15 @@
 import { jest } from "@jest/globals";
 import request from "supertest";
-import bcrypt from "bcryptjs";
 import { createTestDb } from "../testHelpers/testDb.js";
 import { loadAppWithQuery } from "../testHelpers/loadApp.js";
-import { registerAndLogin } from "../testHelpers/api.js";
+import { createAuthenticatedUser } from "../testHelpers/api.js";
 import { upsertAuth0User } from "../utils/auth0Users.js";
+
+function expectClearedTokenCookie(response) {
+  expect(response.headers["set-cookie"].join("; ")).toEqual(
+    expect.stringContaining("token=;")
+  );
+}
 
 describe("auth regression", () => {
   let db;
@@ -25,112 +30,73 @@ describe("auth regression", () => {
     await db?.close();
   });
 
-  it("registers a new user with a hashed password and rejects duplicates", async () => {
-    const response = await request(app)
-      .post("/api/register")
-      .send({ username: "newuser", password: "newpassword" })
-      .expect(201);
-
-    expect(response.body).toEqual({ message: "User registered" });
-
-    // noinspection SqlNoDataSourceInspection
-    const storedUser = await db.get("SELECT * FROM users WHERE username = ?", [
-      "newuser",
-    ]);
-    expect(storedUser.password).not.toBe("newpassword");
-    expect(storedUser.auth_provider).toBe("local");
-    expect(storedUser.auth0_sub).toBeNull();
-    await expect(
-      bcrypt.compare("newpassword", storedUser.password)
-    ).resolves.toBe(true);
-
-    const duplicate = await request(app)
-      .post("/api/register")
-      .send({ username: "newuser", password: "newpassword" })
-      .expect(400);
-
-    expect(duplicate.body).toEqual({ message: "Username already exists" });
+  it("does not expose legacy password auth routes", async () => {
+    await request(app).post("/api/register").send({}).expect(404);
+    await request(app).post("/api/login").send({}).expect(404);
+    await request(app).post("/api/logout").expect(404);
+    await request(app).get("/api/check-auth").expect(404);
   });
 
-  it("logs in valid users, sets an httpOnly token cookie, and rejects bad credentials", async () => {
-    await request(app)
-      .post("/api/register")
-      .send({ username: "newuser", password: "newpassword" })
-      .expect(201);
+  it("returns logged-out JSON from /api/me without a cookie", async () => {
+    const response = await request(app).get("/api/me").expect(401);
 
-    const login = await request(app)
-      .post("/api/login")
-      .send({ username: "newuser", password: "newpassword" })
-      .expect(200);
-
-    expect(login.body.token).toEqual(expect.any(String));
-    expect(login.headers["set-cookie"].join("; ")).toEqual(
-      expect.stringContaining("token=")
-    );
-    expect(login.headers["set-cookie"].join("; ")).toEqual(
-      expect.stringContaining("HttpOnly")
-    );
-
-    await request(app)
-      .post("/api/login")
-      .send({ username: "newuser", password: "wrongpassword" })
-      .expect(400, "Username or password is incorrect");
-
-    await request(app)
-      .post("/api/login")
-      .send({ username: "missing", password: "newpassword" })
-      .expect(400, "Username or password is incorrect");
+    expect(response.body).toEqual({ isLoggedIn: false, user: null });
   });
 
-  it("checks auth using the current cookie-based middleware behavior", async () => {
-    const { agent } = await registerAndLogin(app, "newuser", "newpassword");
-
-    const authenticated = await agent.get("/api/check-auth").expect(200);
-    expect(authenticated.body).toEqual({ isLoggedIn: true });
-
-    const currentUser = await agent.get("/api/me").expect(200);
-    expect(currentUser.body.user).toMatchObject({
-      username: "newuser",
-      authProvider: "local",
-      auth0Sub: null,
-      email: null,
-      emailVerified: false,
-      picture: null,
+  it("returns the current local user from /api/me with a valid app cookie", async () => {
+    const { agent, auth0Sub } = await createAuthenticatedUser(app, db, {
+      username: "newuser@example.com",
+      email: "newuser@example.com",
     });
-    expect(currentUser.body.user).not.toHaveProperty("password");
 
-    await request(app).get("/api/check-auth").expect(401, "Access Denied");
+    const response = await agent.get("/api/me").expect(200);
 
-    await request(app)
-      .get("/api/check-auth")
+    expect(response.body).toEqual({
+      isLoggedIn: true,
+      user: expect.objectContaining({
+        username: "newuser@example.com",
+        authProvider: "auth0",
+        auth0Sub,
+        email: "newuser@example.com",
+        emailVerified: true,
+        picture: null,
+      }),
+    });
+    expect(response.body.user).not.toHaveProperty("password");
+  });
+
+  it("clears invalid app cookies on /api/me", async () => {
+    const response = await request(app)
+      .get("/api/me")
       .set("Cookie", "token=not-a-real-token")
-      .expect(403, "Invalid Token");
+      .expect(401);
+
+    expect(response.body).toEqual({ isLoggedIn: false, user: null });
+    expectClearedTokenCookie(response);
   });
 
-  it("logs out authenticated users and clears the token cookie", async () => {
-    const { agent } = await registerAndLogin(app, "newuser", "newpassword");
+  it("clears app cookies for deleted users on /api/me", async () => {
+    const { agent, userId } = await createAuthenticatedUser(app, db, {
+      username: "deleted@example.com",
+    });
+    await db.run("DELETE FROM users WHERE id = ?", [userId]);
 
-    const response = await agent
-      .post("/api/logout")
-      .expect(200, "Logged out successfully");
+    const response = await agent.get("/api/me").expect(401);
 
-    expect(response.headers["set-cookie"].join("; ")).toEqual(
-      expect.stringContaining("token=;")
-    );
-
-    await request(app).post("/api/logout").expect(401, "Access Denied");
+    expect(response.body).toEqual({ isLoggedIn: false, user: null });
+    expectClearedTokenCookie(response);
   });
 
-  it("clears the legacy token from the Auth0 logout route when Auth0 is disabled", async () => {
-    const { agent } = await registerAndLogin(app, "newuser", "newpassword");
+  it("clears the local app token from the Auth0 logout route when Auth0 is disabled", async () => {
+    const { agent } = await createAuthenticatedUser(app, db, {
+      username: "newuser@example.com",
+    });
 
     const response = await agent.get("/api/auth0/logout").expect(302);
 
     expect(response.headers.location).toBe("http://localhost:5173");
-    expect(response.headers["set-cookie"].join("; ")).toEqual(
-      expect.stringContaining("token=;")
-    );
-    await agent.get("/api/check-auth").expect(401, "Access Denied");
+    expectClearedTokenCookie(response);
+    await agent.get("/api/me").expect(401);
   });
 
   it("creates and updates a local user for an Auth0 identity", async () => {
@@ -172,12 +138,12 @@ describe("auth regression", () => {
     expect(users).toHaveLength(1);
   });
 
-  it("links verified Auth0 email to an existing local user without breaking password login", async () => {
-    await request(app)
-      .post("/api/register")
-      .send({ username: "alice@example.com", password: "newpassword" })
-      .expect(201);
-
+  it("links verified Auth0 email to an existing local user", async () => {
+    await db.run(
+      `INSERT INTO users (username, password, auth_provider, email, email_verified)
+       VALUES (?, ?, ?, ?, ?)`,
+      ["alice@example.com", "legacy-hash", "local", null, 0]
+    );
     const existingUser = await db.get("SELECT * FROM users WHERE username = ?", [
       "alice@example.com",
     ]);
@@ -195,9 +161,38 @@ describe("auth regression", () => {
     expect(linkedUser.auth_provider).toBe("local_auth0");
     expect(linkedUser.auth0_sub).toBe("auth0|alice");
 
-    await request(app)
-      .post("/api/login")
-      .send({ username: "alice@example.com", password: "newpassword" })
-      .expect(200);
+    const storedUser = await db.get("SELECT * FROM users WHERE id = ?", [
+      existingUser.id,
+    ]);
+    expect(storedUser.auth0_sub).toBe("auth0|alice");
+  });
+
+  it("does not link unverified Auth0 email to an existing local user", async () => {
+    await db.run(
+      `INSERT INTO users (username, password, auth_provider, email, email_verified)
+       VALUES (?, ?, ?, ?, ?)`,
+      ["alice@example.com", "legacy-hash", "local", null, 0]
+    );
+    const existingUser = await db.get("SELECT * FROM users WHERE username = ?", [
+      "alice@example.com",
+    ]);
+
+    const auth0User = await upsertAuth0User(
+      {
+        sub: "auth0|unverified-alice",
+        email: "alice@example.com",
+        email_verified: false,
+      },
+      db.query
+    );
+
+    expect(auth0User.id).not.toBe(existingUser.id);
+    expect(auth0User.username).toBe("alice@example.com-1");
+    expect(auth0User.auth_provider).toBe("auth0");
+
+    const storedExistingUser = await db.get("SELECT * FROM users WHERE id = ?", [
+      existingUser.id,
+    ]);
+    expect(storedExistingUser.auth0_sub).toBeNull();
   });
 });

@@ -1,6 +1,5 @@
 import express from "express";
 import jwt from "jsonwebtoken";
-import bcrypt from "bcryptjs";
 import cookieParser from "cookie-parser";
 import bodyParser from "body-parser";
 import cors from "cors";
@@ -15,7 +14,7 @@ import {
 import dotenv from "dotenv";
 import { safeQuery } from "./utils/safeQuery.js";
 import { buildResponsePayload } from "./utils/buildResponsePayload.js";
-import { clearAuthTokenCookie, setAuthTokenCookie } from "./utils/authCookies.js";
+import { clearAuthTokenCookie } from "./utils/authCookies.js";
 import { serializeUser } from "./utils/auth0Users.js";
 dotenv.config();
 
@@ -73,98 +72,42 @@ app.get("/api/ping", async (req, res) => {
   }
 });
 
-app.post("/api/register", async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    const { result: userResult, hadRetry: selectHadRetry } =
-      await safeQuery`SELECT * FROM users WHERE username = ${username}`;
-    if (userResult.length > 0) {
-      return res.status(400).json({ message: "Username already exists" });
-    }
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const { hadRetry: insertHadRetry } =
-      await safeQuery`INSERT INTO users (username, password) VALUES (${username}, ${hashedPassword})`;
-    const hadRetry = selectHadRetry || insertHadRetry;
-    const responsePayload = buildResponsePayload(hadRetry, {
-      message: "User registered",
-    });
-    res.status(201).json(responsePayload);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
+function sendLoggedOut(res) {
+  return res.status(401).json({ isLoggedIn: false, user: null });
+}
 
-app.post("/api/login", async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    const { result: userResult, hadRetry } =
-      await safeQuery`SELECT * FROM users WHERE username = ${username}`;
-    const user = userResult[0];
-    if (!user) {
-      return res.status(400).send("Username or password is incorrect");
-    }
-    const validPass = await bcrypt.compare(password, user.password);
-    if (!validPass) {
-      return res.status(400).send("Username or password is incorrect");
-    }
-    const token = setAuthTokenCookie(res, user.id);
-    const responsePayload = buildResponsePayload(hadRetry, { token });
-    res.json(responsePayload);
-  } catch (err) {
-    console.log("Database Error:", err);
-    return res.status(500).send(err.message);
-  }
-});
-
-app.get("/api/check-auth", authenticateToken, (req, res) => {
+app.get("/api/me", async (req, res) => {
   const token = req.cookies.token;
-
-  console.log("Received token for /api/check-auth:", token);
-
   if (!token) {
-    console.log("No token found in cookies.");
-    return res.json({ isLoggedIn: false });
+    return sendLoggedOut(res);
   }
 
+  let decodedToken;
   try {
-    jwt.verify(token, secretKey);
-    console.log("Token verification successful");
-    res.json({ isLoggedIn: true });
+    decodedToken = jwt.verify(token, secretKey);
   } catch (error) {
-    console.log("Token verification failed:", error.message);
     clearAuthTokenCookie(res);
-    res.json({ isLoggedIn: false });
+    return sendLoggedOut(res);
   }
-});
 
-app.get("/api/me", authenticateToken, async (req, res) => {
   try {
     const { result } = await safeQuery`
       SELECT id, username, auth_provider, auth0_sub, email, email_verified, picture
       FROM users
-      WHERE id = ${req.user.id}
+      WHERE id = ${decodedToken.id}
       LIMIT 1
     `;
     const user = result[0];
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      clearAuthTokenCookie(res);
+      return sendLoggedOut(res);
     }
 
-    res.json({ user: serializeUser(user) });
+    res.json({ isLoggedIn: true, user: serializeUser(user) });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
-});
-
-app.post("/api/logout", authenticateToken, async (req, res) => {
-  console.log("Logout request received");
-  console.log("Cookies before clearing:", req.cookies);
-
-  clearAuthTokenCookie(res);
-
-  console.log("Cookies after clearing:", req.cookies);
-  res.status(200).send("Logged out successfully");
 });
 app.delete(
   "/api/users/:username",

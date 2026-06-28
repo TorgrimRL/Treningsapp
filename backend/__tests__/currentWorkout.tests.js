@@ -1,7 +1,7 @@
 import { jest } from "@jest/globals";
 import { createTestDb } from "../testHelpers/testDb.js";
 import { loadAppWithQuery } from "../testHelpers/loadApp.js";
-import { registerAndLogin } from "../testHelpers/api.js";
+import { createAuthenticatedUser } from "../testHelpers/api.js";
 
 function progressionPlan() {
   return [
@@ -262,7 +262,7 @@ describe("current workout regression", () => {
   });
 
   it("returns 404 when the user has no current workout", async () => {
-    const { agent } = await registerAndLogin(app, "alice");
+    const { agent } = await createAuthenticatedUser(app, db, { username: "alice" });
 
     const response = await agent.get("/api/current-workout").expect(404);
 
@@ -270,7 +270,7 @@ describe("current workout regression", () => {
   });
 
   it("rejects invalid stored plan JSON", async () => {
-    const { agent } = await registerAndLogin(app, "alice");
+    const { agent } = await createAuthenticatedUser(app, db, { username: "alice" });
     // noinspection SqlNoDataSourceInspection,SqlDialectInspection
     const user = await db.get("SELECT * FROM users WHERE username = ?", [
       "alice",
@@ -290,7 +290,7 @@ describe("current workout regression", () => {
   });
 
   it("computes completion state, progression targets, and deload weeks", async () => {
-    const { agent } = await registerAndLogin(app, "alice");
+    const { agent } = await createAuthenticatedUser(app, db, { username: "alice" });
 
     await agent
       .post("/api/mesocycles")
@@ -344,7 +344,7 @@ describe("current workout regression", () => {
   });
 
   it("computes per-exercise progression modes", async () => {
-    const { agent } = await registerAndLogin(app, "alice");
+    const { agent } = await createAuthenticatedUser(app, db, { username: "alice" });
 
     await agent
       .post("/api/mesocycles")
@@ -395,7 +395,7 @@ describe("current workout regression", () => {
   });
 
   it("progresses dropset sets with each exercise progression mode", async () => {
-    const { agent } = await registerAndLogin(app, "alice");
+    const { agent } = await createAuthenticatedUser(app, db, { username: "alice" });
 
     await agent
       .post("/api/mesocycles")
@@ -428,7 +428,7 @@ describe("current workout regression", () => {
   });
 
   it("preserves configured dropsets when fetching the active workout", async () => {
-    const { agent } = await registerAndLogin(app, "alice");
+    const { agent } = await createAuthenticatedUser(app, db, { username: "alice" });
 
     await agent
       .post("/api/mesocycles")

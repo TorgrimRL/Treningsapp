@@ -1,7 +1,7 @@
 import { jest } from "@jest/globals";
 import { createTestDb } from "../testHelpers/testDb.js";
 import { loadAppWithQuery } from "../testHelpers/loadApp.js";
-import { registerAndLogin } from "../testHelpers/api.js";
+import { createAuthenticatedUser } from "../testHelpers/api.js";
 
 function makePlan(completed = false) {
   return [
@@ -62,8 +62,8 @@ describe("exercise and mesocycle regression", () => {
   });
 
   it("creates and lists exercises only for the authenticated user", async () => {
-    const userA = await registerAndLogin(app, "alice");
-    const userB = await registerAndLogin(app, "bob");
+    const userA = await createAuthenticatedUser(app, db, { username: "alice" });
+    const userB = await createAuthenticatedUser(app, db, { username: "bob" });
 
     await userA.agent
       .post("/api/exercises")
@@ -101,7 +101,7 @@ describe("exercise and mesocycle regression", () => {
   });
 
   it("creates mesocycles, marks the newest one current, and parses list responses", async () => {
-    const { agent } = await registerAndLogin(app, "alice");
+    const { agent } = await createAuthenticatedUser(app, db, { username: "alice" });
 
     await createMesocycle(agent, { name: "First plan" });
     await createMesocycle(agent, { name: "Second plan" });
@@ -122,8 +122,8 @@ describe("exercise and mesocycle regression", () => {
   });
 
   it("keeps private mesocycles scoped to their owner", async () => {
-    const userA = await registerAndLogin(app, "alice");
-    const userB = await registerAndLogin(app, "bob");
+    const userA = await createAuthenticatedUser(app, db, { username: "alice" });
+    const userB = await createAuthenticatedUser(app, db, { username: "bob" });
     const { id } = await createMesocycle(userA.agent, { name: "Private plan" });
 
     const ownerResponse = await userA.agent
@@ -154,7 +154,7 @@ describe("exercise and mesocycle regression", () => {
   });
 
   it("sets completedDate when all sets are completed during update", async () => {
-    const { agent } = await registerAndLogin(app, "alice");
+    const { agent } = await createAuthenticatedUser(app, db, { username: "alice" });
     const { id } = await createMesocycle(agent, { name: "Plan to finish" });
 
     const response = await agent
@@ -181,7 +181,7 @@ describe("exercise and mesocycle regression", () => {
   });
 
   it("keeps progression mode and weight increment independent during updates", async () => {
-    const { agent } = await registerAndLogin(app, "alice");
+    const { agent } = await createAuthenticatedUser(app, db, { username: "alice" });
     const { id } = await createMesocycle(agent, {
       name: "Settings plan",
       weeks: 1,

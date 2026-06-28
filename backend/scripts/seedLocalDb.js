@@ -1,11 +1,10 @@
-import bcrypt from "bcryptjs";
 import { pathToFileURL } from "node:url";
 import { createLocalDatabase } from "../db/localDatabase.js";
 import { ensureSchema } from "../db/schema.js";
 
 export const demoCredentials = {
   username: "demo@example.com",
-  password: "demo1234",
+  auth0Sub: "google-oauth2|demo-user",
 };
 
 const customExercises = [
@@ -233,11 +232,12 @@ export async function seedLocalDatabase({
     await ensureSchema((sql, ...values) => db.sql(sql, ...values), { logger });
     await resetTables(db);
 
-    const hashedPassword = await bcrypt.hash(demoCredentials.password, 10);
     // noinspection SqlNoDataSourceInspection
     const userResult = await db.sql`
-      INSERT INTO users (username, password)
-      VALUES (${demoCredentials.username}, ${hashedPassword})
+      INSERT INTO users
+        (username, password, auth_provider, auth0_sub, email, email_verified, picture)
+      VALUES
+        (${demoCredentials.username}, ${null}, ${"auth0"}, ${demoCredentials.auth0Sub}, ${demoCredentials.username}, ${1}, ${null})
     `;
     const userId = userResult.lastID;
 
