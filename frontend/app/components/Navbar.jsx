@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../utils/AuthContext";
 import { Link } from "@remix-run/react";
-import Logout from "./Logout";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBars } from "@fortawesome/free-solid-svg-icons";
 
@@ -9,13 +8,12 @@ export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const { isLoggedIn } = useAuth();
   const menuRef = useRef(null);
+  const baseUrl = import.meta.env.VITE_API_URL;
 
-  const [showLogout, setShowLogout] = useState(false);
-  const handleLogout = (e) => {
-    e.stopPropagation();
-    if (!showLogout) {
-      setShowLogout(true);
-    }
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    sessionStorage.removeItem("token");
+    window.location.assign(`${baseUrl}/auth0/logout`);
   };
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -208,7 +206,6 @@ export default function Navbar() {
           </div>
         )}
       </div>
-      {showLogout && <Logout />}
     </nav>
   );
 }
