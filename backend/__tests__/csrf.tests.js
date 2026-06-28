@@ -2,7 +2,7 @@ import { jest } from "@jest/globals";
 import request from "supertest";
 import { createTestDb } from "../testHelpers/testDb.js";
 import { loadAppWithQuery } from "../testHelpers/loadApp.js";
-import { getCsrfToken, registerAndLogin } from "../testHelpers/api.js";
+import { createAuthenticatedUser, getCsrfToken } from "../testHelpers/api.js";
 
 describe("CSRF current behavior regression", () => {
   let db;
@@ -26,20 +26,20 @@ describe("CSRF current behavior regression", () => {
   it("requires auth before issuing a CSRF token", async () => {
     await request(app).get("/csrf-token").expect(401, "Access Denied");
 
-    const { agent } = await registerAndLogin(app, "csrfuser");
+    const { agent } = await createAuthenticatedUser(app, db, { username: "csrfuser" });
     const csrfToken = await getCsrfToken(agent);
 
     expect(csrfToken).toEqual(expect.any(String));
   });
 
   it("rejects CSRF-protected delete requests without a token", async () => {
-    const { agent, username } = await registerAndLogin(app, "csrfuser");
+    const { agent, username } = await createAuthenticatedUser(app, db, { username: "csrfuser" });
 
     await agent.delete(`/api/users/${username}`).expect(403);
   });
 
   it("accepts CSRF-protected delete requests with the issued token", async () => {
-    const { agent, username } = await registerAndLogin(app, "csrfuser");
+    const { agent, username } = await createAuthenticatedUser(app, db, { username: "csrfuser" });
     const csrfToken = await getCsrfToken(agent);
 
     const response = await agent
@@ -51,7 +51,7 @@ describe("CSRF current behavior regression", () => {
   });
 
   it("documents that exercise creation is currently auth-only and not CSRF-protected", async () => {
-    const { agent } = await registerAndLogin(app, "exerciseuser");
+    const { agent } = await createAuthenticatedUser(app, db, { username: "exerciseuser" });
 
     const response = await agent
       .post("/api/exercises")

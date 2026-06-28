@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../utils/AuthContext";
 import { Link } from "@remix-run/react";
 import Logout from "./Logout";
@@ -7,10 +7,9 @@ import { faBars } from "@fortawesome/free-solid-svg-icons";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const { isLoggedIn, setAuthStatus, checkAuthStatus } = useAuth();
+  const { isLoggedIn } = useAuth();
   const menuRef = useRef(null);
 
-  const baseUrl = import.meta.env.VITE_API_URL;
   const [showLogout, setShowLogout] = useState(false);
   const handleLogout = (e) => {
     e.stopPropagation();
@@ -42,7 +41,6 @@ export default function Navbar() {
 
   return (
     <nav
-      onClick={(e) => e.stopPropagation()}
       style={{
         position: "fixed",
         top: 0,
@@ -53,15 +51,13 @@ export default function Navbar() {
         boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
       }}
     >
-      <div
-        className=" mx-auto flex justify-between items-center px-4 py-2 text-white bg-black"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className=" mx-auto flex justify-between items-center px-4 py-2 text-white bg-black">
         <Link to="/" className="text-red-500 text-2xl font-bold">
           SO
         </Link>
         <div className="md:hidden relative">
           <button
+            type="button"
             onClick={toggleMenu}
             className="text-white focus:outline-none text-xl"
             style={{
@@ -110,9 +106,16 @@ export default function Navbar() {
               >
                 Templates
               </a>
+              <a
+                href="/mesocycles"
+                className="text-white h-full flex items-center "
+              >
+                History
+              </a>
 
               <li className="block px-4 py-2 hover:bg-darkGray">
                 <button
+                  type="button"
                   onClick={handleLogout}
                   className="text-white h-full flex items-center "
                 >
@@ -192,6 +195,7 @@ export default function Navbar() {
                   </li>
                   <li className="block px-4 py-2 hover:bg-darkGray ">
                     <button
+                      type="button"
                       onClick={handleLogout}
                       className="text-white h-full flex items-center hover:bg-gray-700"
                     >

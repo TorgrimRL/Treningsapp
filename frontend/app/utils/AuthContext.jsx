@@ -1,4 +1,10 @@
-import React, { createContext, useState, useContext, useEffect } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 
 const AuthContext = createContext();
 
@@ -8,71 +14,50 @@ export const AuthProvider = ({ children }) => {
   const [authCheckInProgress, setAuthCheckInProgress] = useState(true);
   const baseUrl = import.meta.env.VITE_API_URL;
 
-  const login = () => setIsLoggedIn(true);
-  const logout = () => {
+  const login = useCallback(() => setIsLoggedIn(true), []);
+  const logout = useCallback(() => {
     setIsLoggedIn(false);
     setCurrentUser(null);
-  };
-  const setAuthStatus = (status) => {
+  }, []);
+  const setAuthStatus = useCallback((status) => {
     setIsLoggedIn(status);
     if (!status) {
       setCurrentUser(null);
     }
-  };
+  }, []);
 
-  const fetchCurrentUser = async () => {
-    const response = await fetch(`${baseUrl}/me`, {
-      credentials: "include",
-    });
-
-    if (!response.ok) {
-      setCurrentUser(null);
-      return null;
-    }
-
-    const data = await response.json();
-    setCurrentUser(data.user || null);
-    return data.user || null;
-  };
-
-  const checkAuthStatus = async () => {
+  const checkAuthStatus = useCallback(async () => {
     try {
-      const response = await fetch(`${baseUrl}/check-auth`, {
+      const response = await fetch(`${baseUrl}/me`, {
         credentials: "include",
       });
 
-      console.log("Cookies available:", document.cookie);
-
-      if (!response.ok) {
-        console.error("Server error:", response.status);
-        setIsLoggedIn(false);
-        setCurrentUser(null);
+      if (response.status === 401) {
+        logout();
         return;
       }
 
-      const responseText = await response.text();
-      console.log("Response text:", responseText);
-
-      const data = JSON.parse(responseText);
-      setIsLoggedIn(data.isLoggedIn);
-      if (data.isLoggedIn) {
-        await fetchCurrentUser();
-      } else {
-        setCurrentUser(null);
+      if (!response.ok) {
+        console.error("Failed to fetch current user:", response.status);
+        logout();
+        return;
       }
-      console.log("Auth status checked:", data.isLoggedIn);
+
+      const data = await response.json();
+      const user = data.isLoggedIn ? data.user || null : null;
+      setIsLoggedIn(Boolean(user));
+      setCurrentUser(user);
     } catch (error) {
       console.error("Failed to check auth status:", error);
-      setIsLoggedIn(false);
-      setCurrentUser(null);
+      logout();
     } finally {
       setAuthCheckInProgress(false);
     }
-  };
+  }, [baseUrl, logout]);
 
   useEffect(() => {
     checkAuthStatus();
-  }, []);
+  }, [checkAuthStatus]);
 
   return (
     <AuthContext.Provider

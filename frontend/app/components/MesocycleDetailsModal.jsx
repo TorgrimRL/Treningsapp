@@ -61,7 +61,7 @@ const MesocycleDetailsModal = ({
       shouldCloseOnEsc={false}
       contentLabel="Enter Mesocycle Details"
       className="relative bg-darkGray text-white rounded focus:outline-none shadow-lg p-0 max-w-lg mx-auto mt-20"
-      overlayClassName="fixed inset-0 flex items-start justify-center bg-black bg-opacity-50 z-50"
+      overlayClassName="fixed inset-x-0 top-12 bottom-0 flex items-start justify-center bg-black bg-opacity-50 z-20"
     >
       {mesocycleName && numberOfWeeks && (
         <button

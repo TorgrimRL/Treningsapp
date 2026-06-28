@@ -1,4 +1,3 @@
-import bcrypt from "bcryptjs";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -70,10 +69,14 @@ describe("local database seed script", () => {
 
     const { users, exercises, mesocycles } = await readSeededRows(dbPath);
     expect(users).toHaveLength(1);
-    expect(users[0].username).toBe(demoCredentials.username);
-    await expect(
-      bcrypt.compare(demoCredentials.password, users[0].password)
-    ).resolves.toBe(true);
+    expect(users[0]).toMatchObject({
+      username: demoCredentials.username,
+      password: null,
+      auth_provider: "auth0",
+      auth0_sub: demoCredentials.auth0Sub,
+      email: demoCredentials.username,
+      email_verified: 1,
+    });
 
     expect(exercises).toHaveLength(5);
     expect(mesocycles).toHaveLength(3);

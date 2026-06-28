@@ -1403,9 +1403,6 @@ export default function CurrentWorkout() {
                       <span className="text-sm text-white border uppercase border-red-500 bg-darkBackgroundRed inline-block w-auto px-2 py-1">
                         {exercise.muscleGroup}
                       </span>
-                      <span className="text-sm text-gray-500 uppercase">
-                        {exercise.priority || ""}
-                      </span>
                     </div>
                     <button
                       data-testid={`exercise-menu-${exIndex}`}
