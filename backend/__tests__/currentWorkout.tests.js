@@ -172,6 +172,76 @@ function mixedProgressionPlan() {
   return [firstWeek, secondWeek, deloadWeek];
 }
 
+function dropsetExercise({ exercise, progressionMode, weightIncrement }) {
+  return {
+    exercise,
+    type: "barbell",
+    progressionMode,
+    weightIncrement,
+    dropset: {
+      enabled: true,
+      setCount: 2,
+      startWeight: 100,
+      dropPercent: 20,
+    },
+    sets: [
+      set({
+        weight: 100,
+        reps: 10,
+        completed: true,
+        progressionMode,
+        weightIncrement,
+      }),
+      set({
+        weight: 80,
+        reps: 10,
+        completed: true,
+        progressionMode,
+        weightIncrement,
+      }),
+    ],
+  };
+}
+
+function dropsetProgressionPlan() {
+  const firstWeek = {
+    label: "Week 1",
+    exercises: [
+      dropsetExercise({ exercise: "Percent Dropset" }),
+      dropsetExercise({
+        exercise: "Rep Dropset",
+        progressionMode: "reps",
+      }),
+      dropsetExercise({
+        exercise: "Weight Dropset",
+        progressionMode: "weight",
+        weightIncrement: 5,
+      }),
+    ],
+  };
+
+  const secondWeek = {
+    label: "Week 2",
+    exercises: firstWeek.exercises.map((item) => ({
+      ...item,
+      sets: [
+        set({ weight: 0, reps: 0 }),
+        set({ weight: 0, reps: 0 }),
+      ],
+    })),
+  };
+
+  const deloadWeek = {
+    label: "Week 3",
+    exercises: firstWeek.exercises.map((item) => ({
+      ...item,
+      sets: [set({ weight: 0, reps: 0 })],
+    })),
+  };
+
+  return [firstWeek, secondWeek, deloadWeek];
+}
+
 describe("current workout regression", () => {
   let db;
   let app;
@@ -201,12 +271,12 @@ describe("current workout regression", () => {
 
   it("rejects invalid stored plan JSON", async () => {
     const { agent } = await registerAndLogin(app, "alice");
-    // noinspection SqlNoDataSourceInspection
+    // noinspection SqlNoDataSourceInspection,SqlDialectInspection
     const user = await db.get("SELECT * FROM users WHERE username = ?", [
       "alice",
     ]);
 
-    // noinspection SqlNoDataSourceInspection
+    // noinspection SqlNoDataSourceInspection,SqlDialectInspection
     await db.run(
       `INSERT INTO mesocycles
         (name, weeks, daysPerWeek, plan, user_id, completedDate, isCurrent)
@@ -322,6 +392,113 @@ describe("current workout regression", () => {
       targetWeight: 55,
       targetReps: 8,
     });
+  });
+
+  it("progresses dropset sets with each exercise progression mode", async () => {
+    const { agent } = await registerAndLogin(app, "alice");
+
+    await agent
+      .post("/api/mesocycles")
+      .send({
+        name: "Dropset progression plan",
+        weeks: 3,
+        daysPerWeek: 1,
+        plan: dropsetProgressionPlan(),
+        completedDate: null,
+        isCurrent: true,
+      })
+      .expect(201);
+
+    const response = await agent.get("/api/current-workout").expect(200);
+    const [percentExercise, repExercise, weightExercise] =
+      response.body.plan[1].exercises;
+
+    expect(percentExercise.sets).toEqual([
+      expect.objectContaining({ weight: 105, reps: 10, targetWeight: 105, targetReps: 10 }),
+      expect.objectContaining({ weight: 85, reps: 10, targetWeight: 85, targetReps: 10 }),
+    ]);
+    expect(repExercise.sets).toEqual([
+      expect.objectContaining({ weight: 100, reps: 11, targetWeight: 100, targetReps: 11 }),
+      expect.objectContaining({ weight: 80, reps: 11, targetWeight: 80, targetReps: 11 }),
+    ]);
+    expect(weightExercise.sets).toEqual([
+      expect.objectContaining({ weight: 105, reps: 10, targetWeight: 105, targetReps: 10 }),
+      expect.objectContaining({ weight: 85, reps: 10, targetWeight: 85, targetReps: 10 }),
+    ]);
+  });
+
+  it("preserves configured dropsets when fetching the active workout", async () => {
+    const { agent } = await registerAndLogin(app, "alice");
+
+    await agent
+      .post("/api/mesocycles")
+      .send({
+        name: "Configured dropset plan",
+        weeks: 4,
+        daysPerWeek: 1,
+        plan: [
+          {
+            label: "Week 1",
+            exercises: [
+              {
+                exercise: "Configured Dropset",
+                type: "barbell",
+                sets: [set({ weight: 82.5, reps: 8, completed: true })],
+              },
+            ],
+          },
+          {
+            label: "Week 2",
+            exercises: [
+              {
+                exercise: "Configured Dropset",
+                type: "barbell",
+                progressionMode: "percent",
+                weightIncrement: 2.5,
+                dropset: {
+                  enabled: true,
+                  setCount: 5,
+                  startWeight: 100,
+                  dropPercent: 20,
+                },
+                sets: [
+                  set({ weight: 100, reps: 8 }),
+                  set({ weight: 80, reps: 8 }),
+                  set({ weight: 65, reps: 8 }),
+                  set({ weight: 52.5, reps: 8 }),
+                  set({ weight: 42.5, reps: 8 }),
+                ],
+              },
+            ],
+          },
+        ],
+        completedDate: null,
+        isCurrent: true,
+      })
+      .expect(201);
+
+    const response = await agent.get("/api/current-workout").expect(200);
+    const configuredDropset = response.body.plan[1].exercises[0];
+
+    expect(configuredDropset.dropset).toMatchObject({
+      enabled: true,
+      setCount: 5,
+      startWeight: 100,
+    });
+    expect(configuredDropset.sets.map((item) => item.targetWeight)).toEqual([
+      100,
+      80,
+      65,
+      52.5,
+      50,
+    ]);
+    expect(configuredDropset.sets.map((item) => item.weight)).toEqual([
+      100,
+      80,
+      65,
+      52.5,
+      50,
+    ]);
   });
 
 });

@@ -15,8 +15,14 @@ import ProgressBar from "./ProgressBar";
 import ChooseExerciseModal from "./ChooseExerciseModal";
 import ProgressionModeModal from "./ProgressionModeModal";
 import WeightIncrementModal from "./WeightIncrementModal";
+import DropsetModal from "./DropsetModal";
 import { useApiFetch } from "../utils/apiFetch";
 import { normalizeProgressionSettings } from "../constants/constants";
+import {
+  DROPSET_DROP_PERCENT,
+  buildDropsetSets,
+  generateDropsetWeights,
+} from "../utils/dropsets";
 Modal.setAppElement("#root");
 
 const isBlankValue = (value) =>
@@ -37,6 +43,104 @@ const getSetRepsSelectValue = (set) => {
   }
 
   return isUnsetRepValue(set.targetReps) ? "" : set.targetReps;
+};
+
+const getPositiveNumber = (value) => {
+  const parsedValue = Number(value);
+  return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : null;
+};
+
+const getDropsetStartWeight = (exerciseSets = [], fallbackStartWeight) => {
+  const firstSet = exerciseSets[0] || {};
+  return (
+    getPositiveNumber(firstSet.targetWeight) ??
+    getPositiveNumber(firstSet.weight) ??
+    fallbackStartWeight
+  );
+};
+
+const PROGRESSION_FACTORS = [1.0, 1.05, 1.075, 1.1, 1.125];
+
+const roundToIncrement = (value, increment) =>
+  Number((Math.round(value / increment) * increment).toFixed(2));
+
+const getSetProgressionReps = (set = {}) => {
+  const reps = isUnsetRepValue(set.reps) ? set.targetReps : set.reps;
+  const parsedReps = Number(reps);
+
+  return Number.isFinite(parsedReps) ? parsedReps : 0;
+};
+
+const calculateProgressedTarget = ({
+  weight,
+  reps,
+  exercise,
+  currentWeek,
+}) => {
+  const progressionSettings = normalizeProgressionSettings(exercise);
+
+  if (progressionSettings.progressionMode === "reps") {
+    return { weight, reps: reps + 1 };
+  }
+
+  if (progressionSettings.progressionMode === "weight") {
+    return {
+      weight: roundToIncrement(
+        weight + progressionSettings.weightIncrement,
+        progressionSettings.weightIncrement
+      ),
+      reps,
+    };
+  }
+
+  const previousFactor = PROGRESSION_FACTORS[currentWeek - 2] || 1.0;
+  const currentFactor = PROGRESSION_FACTORS[currentWeek - 1];
+  const baseWeight = weight / previousFactor;
+  const roundedWeight = roundToIncrement(
+    baseWeight * currentFactor,
+    progressionSettings.weightIncrement
+  );
+
+  if (Math.abs(roundedWeight - weight) > 0.001) {
+    return { weight: roundedWeight, reps };
+  }
+
+  return { weight, reps: reps + 1 };
+};
+
+const updateDropsetSetsFromStartWeight = ({
+  exerciseSets,
+  exercise,
+  startWeight,
+}) => {
+  const setCount = exerciseSets.length || exercise.dropset?.setCount || 1;
+  const increment = normalizeProgressionSettings(exercise).weightIncrement;
+  const { weights, error } = generateDropsetWeights({
+    startWeight,
+    setCount,
+    increment,
+    dropPercent: exercise.dropset?.dropPercent ?? DROPSET_DROP_PERCENT,
+  });
+
+  if (error) {
+    return { sets: exerciseSets, error };
+  }
+
+  return {
+    sets: exerciseSets.map((set, index) => {
+      if (index > 0 && set.completed) {
+        return set;
+      }
+
+      return {
+        ...set,
+        completed: false,
+        weight: weights[index],
+        targetWeight: weights[index],
+      };
+    }),
+    error: null,
+  };
 };
 
 export default function CurrentWorkout() {
@@ -61,6 +165,7 @@ export default function CurrentWorkout() {
     useState(false);
   const [isWeightIncrementModalOpen, setIsWeightIncrementModalOpen] =
     useState(false);
+  const [isDropsetModalOpen, setIsDropsetModalOpen] = useState(false);
   const [progressionModeDrafts, setProgressionModeDrafts] = useState({});
   const [weightIncrementDrafts, setWeightIncrementDrafts] = useState({});
   const [applyProgressionModeToFutureWeeks, setApplyProgressionModeToFutureWeeks] =
@@ -372,6 +477,137 @@ export default function CurrentWorkout() {
     );
   };
 
+  const handleSaveDropset = async ({
+    startWeight,
+    setCount,
+    applyToFutureWeeks,
+  }) => {
+    if (!currentExercise) {
+      return;
+    }
+
+    const { dayIndex, exerciseIndex } = currentExercise;
+    const daysPerWeek = currentMesocycle.daysPerWeek;
+    let dropsetError = null;
+    const updatedSets = Object.fromEntries(
+      Object.entries(sets).map(([setsDayIndex, exercisesForDay]) => [
+        setsDayIndex,
+        { ...exercisesForDay },
+      ])
+    );
+
+    const updatedMesocycle = {
+      ...currentMesocycle,
+      plan: currentMesocycle.plan.map((day, dIndex) => {
+        const shouldUpdateDay = applyToFutureWeeks
+          ? dIndex >= dayIndex && dIndex % daysPerWeek === dayIndex % daysPerWeek
+          : dIndex === dayIndex;
+
+        if (!shouldUpdateDay) {
+          return day;
+        }
+
+        return {
+          ...day,
+          exercises: day.exercises.map((exercise, eIndex) => {
+            if (eIndex !== exerciseIndex) {
+              return exercise;
+            }
+
+            const existingSets = updatedSets[dIndex]?.[eIndex] || exercise.sets || [];
+            const previousWeekSets = updatedSets[dIndex - daysPerWeek]?.[eIndex];
+            const currentWeek = Math.floor(dIndex / daysPerWeek) + 1;
+            const previousStartWeight = getDropsetStartWeight(
+              previousWeekSets,
+              startWeight
+            );
+            const previousTargetReps = getSetProgressionReps(
+              previousWeekSets?.[0]
+            );
+            const progressedTarget =
+              applyToFutureWeeks && dIndex > dayIndex
+                ? calculateProgressedTarget({
+                    weight: previousStartWeight,
+                    reps: previousTargetReps,
+                    exercise,
+                    currentWeek,
+                  })
+                : { weight: startWeight, reps: undefined };
+            const dropsetStartWeight = progressedTarget.weight;
+            const increment = normalizeProgressionSettings(exercise).weightIncrement;
+            const {
+              sets: dropsetSets,
+              error,
+            } = buildDropsetSets({
+              existingSets,
+              startWeight: dropsetStartWeight,
+              setCount,
+              increment,
+              dropPercent: DROPSET_DROP_PERCENT,
+              targetReps: progressedTarget.reps,
+            });
+
+            if (error) {
+              dropsetError = error;
+              return exercise;
+            }
+
+            updatedSets[dIndex] = {
+              ...(updatedSets[dIndex] || {}),
+              [eIndex]: dropsetSets,
+            };
+
+            return {
+              ...exercise,
+              dropset: {
+                enabled: true,
+                setCount,
+                startWeight: dropsetStartWeight,
+                dropPercent: DROPSET_DROP_PERCENT,
+              },
+              sets: dropsetSets,
+            };
+          }),
+        };
+      }),
+    };
+
+    if (dropsetError) {
+      console.error("Failed to create dropsets: " + dropsetError);
+      return;
+    }
+
+    setSets(updatedSets);
+    setCurrentMesocycle(updatedMesocycle);
+
+    try {
+      const { ok, data, hadSleep } = await apiFetch(
+        baseUrl + "/mesocycles/" + currentMesocycle.id,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(updatedMesocycle),
+        }
+      );
+
+      if (!ok) {
+        const errorText = data.message || "Unknown error";
+        console.error("Failed to update dropsets: " + errorText);
+        return;
+      }
+
+      if (hadSleep) {
+        console.log("Database was sleeping; update took extra time");
+      }
+
+      setIsDropsetModalOpen(false);
+      setOpenMenus((prev) => ({ ...prev, [exerciseIndex]: false }));
+    } catch (error) {
+      console.error("Error updating dropsets:", error);
+    }
+  };
+
   const handleProgressionModeDraftChange = (
     dayIndex,
     exerciseIndex,
@@ -595,6 +831,55 @@ export default function CurrentWorkout() {
     exercise
   ) => {
     const currentWeight = parseFloat(value);
+
+    if (exercise.dropset?.enabled && setIndex === 0) {
+      setSets((prev) => {
+        const exerciseSets = prev[dayIndex][exerciseIndex];
+        const { sets: dropsetSets, error } = updateDropsetSetsFromStartWeight({
+          exerciseSets,
+          exercise,
+          startWeight: currentWeight,
+        });
+
+        if (error) {
+          console.error("Failed to update dropset weights: " + error);
+          return prev;
+        }
+
+        return {
+          ...prev,
+          [dayIndex]: {
+            ...prev[dayIndex],
+            [exerciseIndex]: dropsetSets,
+          },
+        };
+      });
+
+      setCurrentMesocycle((prevMesocycle) => ({
+        ...prevMesocycle,
+        plan: prevMesocycle.plan.map((day, dIndex) =>
+          dIndex === dayIndex
+            ? {
+                ...day,
+                exercises: day.exercises.map((currentExercise, eIndex) =>
+                  eIndex === exerciseIndex
+                    ? {
+                        ...currentExercise,
+                        dropset: {
+                          ...currentExercise.dropset,
+                          enabled: true,
+                          startWeight: currentWeight,
+                        },
+                      }
+                    : currentExercise
+                ),
+              }
+            : day
+        ),
+      }));
+      return;
+    }
+
     const incrementSize = normalizeProgressionSettings(exercise).weightIncrement;
 
     const { week } = getWeekAndDay(dayIndex, currentMesocycle.daysPerWeek);
@@ -1172,6 +1457,21 @@ export default function CurrentWorkout() {
                           </li>
                           <li className="block px-4 py-2 hover:!bg-darkestGray">
                             <button
+                              data-testid={`dropset-exercise-${exIndex}`}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                setCurrentExercise({
+                                  dayIndex: currentDayIndex,
+                                  exerciseIndex: exIndex,
+                                });
+                                setIsDropsetModalOpen(true);
+                              }}
+                            >
+                              Dropsets
+                            </button>
+                          </li>
+                          <li className="block px-4 py-2 hover:!bg-darkestGray">
+                            <button
                               onClick={(event) => {
                                 event.stopPropagation();
                                 const key = getProgressionKey(
@@ -1641,6 +1941,19 @@ export default function CurrentWorkout() {
             onClose: () => setIsWeightIncrementModalOpen(false),
           });
         }}
+      />
+
+      <DropsetModal
+        isOpen={isDropsetModalOpen}
+        onRequestClose={() => setIsDropsetModalOpen(false)}
+        exercise={
+          currentExercise
+            ? currentMesocycle.plan[currentExercise.dayIndex]?.exercises?.[
+                currentExercise.exerciseIndex
+              ]
+            : null
+        }
+        onSave={handleSaveDropset}
       />
 
       <ChooseExerciseModal

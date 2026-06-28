@@ -5,6 +5,21 @@ test.beforeEach(async () => {
   await resetE2eDatabase();
 });
 
+async function openDropsetModal(page, exerciseIndex = 0) {
+  await page.getByTestId(`exercise-menu-${exerciseIndex}`).click();
+  await page.getByTestId(`dropset-exercise-${exerciseIndex}`).click();
+}
+
+async function expectSetWeights(page, exerciseIndex, weights) {
+  for (const [setIndex, weight] of weights.entries()) {
+    await expect(
+      page
+        .getByTestId(`workout-set-${exerciseIndex}-${setIndex}`)
+        .getByTestId("set-weight-select")
+    ).toHaveValue(String(weight));
+  }
+}
+
 test("logged-in user can open current workout and log a set", async ({ page }) => {
   await loginAsDemoUser(page);
   await page.goto("/currentworkout");
@@ -108,6 +123,96 @@ test("logging a bodyweight set keeps target reps when target weight is zero", as
   ).toHaveValue("11");
 });
 
+
+test("can configure dropsets and update targets from the first set", async ({ page }) => {
+  await loginAsDemoUser(page);
+  await page.goto("/currentworkout");
+
+  await openDropsetModal(page);
+  await page.getByTestId("dropset-start-weight").fill("100");
+  await expect(page.getByTestId("dropset-preview")).toContainText(
+    "100 / 80 / 65"
+  );
+
+  await Promise.all([
+    page.waitForResponse(
+      (response) =>
+        /\/api\/mesocycles\/\d+$/.test(response.url()) &&
+        response.request().method() === "PUT" &&
+        response.status() === 200
+    ),
+    page.getByTestId("dropset-save").click(),
+  ]);
+
+  await expectSetWeights(page, 0, [100, 80, 65, 52.5, 50]);
+
+  await page.reload();
+  await expectSetWeights(page, 0, [100, 80, 65, 52.5, 50]);
+
+  await page
+    .getByTestId("workout-set-0-0")
+    .getByTestId("set-weight-select")
+    .selectOption("90");
+  await expectSetWeights(page, 0, [90, 72.5, 57.5, 47.5, 45]);
+
+  await Promise.all([
+    page.waitForResponse(
+      (response) =>
+        /\/api\/mesocycles\/\d+$/.test(response.url()) &&
+        response.request().method() === "PUT" &&
+        response.status() === 200
+    ),
+    page
+      .getByTestId("workout-set-0-0")
+      .getByTestId("set-log-checkbox")
+      .check(),
+  ]);
+
+  await page.reload();
+  await expectSetWeights(page, 0, [90, 72.5, 57.5, 47.5, 45]);
+});
+
+test("dropsets can apply to the rest of the mesocycle", async ({ page }) => {
+  await loginAsDemoUser(page);
+  await page.goto("/currentworkout");
+
+  await openDropsetModal(page);
+  await page.getByTestId("dropset-start-weight").fill("100");
+  await page.getByTestId("dropset-apply-future").check();
+
+  await Promise.all([
+    page.waitForResponse(
+      (response) =>
+        /\/api\/mesocycles\/\d+$/.test(response.url()) &&
+        response.request().method() === "PUT" &&
+        response.status() === 200
+    ),
+    page.getByTestId("dropset-save").click(),
+  ]);
+
+  const rawPlan = await page.evaluate(async () => {
+    const apiBase = "http://127.0.0.1:3001/api";
+    const workoutResponse = await fetch(apiBase + "/current-workout", {
+      credentials: "include",
+    });
+    const workout = await workoutResponse.json();
+    const mesocycleResponse = await fetch(
+      apiBase + "/mesocycles/" + workout.id,
+      { credentials: "include" }
+    );
+    const mesocycle = await mesocycleResponse.json();
+    return JSON.parse(mesocycle.plan);
+  });
+
+  expect(rawPlan[6].exercises[0].dropset).toMatchObject({
+    enabled: true,
+    setCount: 5,
+    dropPercent: 20,
+  });
+  expect(rawPlan[6].exercises[0].sets).toHaveLength(5);
+  expect(rawPlan[6].exercises[0].sets[0].targetWeight).toBe(102.5);
+  expect(rawPlan[6].exercises[0].sets[4].targetWeight).toBe(52.5);
+});
 
 test("changing exercise updates the muscle group display", async ({ page }) => {
   await loginAsDemoUser(page);
