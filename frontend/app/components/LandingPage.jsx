@@ -1,7 +1,5 @@
-import React from "react";
-import { Link } from "react-router-dom";
-
 function LandingPage() {
+  const baseUrl = import.meta.env.VITE_API_URL;
   return (
     <div className="flex flex-col">
     
@@ -19,12 +17,12 @@ function LandingPage() {
           <p className="text-gray-300 text-lg md:text-xl mt-4">
             Eliminate the Guesswork. Achieve Results.
           </p>
-          <Link
-            to="/register"
+          <a
+            href={`${baseUrl}/auth0/register`}
             className="bg-red-600 text-white text-lg font-semibold py-3 px-8 rounded-full hover:bg-red-700 transition duration-300 mt-6"
           >
             Register here
-          </Link>
+          </a>
         </div>
       </div>
 
@@ -35,7 +33,7 @@ function LandingPage() {
           className="shadow-lg max-w-full h-auto"
         />
         <p className="text-white text-lg md:text-xl mt-4">
-          Get your target reps and weight based on last week's performance.
+          Get your target reps and weight based on last week&apos;s performance.
         </p>
       </div>
       <div className="relative">
@@ -132,12 +130,12 @@ function LandingPage() {
           <p className="text-gray-300 text-lg md:text-xl mt-4">
             Eliminate the Guesswork. Achieve Results.
           </p>
-          <Link
-            to="/register"
+          <a
+            href={`${baseUrl}/auth0/register`}
             className="bg-red-600 text-white text-lg font-semibold py-3 px-8 rounded-full hover:bg-red-700 transition duration-300 mt-6"
           >
             Register now
-          </Link>
+          </a>
         </div>
       </div>
     </div>

@@ -1,9 +1,11 @@
-import React from "react";
-import Login from "../components/Login";
+import { useEffect } from "react";
 
 export default function LoginPage() {
-    return <div>
-        <h1>Login Page</h1>
-        <Login />
-    </div>
+  const baseUrl = import.meta.env.VITE_API_URL;
+
+  useEffect(() => {
+    window.location.replace(`${baseUrl}/auth0/login`);
+  }, [baseUrl]);
+
+  return null;
 }
