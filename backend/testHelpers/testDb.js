@@ -1,5 +1,8 @@
 import sqlite3 from "sqlite3";
-import { schemaStatements } from "../db/schema.js";
+import {
+  schemaMigrationStatements,
+  schemaStatements,
+} from "../db/schema.js";
 
 function toSql(strings) {
   return strings.reduce((sql, chunk, index) => {
@@ -56,6 +59,19 @@ export async function createTestDb() {
   await run("PRAGMA foreign_keys = ON");
   for (const statement of schemaStatements) {
     await run(statement.sql);
+  }
+  for (const statement of schemaMigrationStatements) {
+    try {
+      await run(statement.sql);
+    } catch (error) {
+      const message = String(error?.message || "").toLowerCase();
+      if (
+        !message.includes("duplicate column name") &&
+        !message.includes("already exists")
+      ) {
+        throw error;
+      }
+    }
   }
 
   const query = async (strings, ...values) => {

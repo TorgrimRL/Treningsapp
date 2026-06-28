@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import cookieParser from "cookie-parser";
 import bodyParser from "body-parser";
 import cors from "cors";
+import { createAuth0Router } from "./routes/auth0Routes.js";
 import mesocycleRoutes from "./routes/mesocycleRoutes.js";
 import exerciseRoutes from "./routes/exerciseRoutes.js";
 import {
@@ -14,10 +15,13 @@ import {
 import dotenv from "dotenv";
 import { safeQuery } from "./utils/safeQuery.js";
 import { buildResponsePayload } from "./utils/buildResponsePayload.js";
+import { clearAuthTokenCookie, setAuthTokenCookie } from "./utils/authCookies.js";
+import { serializeUser } from "./utils/auth0Users.js";
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
+const auth0Routes = createAuth0Router();
 
 const corsOptions = {
   origin: function (origin, callback) {
@@ -27,7 +31,8 @@ const corsOptions = {
       "http://127.0.0.1:5174",
       "https://setoptimizer.com",
       "https://www.setoptimizer.com",
-    ];
+      process.env.FRONTEND_URL,
+    ].filter(Boolean);
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -43,23 +48,16 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-app.use((req, res, next) => {
-  next();
-});
-
 const secretKey = process.env.JWT_SECRET_KEY;
 if (!secretKey && process.env.NODE_ENV === "production") {
   throw new Error("Missing JWT_SECRET_KEY in environment");
 }
 app.get("/favicon.ico", (req, res) => res.status(204));
 
+app.use("/api/auth0", auth0Routes);
 app.use("/api", exerciseRoutes);
 app.use("/api", mesocycleRoutes);
 csrfTokenRoute(app);
-
-app.use((req, res, next) => {
-  next();
-});
 
 app.get("/api/", (req, res) => {
   res.send("Welcome to the API");
@@ -109,14 +107,7 @@ app.post("/api/login", async (req, res) => {
     if (!validPass) {
       return res.status(400).send("Username or password is incorrect");
     }
-    const token = jwt.sign({ id: user.id }, secretKey, { expiresIn: "30d" });
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      SameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
-      maxAge: 604800000,
-      path: "/",
-    });
+    const token = setAuthTokenCookie(res, user.id);
     const responsePayload = buildResponsePayload(hadRetry, { token });
     res.json(responsePayload);
   } catch (err) {
@@ -124,13 +115,14 @@ app.post("/api/login", async (req, res) => {
     return res.status(500).send(err.message);
   }
 });
+
 app.get("/api/check-auth", authenticateToken, (req, res) => {
   const token = req.cookies.token;
 
-  console.log("Received token for /api/check-auth:", token); // Logging av token
+  console.log("Received token for /api/check-auth:", token);
 
   if (!token) {
-    console.log("No token found in cookies."); // Logging hvis token mangler
+    console.log("No token found in cookies.");
     return res.json({ isLoggedIn: false });
   }
 
@@ -139,14 +131,29 @@ app.get("/api/check-auth", authenticateToken, (req, res) => {
     console.log("Token verification successful");
     res.json({ isLoggedIn: true });
   } catch (error) {
-    console.log("Token verification failed:", error.message); // Logging ved feil i verifisering
-    res.clearCookie("token", {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "None",
-      path: "/",
-    });
+    console.log("Token verification failed:", error.message);
+    clearAuthTokenCookie(res);
     res.json({ isLoggedIn: false });
+  }
+});
+
+app.get("/api/me", authenticateToken, async (req, res) => {
+  try {
+    const { result } = await safeQuery`
+      SELECT id, username, auth_provider, auth0_sub, email, email_verified, picture
+      FROM users
+      WHERE id = ${req.user.id}
+      LIMIT 1
+    `;
+    const user = result[0];
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({ user: serializeUser(user) });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 
@@ -154,13 +161,7 @@ app.post("/api/logout", authenticateToken, async (req, res) => {
   console.log("Logout request received");
   console.log("Cookies before clearing:", req.cookies);
 
-  // Fjern cookien med de samme alternativene som den ble satt med
-  res.clearCookie("token", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "None",
-    path: "/",
-  });
+  clearAuthTokenCookie(res);
 
   console.log("Cookies after clearing:", req.cookies);
   res.status(200).send("Logged out successfully");

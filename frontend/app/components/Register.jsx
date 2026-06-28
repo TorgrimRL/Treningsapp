@@ -11,6 +11,10 @@ export default function Register() {
   const baseUrl = import.meta.env.VITE_API_URL;
   const { apiFetch } = useApiFetch();
 
+  const handleAuth0Register = () => {
+    window.location.href = `${baseUrl}/auth0/register`;
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -109,6 +113,14 @@ export default function Register() {
         className="bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-lg"
       >
         Register
+      </button>
+      <button
+        data-testid="auth0-register"
+        type="button"
+        onClick={handleAuth0Register}
+        className="bg-white text-black border-none py-2 px-4 cursor-pointer text-lg mt-3 w-full"
+      >
+        Sign up with Auth0
       </button>
       {message && <p>{message}</p>}
     </form>
