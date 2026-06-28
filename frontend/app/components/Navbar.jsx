@@ -1,41 +1,46 @@
-import { useState, useEffect, useRef } from "react";
-import { useAuth } from "../utils/AuthContext";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "@remix-run/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBars } from "@fortawesome/free-solid-svg-icons";
+import { useAuth } from "../utils/AuthContext";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const { isLoggedIn } = useAuth();
+  const { authCheckInProgress, isLoggedIn } = useAuth();
   const menuRef = useRef(null);
   const baseUrl = import.meta.env.VITE_API_URL;
+  const showLoggedInNav = isLoggedIn === true;
+  const showLoggedOutNav = !authCheckInProgress && isLoggedIn === false;
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     sessionStorage.removeItem("token");
     window.location.assign(`${baseUrl}/auth0/logout`);
   };
-  const toggleMenu = () => {
-    setIsOpen(!isOpen);
+
+  const closeMenu = () => {
+    setIsOpen(false);
   };
+
+  const toggleMenu = () => {
+    setIsOpen((open) => !open);
+  };
+
   useEffect(() => {
-    const handleClickOutSide = (event) => {
+    const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setIsOpen(false);
       }
     };
-    document.addEventListener("mousedown", handleClickOutSide);
-    document.addEventListener("touchstart", handleClickOutSide);
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutSide);
-      document.removeEventListener("touchstart", handleClickOutSide);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
     };
-  }, [menuRef]);
-
-  useEffect(() => {
-    console.log("Isloggedin status:", isLoggedIn);
-  }, [isLoggedIn]);
+  }, []);
 
   return (
     <nav
@@ -57,6 +62,8 @@ export default function Navbar() {
           <button
             type="button"
             onClick={toggleMenu}
+            aria-label="Open navigation menu"
+            aria-expanded={isOpen}
             className="text-white focus:outline-none text-xl"
             style={{
               position: "fixed",
@@ -68,58 +75,58 @@ export default function Navbar() {
           </button>
         </div>
         <div className="hidden md:flex md:space-x-4 h-full items-center ">
-          <a href="/" className="text-white h-full flex items-center ">
+          <Link to="/" className="text-white h-full flex items-center ">
             Home
-          </a>
-          {!isLoggedIn && (
-            <a href="/login" className="text-white h-full flex items-center ">
+          </Link>
+          {showLoggedOutNav && (
+            <a
+              href={`${baseUrl}/auth0/login`}
+              className="text-white h-full flex items-center "
+            >
               Login
             </a>
           )}
-          {!isLoggedIn && (
+          {showLoggedOutNav && (
             <a
-              href="/register"
+              href={`${baseUrl}/auth0/register`}
               className="text-white h-full flex items-center "
             >
               Register
             </a>
           )}
-          {isLoggedIn && (
+          {showLoggedInNav && (
             <>
-              <a
-                href="/currentworkout"
+              <Link
+                to="/currentworkout"
                 className="text-white h-full flex items-center "
               >
                 Current workout
-              </a>
-              <a
-                href="/mesocycles-new"
+              </Link>
+              <Link
+                to="/mesocycles-new"
                 className="text-white h-full flex items-center"
               >
                 Plan a new training block
-              </a>
-              <a
-                href="/templates"
+              </Link>
+              <Link
+                to="/templates"
                 className="text-white h-full flex items-center "
               >
                 Templates
-              </a>
-              <a
-                href="/mesocycles"
+              </Link>
+              <Link
+                to="/mesocycles"
                 className="text-white h-full flex items-center "
               >
                 History
-              </a>
-
-              <li className="block px-4 py-2 hover:bg-darkGray">
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="text-white h-full flex items-center "
-                >
-                  Logout
-                </button>
-              </li>
+              </Link>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="text-white h-full flex items-center px-4 py-2 hover:bg-darkGray"
+              >
+                Logout
+              </button>
             </>
           )}
         </div>
@@ -130,66 +137,71 @@ export default function Navbar() {
           >
             <ul className="py-1 bg-hamburgerbackground text-white ">
               <li className="block px-4 py-2 hover:bg-darkGray ">
-                <a
-                  href="/"
+                <Link
+                  to="/"
+                  onClick={closeMenu}
                   className="focus:outline-none block w-full text-left cursor-pointer"
                 >
                   Home
-                </a>
+                </Link>
               </li>
-              {!isLoggedIn && (
+              {showLoggedOutNav && (
                 <li className="block px-4 py-2 hover:bg-darkGray ">
                   <a
-                    href="/login"
+                    href={`${baseUrl}/auth0/login`}
                     className="focus:outline-none block w-full text-left cursor-pointer"
                   >
                     Login
                   </a>
                 </li>
               )}
-              {!isLoggedIn && (
+              {showLoggedOutNav && (
                 <li className="block px-4 py-2 hover:bg-darkGray ">
                   <a
-                    href="/register"
+                    href={`${baseUrl}/auth0/register`}
                     className="focus:outline-none block w-full text-left cursor-pointer"
                   >
                     Register
                   </a>
                 </li>
               )}
-              {isLoggedIn && (
+              {showLoggedInNav && (
                 <>
                   <li className="block px-4 py-2 hover:bg-darkGray ">
-                    <a
-                      href="/currentworkout"
+                    <Link
+                      to="/currentworkout"
+                      onClick={closeMenu}
                       className="focus:outline-none block w-full text-left cursor-pointer"
                     >
                       Current workout
-                    </a>
+                    </Link>
                   </li>
                   <li className="block px-4 py-2 hover:bg-darkGray ">
-                    <a
-                      href="/mesocycles-new"
+                    <Link
+                      to="/mesocycles-new"
+                      onClick={closeMenu}
                       className="focus:outline-none block w-full text-left cursor-pointer"
                     >
                       New training block
-                    </a>
+                    </Link>
                   </li>
                   <li className="block px-4 py-2 hover:bg-darkGray ">
-                    <a
-                      href="/templates"
+                    <Link
+                      to="/templates"
+                      onClick={closeMenu}
                       className="focus:outline-none block w-full text-left cursor-pointer"
                     >
                       Templates
-                    </a>
+                    </Link>
                   </li>
                   <li className="block px-4 py-2 hover:bg-darkGray ">
-                    <a
-                      href="/mesocycles"
+                    <Link
+                      to="/mesocycles"
+                      onClick={closeMenu}
                       className="focus:outline-none block w-full text-left cursor-pointer"
                     >
                       History
-                    </a>
+                    </Link>
                   </li>
                   <li className="block px-4 py-2 hover:bg-darkGray ">
                     <button

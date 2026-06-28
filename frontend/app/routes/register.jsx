@@ -1,11 +1,11 @@
-import  React from "react";
-import Register from "../components/Register";
+import { useEffect } from "react";
 
 export default function RegisterPage() {
-    return(
-        <div>
-            <h1>Registration Page</h1>
-            <Register />
-        </div>
-    );
+  const baseUrl = import.meta.env.VITE_API_URL;
+
+  useEffect(() => {
+    window.location.replace(`${baseUrl}/auth0/register`);
+  }, [baseUrl]);
+
+  return null;
 }
