@@ -142,21 +142,234 @@ router.get("/mesocycle-names", authenticateToken, async (req, res) => {
   }
 });
 
+const DROPSET_DROP_PERCENT = 20;
+
+function isBlankValue(value) {
+  return value === undefined || value === null || value === "";
+}
+
+function getPositiveNumber(value) {
+  const parsedValue = Number(value);
+  return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : null;
+}
+
+function isUnsetRepValue(value) {
+  return isBlankValue(value) || Number(value) === 0;
+}
+
+function roundToIncrement(value, increment) {
+  return Number((Math.round(value / increment) * increment).toFixed(2));
+}
+
+function ceilToIncrement(value, increment) {
+  return Number((Math.ceil(value / increment) * increment).toFixed(2));
+}
+
+function generateDropsetWeights({
+  startWeight,
+  setCount,
+  increment,
+  dropPercent = DROPSET_DROP_PERCENT,
+}) {
+  const parsedStartWeight = Number(startWeight);
+  const parsedSetCount = Number(setCount);
+  const parsedIncrement = Number(increment);
+
+  if (
+    !Number.isFinite(parsedStartWeight) ||
+    parsedStartWeight <= 0 ||
+    !Number.isInteger(parsedSetCount) ||
+    parsedSetCount <= 0 ||
+    !Number.isFinite(parsedIncrement) ||
+    parsedIncrement <= 0
+  ) {
+    return { weights: [], error: "Invalid dropset inputs." };
+  }
+
+  const roundedStartWeight = roundToIncrement(
+    parsedStartWeight,
+    parsedIncrement
+  );
+  const weights = [];
+  const dropMultiplier = 1 - dropPercent / 100;
+  const minimumFinalWeight = ceilToIncrement(
+    roundedStartWeight * 0.5,
+    parsedIncrement
+  );
+  const minimumStartWeight = Number(
+    (minimumFinalWeight + (parsedSetCount - 1) * parsedIncrement).toFixed(2)
+  );
+
+  if (roundedStartWeight < minimumStartWeight) {
+    return { weights: [], error: "Dropset cannot keep real drops above 50%." };
+  }
+
+  for (let index = 0; index < parsedSetCount; index += 1) {
+    const rawWeight =
+      index === 0 ? roundedStartWeight : weights[index - 1] * dropMultiplier;
+    let nextWeight = roundToIncrement(rawWeight, parsedIncrement);
+    const remainingDrops = parsedSetCount - index - 1;
+    const minimumWeightForRealDrops = Number(
+      (minimumFinalWeight + remainingDrops * parsedIncrement).toFixed(2)
+    );
+
+    nextWeight = Math.max(nextWeight, minimumWeightForRealDrops);
+
+    if (index > 0 && nextWeight >= weights[index - 1]) {
+      return { weights: [], error: "Dropset cannot keep real drops above 50%." };
+    }
+
+    weights.push(nextWeight);
+  }
+
+  return { weights, error: null };
+}
+
+function getProgressionFactors(currentWeek) {
+  const factors = [1.0, 1.05, 1.075, 1.1, 1.125];
+
+  return {
+    previousFactor: factors[currentWeek - 2] || 1.0,
+    currentFactor: factors[currentWeek - 1],
+  };
+}
+
+function getSetProgressionValues(set) {
+  return {
+    weight: set.completed
+      ? parseFloat(set.weight)
+      : parseFloat(set.targetWeight),
+    reps: set.completed
+      ? parseInt(set.reps, 10)
+      : parseInt(set.targetReps, 10),
+  };
+}
+
+function getDropsetSetCount(exercise) {
+  const configuredSetCount = Number(exercise.dropset?.setCount);
+
+  if (Number.isInteger(configuredSetCount) && configuredSetCount > 0) {
+    return configuredSetCount;
+  }
+
+  return Array.isArray(exercise.sets) ? exercise.sets.length : 1;
+}
+
+function hasConfiguredDropsetStart(exercise) {
+  const configuredStartWeight = getPositiveNumber(exercise.dropset?.startWeight);
+  const firstSet = exercise.sets?.[0] || {};
+  const firstSetWeight =
+    getPositiveNumber(firstSet.targetWeight) ?? getPositiveNumber(firstSet.weight);
+
+  return !!configuredStartWeight && !!firstSetWeight;
+}
+
+function buildDropsetSetsFromTargets({
+  exercise,
+  startWeight,
+  targetReps,
+  progressionSettings,
+  useTargetsForValues,
+}) {
+  const setCount = getDropsetSetCount(exercise);
+  const { weights, error } = generateDropsetWeights({
+    startWeight,
+    setCount,
+    increment: progressionSettings.weightIncrement,
+    dropPercent: exercise.dropset?.dropPercent ?? DROPSET_DROP_PERCENT,
+  });
+
+  if (error) {
+    return exercise.sets;
+  }
+
+  return weights.map((weight, setIndex) => {
+    const set = exercise.sets[setIndex] || {};
+    const nextTargetReps = isUnsetRepValue(set.targetReps)
+      ? targetReps
+      : set.targetReps;
+
+    return {
+      ...set,
+      weight:
+        useTargetsForValues && !set.completed
+          ? weight
+          : set.weight ?? weight,
+      reps:
+        useTargetsForValues && !set.completed
+          ? targetReps
+          : set.reps ?? nextTargetReps,
+      targetWeight: weight,
+      targetReps: nextTargetReps,
+    };
+  });
+}
+
+function getUpdatedDropsetSets(
+  exercise,
+  previousWeekExercise,
+  currentWeek,
+  progressionSettings
+) {
+  const configuredStartWeight = getPositiveNumber(exercise.dropset?.startWeight);
+
+  if (hasConfiguredDropsetStart(exercise)) {
+    const firstSet = exercise.sets[0] || {};
+    const targetReps = isUnsetRepValue(firstSet.targetReps)
+      ? firstSet.reps ?? 0
+      : firstSet.targetReps;
+
+    return buildDropsetSetsFromTargets({
+      exercise,
+      startWeight: configuredStartWeight,
+      targetReps,
+      progressionSettings,
+      useTargetsForValues: true,
+    });
+  }
+
+  const previousFirstSet = previousWeekExercise.sets?.[0];
+  if (!previousFirstSet) {
+    return exercise.sets;
+  }
+
+  const { weight: lastWeekWeight, reps: lastWeekReps } =
+    getSetProgressionValues(previousFirstSet);
+  const { previousFactor, currentFactor } = getProgressionFactors(currentWeek);
+  const newTarget = calculateNewTarget(
+    lastWeekWeight,
+    lastWeekReps,
+    previousWeekExercise.type,
+    previousFactor,
+    currentFactor,
+    progressionSettings
+  );
+
+  return buildDropsetSetsFromTargets({
+    exercise,
+    startWeight: newTarget.weight,
+    targetReps: newTarget.reps,
+    progressionSettings,
+    useTargetsForValues: previousFirstSet.completed,
+  });
+}
+
 function getUpdatedSets(exercise, previousWeekExercise, currentWeek, progressionSettings) {
+  if (exercise.dropset?.enabled) {
+    return getUpdatedDropsetSets(
+      exercise,
+      previousWeekExercise,
+      currentWeek,
+      progressionSettings
+    );
+  }
+
   return exercise.sets.map((set, setIndex) => {
     const prevWeekset = previousWeekExercise.sets[setIndex];
     if (!prevWeekset) return set;
-    const lastWeekWeight = prevWeekset.completed
-        ? parseFloat(prevWeekset.weight)
-        : parseFloat(prevWeekset.targetWeight);
-    const lastWeekReps = prevWeekset.completed
-        ? parseInt(prevWeekset.reps, 10)
-        : parseInt(prevWeekset.targetReps, 10);
-    const previousFactor =
-        [1.0, 1.05, 1.075, 1.1, 1.125][currentWeek - 2] || 1.0;
-    const currentFactor = [1.0, 1.05, 1.075, 1.1, 1.125][
-    currentWeek - 1
-        ];
+    const { weight: lastWeekWeight, reps: lastWeekReps } =
+      getSetProgressionValues(prevWeekset);
+    const { previousFactor, currentFactor } = getProgressionFactors(currentWeek);
     const newTarget = calculateNewTarget(
         lastWeekWeight,
         lastWeekReps,
