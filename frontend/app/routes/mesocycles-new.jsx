@@ -82,11 +82,16 @@ export default function NewMesocycle() {
   const handleSubmit = (mesocycleData) => {
     handleFormSubmit(mesocycleData);
   };
+
+  const handleCancel = () => {
+    navigate("/templates");
+  };
+
   return (
     <ProtectedRoute>
       <div className="min-h-full bg-darkGray text-white">
         <PageContainer size="wide" className="lg:px-6">
-          <MesocycleForm onSubmit={handleSubmit} />
+          <MesocycleForm onCancel={handleCancel} onSubmit={handleSubmit} />
         </PageContainer>
       </div>
     </ProtectedRoute>

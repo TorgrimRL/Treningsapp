@@ -40,7 +40,7 @@ const createEmptyExercise = (overrides = {}) => {
 const sortExercisesByName = (exerciseList = []) =>
   [...exerciseList].sort((a, b) => a.name.localeCompare(b.name));
 
-const MesocycleForm = ({ onSubmit }) => {
+const MesocycleForm = ({ onCancel, onSubmit }) => {
   const [plan, setPlan] = useState([
     {
       label: "",
@@ -368,17 +368,23 @@ const MesocycleForm = ({ onSubmit }) => {
       : "";
   };
 
-  return (
-    <div>
+  if (isModalOpen) {
+    return (
       <MesocycleDetailsModal
         isOpen={isModalOpen}
-        onRequestClose={() => setIsModalOpen(false)}
+        onRequestClose={onCancel}
         onSave={handleSaveMesocycleDetails}
         mesocycleName={mesocycleName}
         setMesocycleName={setMesocycleName}
         numberOfWeeks={numberOfWeeks}
         setNumberOfWeeks={setNumberOfWeeks}
+        variant="inline"
       />
+    );
+  }
+
+  return (
+    <div>
       <form data-testid="mesocycle-form" onSubmit={handleSubmit}>
         <div className="flex min-w-0 flex-col items-center">
           <div className="flex w-full flex-wrap justify-center gap-3 px-4 py-6">
