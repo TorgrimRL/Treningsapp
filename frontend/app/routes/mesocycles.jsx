@@ -1,11 +1,13 @@
 import MesocycleOverview from "../components/MesocycleOverview";
+import PageContainer from "../components/PageContainer";
 import ProtectedRoute from "../components/ProtectedRoute";
+
 export default function Mesocycles() {
   return (
     <ProtectedRoute>
-      <div style={{ paddingTop: "30px" }}>
+      <PageContainer size="standard" className="md:px-6">
         <MesocycleOverview />
-      </div>
+      </PageContainer>
     </ProtectedRoute>
   );
 }

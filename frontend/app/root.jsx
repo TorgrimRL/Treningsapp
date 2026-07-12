@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   Links,
   Meta,
@@ -12,9 +11,10 @@ import { AuthProvider } from "./utils/AuthContext";
 import { WaitModalProvider } from "./components/WaitModalContext";
 import GlobalWaitModal from "./components/GlobalWaitModal";
 
-export default function Root() {
-  const [isWarningVisible, setIsWarningVisible] = useState(true);
+const vippsDonationUrl =
+  "https://qr.vipps.no/box/89367565-e970-4b18-89ab-6a35c66c09b3/pay-in";
 
+export default function Root() {
   return (
     <html lang="en">
       <head>
@@ -25,16 +25,35 @@ export default function Root() {
         <Meta />
         <Links />
       </head>
-      <body className="bg-darkestGray text-white">
+      <body className="min-h-screen bg-darkestGray text-white">
         <WaitModalProvider>
           <AuthProvider>
-            <Navbar />
-            <div id="root">
-              <main>
+            <div id="root" className="flex min-h-screen flex-col pt-12">
+              <Navbar />
+              <main className="min-w-0 flex-1">
                 <Outlet />
               </main>
-              <footer className="text-gray-400">
-                <p>&copy; 2026 SETOPTIMIZER.COM</p>
+              <footer
+                data-testid="site-footer"
+                className="border-t border-gray-800 text-gray-400"
+              >
+                <div className="mx-auto w-full max-w-7xl px-4 py-6 text-center">
+                  <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+                    <p className="text-sm">
+                      Enjoying SetOptimizer? Help support continued development.
+                    </p>
+                    <a
+                      data-testid="vipps-donation-link"
+                      href={vippsDonationUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex min-h-11 items-center justify-center border border-red-600 px-4 py-2 text-sm font-semibold text-red-400 transition-colors hover:bg-red-600 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
+                    >
+                      Support with Vipps
+                    </a>
+                  </div>
+                  <p className="mt-4 text-xs">&copy; 2026 SETOPTIMIZER.COM</p>
+                </div>
               </footer>
             </div>
             <GlobalWaitModal />
@@ -42,29 +61,6 @@ export default function Root() {
         </WaitModalProvider>
         <ScrollRestoration />
         <Scripts />
-
-        {/* Warning div for large screens */}
-        {isWarningVisible && (
-          <div className="hidden lg:flex fixed inset-0 bg-black bg-opacity-80 z-50 flex-col justify-center items-center text-center p-6">
-            <div className="relative bg-darkestGray text-white p-8 rounded-lg shadow-lg max-w-lg">
-              <button
-                className="absolute top-2 right-2 text-gray-400 hover:text-white"
-                onClick={() => setIsWarningVisible(false)}
-              >
-                &#x2715;
-              </button>
-              <h2 className="text-3xl font-bold mb-4">
-                Optimized for Mobile Use
-              </h2>
-              <p className="text-lg">
-                Please access this application on a mobile device for the best
-                experience. To disable this popup, switch to mobile mode: Press
-                Ctrl + Shift + M on Windows or Linux, or Cmd + Shift + M on
-                macOS.
-              </p>
-            </div>
-          </div>
-        )}
       </body>
     </html>
   );

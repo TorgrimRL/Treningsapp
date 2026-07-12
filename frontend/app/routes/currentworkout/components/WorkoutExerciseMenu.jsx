@@ -15,11 +15,11 @@ export default function WorkoutExerciseMenu({
 }) {
   return (
     <div
-      className="flex justify-between items-center relative"
+      className="relative flex min-w-0 items-center justify-between"
       ref={menuRef}
     >
-      <div className="flex items-center space-x-2">
-        <span className="text-sm text-white border uppercase border-red-500 bg-darkBackgroundRed inline-block w-auto px-2 py-1">
+      <div className="min-w-0 flex-1">
+        <span className="inline-block max-w-full truncate border border-red-500 bg-darkBackgroundRed px-2 py-1 text-sm uppercase text-white">
           {muscleGroup}
         </span>
       </div>
@@ -27,7 +27,7 @@ export default function WorkoutExerciseMenu({
         type="button"
         data-testid={"exercise-menu-" + exerciseIndex}
         onClick={() => onToggleMenu(exerciseIndex)}
-        className="text-white focus:outline-none"
+        className="ml-2 shrink-0 text-white focus:outline-none"
       >
         <FontAwesomeIcon icon={faEllipsisV} />
       </button>

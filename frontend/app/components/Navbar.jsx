@@ -44,37 +44,37 @@ export default function Navbar() {
 
   return (
     <nav
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100%",
-        zIndex: 30,
-
-        boxShadow: "0 2px 5px rgba(0, 0, 0, 0.1)",
-      }}
+      ref={menuRef}
+      data-testid="navbar"
+      className="fixed inset-x-0 top-0 z-30 h-12 bg-black shadow-md"
     >
-      <div className=" mx-auto flex justify-between items-center px-4 py-2 text-white bg-black">
-        <Link to="/" className="text-red-500 text-2xl font-bold">
+      <div
+        data-testid="navbar-content"
+        className="relative flex h-12 w-full items-center justify-between px-4 text-white md:px-6"
+      >
+        <Link
+          to="/"
+          data-testid="navbar-brand"
+          className="shrink-0 text-2xl font-bold text-red-500"
+        >
           SO
         </Link>
-        <div className="md:hidden relative">
+        <div className="relative md:hidden">
           <button
             type="button"
             onClick={toggleMenu}
             aria-label="Open navigation menu"
             aria-expanded={isOpen}
-            className="text-white focus:outline-none text-xl"
-            style={{
-              position: "fixed",
-              top: "10px",
-              right: "15px",
-            }}
+            data-testid="navbar-menu-button"
+            className="flex h-10 w-10 items-center justify-center text-xl text-white focus:outline-none"
           >
             <FontAwesomeIcon icon={faBars} size="1x" />
           </button>
         </div>
-        <div className="hidden md:flex md:space-x-4 h-full items-center ">
+        <div
+          data-testid="navbar-desktop-menu"
+          className="hidden h-full min-w-0 items-center gap-3 text-sm md:flex lg:gap-5 lg:text-base"
+        >
           <Link to="/" className="text-white h-full flex items-center ">
             Home
           </Link>
@@ -123,7 +123,7 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="text-white h-full flex items-center px-4 py-2 hover:bg-darkGray"
+                className="flex h-full items-center px-2 py-2 text-white hover:bg-darkGray lg:px-4"
               >
                 Logout
               </button>
@@ -131,10 +131,7 @@ export default function Navbar() {
           )}
         </div>
         {isOpen && (
-          <div
-            className="fixed right-0 top-12 w-48 bg-white rounded-md shadow-lg z-[1000] md:hidden"
-            ref={menuRef}
-          >
+          <div className="absolute right-4 top-12 z-[1000] w-48 rounded-md bg-white shadow-lg md:hidden">
             <ul className="py-1 bg-hamburgerbackground text-white ">
               <li className="block px-4 py-2 hover:bg-darkGray ">
                 <Link

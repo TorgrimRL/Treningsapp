@@ -31,7 +31,7 @@ export default function WorkoutExerciseCard({
   return (
     <li
       data-testid={"workout-exercise-" + exerciseIndex}
-      className="p-3 overflow-visible bg-darkGray"
+      className="min-w-0 overflow-visible bg-darkGray p-3 md:border md:border-gray-700 md:shadow-sm"
     >
       <WorkoutExerciseMenu
         exerciseIndex={exerciseIndex}
@@ -59,7 +59,9 @@ export default function WorkoutExerciseCard({
           onOpenWeightIncrement({ dayIndex: currentDayIndex, exerciseIndex })
         }
       />
-      <div className="text-white font-semibold">{exercise.exercise}</div>
+      <div className="break-words font-semibold text-white">
+        {exercise.exercise}
+      </div>
       {note && <ExerciseNote note={note} />}
       {exerciseSets.map((set, setIndex) => {
         const setMenuId = exerciseIndex + "-" + setIndex;
@@ -84,7 +86,12 @@ export default function WorkoutExerciseCard({
               )
             }
             onRepsChange={(targetSetIndex, value) =>
-              onRepsChange(currentDayIndex, exerciseIndex, targetSetIndex, value)
+              onRepsChange(
+                currentDayIndex,
+                exerciseIndex,
+                targetSetIndex,
+                value
+              )
             }
             onSetCompletionChange={(targetSetIndex, value) =>
               onSetCompletionChange(

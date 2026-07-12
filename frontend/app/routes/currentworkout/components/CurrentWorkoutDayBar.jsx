@@ -8,19 +8,22 @@ export default function CurrentWorkoutDayBar({
   week,
 }) {
   return (
-    <div className="p-1 text-white bg-darkGray flex items-center justify-between fixed top-[4.4rem] w-full z-20">
-      <div className="space-x-2 pl-3 mr-auto">
-        <span className="font-semibold uppercase">
+    <div className="flex min-w-0 items-center justify-between gap-3 bg-darkGray px-4 py-1 text-white">
+      <div className="min-w-0 flex-1">
+        <span className="block truncate font-semibold uppercase">
           {week === currentMesocycle.weeks
             ? "DELOAD WEEK"
             : "Week " + week + " Day " + dayNumber + " " + dayLabel}
         </span>
       </div>
-      <FaCalendarAlt
-        className="text-white cursor-pointer text-xl -ml-4"
+      <button
+        type="button"
+        aria-label="Open workout calendar"
         onClick={onClick}
-        style={{ transform: "translateX(-10px)" }}
-      />
+        className="shrink-0 p-1 text-xl text-white"
+      >
+        <FaCalendarAlt aria-hidden="true" />
+      </button>
     </div>
   );
 }
