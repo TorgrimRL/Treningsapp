@@ -33,6 +33,26 @@ function isDesktop(page) {
   return page.viewportSize().width >= 1280;
 }
 
+async function expectNavbarUsesViewportEdges(page) {
+  const viewport = page.viewportSize();
+  const contentBox = await getBox(page.getByTestId("navbar-content"));
+  const brandBox = await getBox(page.getByTestId("navbar-brand"));
+  const edgePadding = viewport.width >= 768 ? 24 : 16;
+
+  expect(contentBox.x).toBeLessThanOrEqual(1);
+  expect(contentBox.width).toBeGreaterThanOrEqual(viewport.width - 1);
+  expect(Math.abs(brandBox.x - edgePadding)).toBeLessThanOrEqual(1);
+
+  const trailingControl =
+    viewport.width >= 768
+      ? page.getByTestId("navbar-desktop-menu")
+      : page.getByTestId("navbar-menu-button");
+  const trailingBox = await getBox(trailingControl);
+  const rightGap = viewport.width - (trailingBox.x + trailingBox.width);
+
+  expect(Math.abs(rightGap - edgePadding)).toBeLessThanOrEqual(1);
+}
+
 test("landing shell and feature content stay within responsive bounds", async ({
   page,
 }) => {
@@ -47,7 +67,7 @@ test("landing shell and feature content stay within responsive bounds", async ({
   expect(heroBox.width).toBeLessThanOrEqual(page.viewportSize().width + 1);
   expect(heroBox.y).toBeGreaterThanOrEqual(navbarBox.y + navbarBox.height - 1);
 
-  await expectCenteredWithin(page, page.getByTestId("navbar-content"), 1280);
+  await expectNavbarUsesViewportEdges(page);
   await expectCenteredWithin(
     page,
     page.getByTestId("landing-feature-content"),
@@ -58,6 +78,17 @@ test("landing shell and feature content stay within responsive bounds", async ({
     page.getByTestId("site-footer").locator(":scope > div"),
     1280
   );
+  const donationLink = page.getByTestId("vipps-donation-link");
+  await expect(donationLink).toBeVisible();
+  await expect(donationLink).toHaveAccessibleName("Support with Vipps");
+  await expect(donationLink).toHaveAttribute(
+    "href",
+    "https://qr.vipps.no/box/89367565-e970-4b18-89ab-6a35c66c09b3/pay-in"
+  );
+  await expect(donationLink).toHaveAttribute("target", "_blank");
+  await expect(donationLink).toHaveAttribute("rel", "noopener noreferrer");
+  const donationLinkBox = await getBox(donationLink);
+  expect(donationLinkBox.height).toBeGreaterThanOrEqual(44);
   await expectNoDocumentOverflow(page);
 });
 
@@ -224,6 +255,7 @@ test("tablet breakpoint uses two columns without navbar overflow", async ({
 
   await page.setViewportSize({ width: 768, height: 1024 });
   await loginAsDemoUser(page);
+  await expectNavbarUsesViewportEdges(page);
 
   const cards = page.getByTestId(/^template-card-\d+$/);
   await expect(cards.first()).toBeVisible();
@@ -237,5 +269,6 @@ test("tablet breakpoint uses two columns without navbar overflow", async ({
   await expect(
     page.getByRole("link", { name: "Current workout" })
   ).toBeVisible();
+  await expect(page.getByTestId("vipps-donation-link")).toBeVisible();
   await expectNoDocumentOverflow(page);
 });

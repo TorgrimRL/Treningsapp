@@ -50,9 +50,13 @@ export default function Navbar() {
     >
       <div
         data-testid="navbar-content"
-        className="relative mx-auto flex h-12 w-full max-w-7xl items-center justify-between px-4 text-white md:px-6"
+        className="relative flex h-12 w-full items-center justify-between px-4 text-white md:px-6"
       >
-        <Link to="/" className="shrink-0 text-2xl font-bold text-red-500">
+        <Link
+          to="/"
+          data-testid="navbar-brand"
+          className="shrink-0 text-2xl font-bold text-red-500"
+        >
           SO
         </Link>
         <div className="relative md:hidden">
@@ -61,12 +65,16 @@ export default function Navbar() {
             onClick={toggleMenu}
             aria-label="Open navigation menu"
             aria-expanded={isOpen}
+            data-testid="navbar-menu-button"
             className="flex h-10 w-10 items-center justify-center text-xl text-white focus:outline-none"
           >
             <FontAwesomeIcon icon={faBars} size="1x" />
           </button>
         </div>
-        <div className="hidden h-full min-w-0 items-center gap-3 text-sm md:flex lg:gap-5 lg:text-base">
+        <div
+          data-testid="navbar-desktop-menu"
+          className="hidden h-full min-w-0 items-center gap-3 text-sm md:flex lg:gap-5 lg:text-base"
+        >
           <Link to="/" className="text-white h-full flex items-center ">
             Home
           </Link>

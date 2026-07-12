@@ -82,7 +82,7 @@ const MesocycleOverview = () => {
           <h1 className="m-0 text-2xl">Mesocycles</h1>
           <Link
             to="/mesocycles-new"
-            className="cursor-pointer bg-red-600 px-4 py-2 text-lg text-white md:rounded"
+            className="cursor-pointer bg-red-600 px-4 py-2 text-lg text-white"
           >
             + NEW
           </Link>
@@ -98,7 +98,7 @@ const MesocycleOverview = () => {
               <li
                 key={mesocycle.id}
                 data-testid={"history-card-" + mesocycle.id}
-                className={`flex h-full min-w-0 items-start justify-between gap-3 bg-darkestGray p-4 md:rounded-lg md:border md:border-gray-700 ${
+                className={`flex h-full min-w-0 items-start justify-between gap-3 bg-darkestGray p-4 md:border md:border-gray-700 ${
                   mesocycle.isCurrent ? "border-l-4 !border-l-red-600" : ""
                 }`}
               >

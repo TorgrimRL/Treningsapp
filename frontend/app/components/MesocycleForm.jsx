@@ -385,14 +385,14 @@ const MesocycleForm = ({ onSubmit }) => {
             <button
               data-testid="save-training-plan"
               type="submit"
-              className="w-full cursor-pointer bg-red-600 px-4 py-2 text-lg text-white sm:w-auto md:rounded"
+              className="w-full cursor-pointer bg-red-600 px-4 py-2 text-lg text-white sm:w-auto"
             >
               Save Plan
             </button>
             <button
               data-testid="autofill-exercises"
               type="button"
-              className="w-full cursor-pointer bg-red-600 px-4 py-2 text-lg text-white sm:w-auto md:rounded"
+              className="w-full cursor-pointer bg-red-600 px-4 py-2 text-lg text-white sm:w-auto"
               onClick={handleAutofillExercises}
             >
               Auto Fill Exercises
@@ -407,7 +407,7 @@ const MesocycleForm = ({ onSubmit }) => {
                 <div
                   key={dayIndex}
                   data-testid={"planner-day-" + dayIndex}
-                  className="w-full min-w-0 flex-none bg-darkestGray p-3 shadow-lg lg:w-80 lg:border lg:border-gray-700 lg:rounded-lg xl:w-96"
+                  className="w-full min-w-0 flex-none bg-darkestGray p-3 shadow-lg lg:w-80 lg:border lg:border-gray-700 xl:w-96"
                 >
                   <label className="mb-3 flex min-w-0 items-center justify-between gap-3">
                     <select
@@ -622,7 +622,7 @@ const MesocycleForm = ({ onSubmit }) => {
                   data-testid="add-planner-day"
                   type="button"
                   onClick={handleAddDay}
-                  className="flex min-h-10 w-full items-center justify-between border border-gray-700 bg-darkestGray p-3 lg:rounded-lg"
+                  className="flex min-h-10 w-full items-center justify-between border border-gray-700 bg-darkestGray p-3"
                 >
                   + Add a day
                 </button>

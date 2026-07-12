@@ -11,6 +11,9 @@ import { AuthProvider } from "./utils/AuthContext";
 import { WaitModalProvider } from "./components/WaitModalContext";
 import GlobalWaitModal from "./components/GlobalWaitModal";
 
+const vippsDonationUrl =
+  "https://qr.vipps.no/box/89367565-e970-4b18-89ab-6a35c66c09b3/pay-in";
+
 export default function Root() {
   return (
     <html lang="en">
@@ -35,7 +38,21 @@ export default function Root() {
                 className="border-t border-gray-800 text-gray-400"
               >
                 <div className="mx-auto w-full max-w-7xl px-4 py-6 text-center">
-                  <p>&copy; 2026 SETOPTIMIZER.COM</p>
+                  <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+                    <p className="text-sm">
+                      Enjoying SetOptimizer? Help support continued development.
+                    </p>
+                    <a
+                      data-testid="vipps-donation-link"
+                      href={vippsDonationUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex min-h-11 items-center justify-center border border-red-600 px-4 py-2 text-sm font-semibold text-red-400 transition-colors hover:bg-red-600 hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-500"
+                    >
+                      Support with Vipps
+                    </a>
+                  </div>
+                  <p className="mt-4 text-xs">&copy; 2026 SETOPTIMIZER.COM</p>
                 </div>
               </footer>
             </div>

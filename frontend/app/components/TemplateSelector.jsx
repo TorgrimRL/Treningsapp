@@ -24,7 +24,7 @@ const TemplateSelector = ({ onSelectTemplate }) => {
       <header className="flex flex-col gap-4 px-4 py-6 sm:flex-row sm:items-center sm:justify-between md:px-0">
         <h1 className="m-0 text-2xl">Templates</h1>
         <a
-          className="inline-flex items-center justify-center bg-red-600 px-4 py-2 text-center text-lg text-white transition-colors hover:bg-red-700 md:rounded"
+          className="inline-flex items-center justify-center bg-red-600 px-4 py-2 text-center text-lg text-white transition-colors hover:bg-red-700"
           href="/mesocycles-new"
         >
           Build a training block from scratch
@@ -46,7 +46,7 @@ const TemplateSelector = ({ onSelectTemplate }) => {
             >
               <button
                 onClick={() => handleSelect(template)}
-                className="flex h-full w-full min-w-0 flex-col items-start justify-center bg-darkGray px-4 py-3 text-left text-white hover:bg-gray-700 md:rounded-lg md:border md:border-gray-700"
+                className="flex h-full w-full min-w-0 flex-col items-start justify-center bg-darkGray px-4 py-3 text-left text-white hover:bg-gray-700 md:border md:border-gray-700"
               >
                 <span className="w-full break-words font-semibold">
                   {template.name}

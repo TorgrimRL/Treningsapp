@@ -31,7 +31,7 @@ export default function WorkoutExerciseCard({
   return (
     <li
       data-testid={"workout-exercise-" + exerciseIndex}
-      className="min-w-0 overflow-visible bg-darkGray p-3 md:rounded-lg md:border md:border-gray-700 md:shadow-sm"
+      className="min-w-0 overflow-visible bg-darkGray p-3 md:border md:border-gray-700 md:shadow-sm"
     >
       <WorkoutExerciseMenu
         exerciseIndex={exerciseIndex}

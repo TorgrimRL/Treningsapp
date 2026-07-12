@@ -53,7 +53,7 @@ function LandingPage() {
             className="space-y-16 lg:space-y-24"
           >
             <section className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
-              <div className="aspect-[4/3] min-w-0 overflow-hidden bg-darkGray p-3 shadow-lg md:rounded-xl">
+              <div className="aspect-[4/3] min-w-0 overflow-hidden bg-darkGray p-3 shadow-lg">
                 <img
                   src="/images/targetweightandreps.png"
                   alt="Target reps and weight recommendations"
@@ -72,7 +72,7 @@ function LandingPage() {
             </section>
 
             <section className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
-              <div className="aspect-video min-w-0 overflow-hidden shadow-lg md:rounded-xl lg:order-2">
+              <div className="aspect-video min-w-0 overflow-hidden shadow-lg lg:order-2">
                 <img
                   src="/images/dumbbells.jpg"
                   alt="Dumbbells on a gym rack"
@@ -91,7 +91,7 @@ function LandingPage() {
             </section>
 
             <section className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
-              <div className="aspect-[4/3] min-w-0 overflow-hidden bg-darkGray p-3 shadow-lg md:rounded-xl">
+              <div className="aspect-[4/3] min-w-0 overflow-hidden bg-darkGray p-3 shadow-lg">
                 <img
                   src="/images/lastweeksreps.png"
                   alt="Previous workout performance"
@@ -110,7 +110,7 @@ function LandingPage() {
             </section>
 
             <section className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
-              <div className="aspect-[4/3] min-w-0 overflow-hidden bg-darkGray p-3 shadow-lg md:rounded-xl lg:order-2">
+              <div className="aspect-[4/3] min-w-0 overflow-hidden bg-darkGray p-3 shadow-lg lg:order-2">
                 <img
                   src="/images/targetreps.png"
                   alt="Adjusted target for different weights"
@@ -137,7 +137,7 @@ function LandingPage() {
                 {steps.map((step, index) => (
                   <article
                     key={step.title}
-                    className="flex min-w-0 flex-col items-center bg-darkGray p-6 text-center md:rounded-xl md:border md:border-gray-700"
+                    className="flex min-w-0 flex-col items-center bg-darkGray p-6 text-center md:border md:border-gray-700"
                   >
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red-600 text-xl font-bold text-white">
                       {index + 1}
@@ -151,7 +151,7 @@ function LandingPage() {
               </div>
             </section>
 
-            <section className="relative min-h-[60svh] overflow-hidden shadow-xl md:rounded-xl">
+            <section className="relative min-h-[60svh] overflow-hidden shadow-xl">
               <img
                 src="/images/pexels-scottwebb-28076(1).jpg"
                 alt=""
