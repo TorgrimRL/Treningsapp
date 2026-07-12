@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   Links,
   Meta,
@@ -20,6 +20,8 @@ export default function Root() {
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>SetOptimizer</title>
+        <link rel="icon" href="/favicon.ico" />
         <Meta />
         <Links />
       </head>
@@ -32,7 +34,7 @@ export default function Root() {
                 <Outlet />
               </main>
               <footer className="text-gray-400">
-                <p>&copy; 2024 SETOPTIMIZER.COM</p>
+                <p>&copy; 2026 SETOPTIMIZER.COM</p>
               </footer>
             </div>
             <GlobalWaitModal />

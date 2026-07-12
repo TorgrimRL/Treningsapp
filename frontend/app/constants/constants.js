@@ -14,12 +14,6 @@ export const muscleGroups = [
   "Triceps",
 ];
 
-export const exerciseTemplate = {
-  name: "",
-  type: "barbell",
-  videoLink: "",
-  muscleGroup: muscleGroups[0],
-};
 export const exerciseTypes = [
   "barbell",
   "machine",

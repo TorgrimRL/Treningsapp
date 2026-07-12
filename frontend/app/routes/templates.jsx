@@ -1,4 +1,3 @@
-import React from "react";
 import TemplateSelector from "../components/TemplateSelector";
 import { useNavigate } from "@remix-run/react";
 import ProtectedRoute from "../components/ProtectedRoute";

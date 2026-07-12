@@ -10,9 +10,9 @@ export function useApiFetch() {
 
     if (data.message && data.message === "Database went to sleep!") {
       showWaitModal(60);
-      return { ok: response.ok, data, hadSleep: true };
+      return { ok: response.ok, data };
     }
-    return { ok: response.ok, data, hadSleep: false };
+    return { ok: response.ok, data };
   }, [showWaitModal]);
 
   return { apiFetch };

@@ -28,9 +28,7 @@ En Node.js Express-server tar imot forespørsler fra frontenden, behandler dem o
 ## Struktur
 ```
 .
-├── database.js              //  lokal database ikke i bruk
 ├── database.sqlite          // Lokal databasefil (om bruk, se .gitignore)
-├── favicon.ico
 ├── index.js                 // Inngangspunkt for Express-server
 ├── jest.config.js           // Konfigurasjon for Jest (om du tester)
 ├── middleware.js            // Egendefinert middleware (JWT, CSRF, osv.)

@@ -1,4 +1,5 @@
-import React, { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
+import { Link } from "@remix-run/react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEllipsisV } from "@fortawesome/free-solid-svg-icons";
 import RedoExerciseBlockModal from "./RedoExerciseBlockModal";
@@ -10,7 +11,6 @@ const MesocycleOverview = () => {
   const [sortedPlans, setSortedPlans] = useState([]);
   const [selectedExerciseBlock, setSelectedExerciseBlock] = useState(null);
   const [isRedoModalOpen, setIsRedoModalOpen] = useState(false);
-  const menuRef = useRef(null);
   const baseUrl = import.meta.env.VITE_API_URL;
   const { apiFetch } = useApiFetch();
   const sortPlansByCurrent = (plans) => {
@@ -47,32 +47,21 @@ const MesocycleOverview = () => {
   useEffect(() => {
     const fetchMesocycles = async () => {
       try {
-        const { ok, data, hadSleep } = await apiFetch(`${baseUrl}/mesocycles`, {
+        const { ok, data } = await apiFetch(`${baseUrl}/mesocycles`, {
           method: "GET",
           credentials: "include",
         });
         if (ok) {
           setMesocycles(data);
         } else {
-          throw new Error(data.message || "Failed to fetch mesocycles");
+          console.error(data.message || "Failed to fetch mesocycles");
         }
       } catch (error) {
         console.error("Error fetching mesocycles:", error);
       }
     };
     fetchMesocycles();
-  }, []);
-
-  // const checkCompletion = (mesocycle) => {
-  //   const allDaysCompleted = mesocycle.plan.every((day) =>
-  //     day.exercises.every((exercise) => exercise.completed)
-  //   );
-  //   if (allDaysCompleted && !mesocycle.completedDate) {
-  //     // Uncomment when exercisestatus per day is implemented
-  //     mesocycle.completedDate = new Date().toISOString();
-  //   }
-  //   return mesocycle;
-  // };
+  }, [apiFetch, baseUrl]);
 
   const toggleMenu = (id) => {
     setOpenMenus((prevState) => ({
@@ -91,12 +80,12 @@ const MesocycleOverview = () => {
       <div className=" mx-auto p-5 text-white bg-darkGray">
         <header className="flex justify-between items-center mb-5">
           <h1 className="text-2xl m-0">Mesocycles</h1>
-          <a
-            href="mesocycles-new"
+          <Link
+            to="/mesocycles-new"
             className="bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-lg rounded"
           >
             + NEW
-          </a>
+          </Link>
         </header>
         <ul className="list-none p-0 m-0">
           {sortedPlans.map((mesocycle) => {
