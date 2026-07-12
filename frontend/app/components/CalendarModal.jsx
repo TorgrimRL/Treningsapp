@@ -1,7 +1,4 @@
-import Modal from "react-modal";
-import { useEffect, useRef } from "react";
-
-// Modal.setAppElement("#root");
+import AppModal from "./AppModal";
 
 export default function CalendarModal({
   isOpen,
@@ -10,52 +7,25 @@ export default function CalendarModal({
   currentDayIndex,
   onDayClick,
 }) {
-  const calendarRef = useRef(null);
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (calendarRef.current && !calendarRef.current.contains(event.target)) {
-        onRequestClose();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      document.addEventListener("touchstart", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("touchstart", handleClickOutside);
-    };
-  }, [isOpen, onRequestClose]);
-
   const numCols = mesocycle.weeks;
   const numRows = mesocycle.daysPerWeek;
+
   return (
-    <Modal
+    <AppModal
       isOpen={isOpen}
       onRequestClose={onRequestClose}
       contentLabel="Calendar Modal"
+      title="Mesocycle Overview"
       shouldCloseOnOverlayClick={true}
       shouldCloseOnEsc={true}
-      className="bg-gray-800 rounded focus:outline-none shadow-lg p-0 max-w-3xl mx-auto mt-20 text-2sm "
-      overlayClassName="fixed inset-0 flex items-start justify-center bg-black bg-opacity-50 z-50 "
-      style={{
-        content: {
-          background: "transparent",
-          border: "none",
-          padding: 0,
-          inset: "unset",
-          maxWidth: "none",
-        },
-      }}
+      bodyClassName="overflow-x-auto"
     >
-      <div className="  max-height: vh p-4 bg-darkGray">
+      <div className="p-0 bg-darkGray">
         <div
-          className="grid gap-0 text-center transform scale-75"
+          className="grid gap-0 text-center transform scale-75 origin-top"
           style={{
-            gridTemplateColumns: `repeat(${numCols}, 1fr)`,
-            gridTemplateRows: `repeat(${numRows}, auto)`,
+            gridTemplateColumns: "repeat(" + numCols + ", 1fr)",
+            gridTemplateRows: "repeat(" + numRows + ", auto)",
           }}
         >
           {Array.from({ length: numCols }).map((_, weekIndex) => (
@@ -75,17 +45,21 @@ export default function CalendarModal({
                     : currentDayIndex === weekIndex * numRows + dayIndex
                     ? "bg-red-500"
                     : "bg-darkestGray";
+
                   return (
                     <li
                       key={dayIndex}
-                      className={`border p-0 mb-1 cursor-pointer text-xs uppercase min-w-[75px] min-h-[50px] flex items-center justify-center ${dayClass}`}
+                      className={
+                        "border p-0 mb-1 cursor-pointer text-xs uppercase min-w-[75px] min-h-[50px] flex items-center justify-center " +
+                        dayClass
+                      }
                     >
                       <button
                         type="button"
                         className="w-full min-h-[50px] cursor-pointer uppercase flex items-center justify-center bg-transparent text-white"
                         onClick={() => onDayClick(weekIndex * numRows + dayIndex)}
                       >
-                        {day.label ? `${day.label}` : `Day ${dayIndex + 1}`}
+                        {day.label ? day.label : "Day " + (dayIndex + 1)}
                       </button>
                     </li>
                   );
@@ -95,6 +69,6 @@ export default function CalendarModal({
           ))}
         </div>
       </div>
-    </Modal>
+    </AppModal>
   );
 }

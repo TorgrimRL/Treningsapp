@@ -1,9 +1,7 @@
-import React, { useState } from "react";
-import Modal from "react-modal";
+import { useState } from "react";
 import TemplateOverviewModal from "./TemplatePreviewModal";
 import { templates } from "../constants/constants";
 
-Modal.setAppElement("#root");
 
 const TemplateSelector = ({ onSelectTemplate }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -18,7 +16,7 @@ const TemplateSelector = ({ onSelectTemplate }) => {
     if (onSelectTemplate && typeof onSelectTemplate === "function") {
       onSelectTemplate(selectedTemplate);
     }
-    
+
     setIsModalOpen(false);
   };
 
@@ -40,14 +38,12 @@ const TemplateSelector = ({ onSelectTemplate }) => {
         >
           Build a training block from scratch
         </a>
-        <label className=" block mx-auto text-center">
-          or select a template
-        </label>
+        <p className="block mx-auto text-center">or select a template</p>
       </div>
       <div>
         <ul className="list-none p-6">
-          {templates.map((template) => (
-            <li key={template.name} className="mb-2">
+          {templates.map((template, index) => (
+            <li key={template.name + "-" + index} className="mb-2">
               <button
                 onClick={() => handleSelect(template)}
                 className="bg-darkGray text-white py-2 px-8 w-full hover:bg-gray-700"

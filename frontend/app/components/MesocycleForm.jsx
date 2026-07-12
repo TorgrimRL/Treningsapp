@@ -10,13 +10,11 @@ import {
 } from "../constants/constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
-import Modal from "react-modal";
 import { useLocation } from "@remix-run/react";
 import AddExerciseModal from "./AddExerciseModal";
 import MesocycleDetailsModal from "./MesocycleDetailsModal";
 import { useApiFetch } from "../utils/apiFetch";
 
-Modal.setAppElement("#root");
 
 const emptySet = () => ({
   completed: false,

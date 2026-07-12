@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from "react";
-import Modal from "react-modal";
+import { useState, useEffect } from "react";
 import MesocycleDetailsModal from "./MesocycleDetailsModal";
 import { getCookie } from "../utils/cookies";
 import { useNavigate } from "@remix-run/react";
-
-Modal.setAppElement("#root");
+import AppModal from "./AppModal";
 
 const RedoExerciseBlockModal = ({ isOpen, onRequestClose, exerciseBlock }) => {
   const [weekAsTarget, setWeekAsTarget] = useState(null);
@@ -22,7 +20,7 @@ const RedoExerciseBlockModal = ({ isOpen, onRequestClose, exerciseBlock }) => {
   useEffect(() => {
     const fetchCsrfToken = async () => {
       try {
-        const response = await fetch(`${baseUrl}/csrf-token`, {
+        const response = await fetch(baseUrl + "/csrf-token", {
           method: "GET",
           credentials: "include",
         });
@@ -33,32 +31,27 @@ const RedoExerciseBlockModal = ({ isOpen, onRequestClose, exerciseBlock }) => {
       }
     };
     fetchCsrfToken();
-  }, []);
-
-  useEffect(() => {
-    console.log("Exercise Block Data:", exerciseBlock);
-  }, [exerciseBlock]);
+  }, [baseUrl]);
 
   if (!exerciseBlock || !Array.isArray(exerciseBlock.plan)) {
     console.error("Invalid exercise block data:", exerciseBlock);
     return null;
   }
 
-  // Gruppér treningsdagene i uker basert på `daysPerWeek`
   const groupedWeeks = [];
   for (
-    let i = 0;
-    i < exerciseBlock.plan.length;
-    i += exerciseBlock.daysPerWeek
+    let index = 0;
+    index < exerciseBlock.plan.length;
+    index += exerciseBlock.daysPerWeek
   ) {
-    const week = exerciseBlock.plan.slice(i, i + exerciseBlock.daysPerWeek);
+    const week = exerciseBlock.plan.slice(index, index + exerciseBlock.daysPerWeek);
     groupedWeeks.push(week);
   }
 
   const handleSave = () => {
     try {
       if (wantToUsePreviousWeekAsBase && weekAsTarget !== null) {
-        const newExerciseBlock = {
+        const nextExerciseBlock = {
           ...exerciseBlock,
           plan: groupedWeeks
             .map((week, weekIndex) => {
@@ -72,7 +65,7 @@ const RedoExerciseBlockModal = ({ isOpen, onRequestClose, exerciseBlock }) => {
                 return week.map((day, dayIndex) => {
                   const targetDay = targetWeek[dayIndex];
                   if (!targetDay) {
-                    console.error(`Invalid target day at index ${dayIndex}`);
+                    console.error("Invalid target day at index " + dayIndex);
                     return day;
                   }
 
@@ -83,7 +76,7 @@ const RedoExerciseBlockModal = ({ isOpen, onRequestClose, exerciseBlock }) => {
                       const targetExercise = targetDay.exercises[exerciseIndex];
                       if (!targetExercise) {
                         console.error(
-                          `Invalid target exercise at index ${exerciseIndex}`
+                          "Invalid target exercise at index " + exerciseIndex
                         );
                         return exercise;
                       }
@@ -94,7 +87,7 @@ const RedoExerciseBlockModal = ({ isOpen, onRequestClose, exerciseBlock }) => {
                           const targetSet = targetExercise.sets[setIndex];
                           if (!targetSet) {
                             console.error(
-                              `Invalid target set at index ${setIndex}`
+                              "Invalid target set at index " + setIndex
                             );
                             return set;
                           }
@@ -112,30 +105,28 @@ const RedoExerciseBlockModal = ({ isOpen, onRequestClose, exerciseBlock }) => {
                     }),
                   };
                 });
-              } else {
-                return week.map((day) => ({
-                  ...day,
-                  isCompleted: false,
-                  exercises: day.exercises.map((exercise) => ({
-                    ...exercise,
-                    sets: exercise.sets.map((set) => ({
-                      ...set,
-                      targetWeight: 0,
-                      targetReps: 0,
-                      completed: false,
-                      weight: 0,
-                      reps: 0,
-                    })),
-                  })),
-                }));
               }
+
+              return week.map((day) => ({
+                ...day,
+                isCompleted: false,
+                exercises: day.exercises.map((exercise) => ({
+                  ...exercise,
+                  sets: exercise.sets.map((set) => ({
+                    ...set,
+                    targetWeight: 0,
+                    targetReps: 0,
+                    completed: false,
+                    weight: 0,
+                    reps: 0,
+                  })),
+                })),
+              }));
             })
             .flat(),
         };
 
-        console.log("New exercise block ready to save:", newExerciseBlock);
-        // Lagre newExerciseBlock i state for å bruke i handleSaveMesocycleDetails
-        setNewExerciseBlock(newExerciseBlock);
+        setNewExerciseBlock(nextExerciseBlock);
         setIsDetailsModalOpen(true);
       } else {
         onRequestClose();
@@ -145,44 +136,40 @@ const RedoExerciseBlockModal = ({ isOpen, onRequestClose, exerciseBlock }) => {
     }
   };
 
-  // Bruk newExerciseBlock i handleSaveMesocycleDetails for å sende riktig data til backend
   const handleSaveMesocycleDetails = async () => {
     if (mesocycleName && numberOfWeeks) {
-      // Bruk newExerciseBlock som inneholder de oppdaterte ukene
       const mesocycleData = {
         name: mesocycleName,
         weeks: numberOfWeeks,
         daysPerWeek: exerciseBlock.daysPerWeek,
-        plan: newExerciseBlock.plan, // Bruker den oppdaterte treningsplanen
+        plan: newExerciseBlock.plan,
         completedDate: null,
         isCurrent: true,
       };
 
       try {
         const token = getCookie("token");
-        console.log("Retrieved token:", token);
 
-        const response = await fetch(`${baseUrl}/mesocycles`, {
+        const response = await fetch(baseUrl + "/mesocycles", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "X-CSRF-Token": csrfToken,
-            Authorization: `Bearer ${token}`,
+            Authorization: "Bearer " + token,
           },
           credentials: "include",
           body: JSON.stringify(mesocycleData),
         });
 
         if (!response.ok) {
-          throw new Error("Network response was not ok");
+          console.error("Network response was not ok");
+          return;
         }
 
-        const result = await response.json();
-        console.log("Mesocycle created:", result);
+        await response.json();
 
         setIsDetailsModalOpen(false);
         onRequestClose();
-
         navigate("/currentworkout");
       } catch (error) {
         console.error("There was a problem with the fetch operation", error);
@@ -192,78 +179,63 @@ const RedoExerciseBlockModal = ({ isOpen, onRequestClose, exerciseBlock }) => {
 
   return (
     <>
-      <Modal
+      <AppModal
         isOpen={isOpen}
         onRequestClose={onRequestClose}
         contentLabel="Redo Exerciseblock"
-        className="relative bg-darkGray text-white rounded focus:outline-none shadow-lg p-0 max-w-3xl mx-auto mt-20 text-2sm"
-        overlayClassName="fixed inset-0 flex items-start justify-center bg-black bg-opacity-50 z-50"
+        title="Want to do the training block again?"
       >
-        <button
-          onClick={onRequestClose}
-          className="absolute top-0 right-2 m-0 text-3xl text-white-600 hover:text-gray-800"
-        >
-          &times;
-        </button>
-        <header className="bold text-2xl mb-4 mt-2 border-b-1 border-inputBGGray">
-          Want to do the training block again?
-        </header>
-        {exerciseBlock && (
-          <div className="flex flex-col h-[60vh]">
-            <header className="bold text-2xl mb-4 mt-2 border-b-1 border-inputBGGray p-2">
-              {exerciseBlock.name}
-            </header>
+        <div className="flex flex-col">
+          <header className="bold text-2xl mb-4 mt-2 border-b border-inputBGGray p-2">
+            {exerciseBlock.name}
+          </header>
+          <label
+            htmlFor="use-previous-week-as-base"
+            className="flex items-center gap-3 mb-4"
+          >
             <input
+              id="use-previous-week-as-base"
               type="checkbox"
               checked={wantToUsePreviousWeekAsBase}
               onChange={(e) => setWantToUsePreviousWeekAsBase(e.target.checked)}
               className="scale-125"
-              style={{
-                width: "20px",
-                height: "20px",
-                marginTop: "10px",
-                marginLeft: "160px",
-                marginRight: "10px",
-                marginBottom: "20px",
-              }}
+              style={{ width: "20px", height: "20px" }}
             />
-            <label>
+            <span>
               Use a previous done week to get target reps and weights for first
               week
-            </label>
-            {wantToUsePreviousWeekAsBase && (
-              <div className="flex-1 overflow-y-auto p-2">
-                <label htmlFor="week-select">
-                  Select week to use as target:
-                </label>
-                <select
-                  id="week-select"
-                  value={weekAsTarget}
-                  onChange={(e) => setWeekAsTarget(parseInt(e.target.value))}
-                  className="bg-darkestGray text-white border border-gray-600 p-2 rounded w-full"
-                >
-                  <option value={null} disabled>
-                    Select a week
-                  </option>
-                  {groupedWeeks.map((_, weekIndex) => (
-                    <option key={weekIndex} value={weekIndex}>
-                      Week {weekIndex + 1}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-            <div className="flex justify-center mt-4 mb-4">
-              <button
-                onClick={handleSave}
-                className="flex items-center justify-center bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-lg"
+            </span>
+          </label>
+          {wantToUsePreviousWeekAsBase && (
+            <div className="p-2">
+              <label htmlFor="week-select">Select week to use as target:</label>
+              <select
+                id="week-select"
+                value={weekAsTarget ?? ""}
+                onChange={(e) => setWeekAsTarget(parseInt(e.target.value, 10))}
+                className="bg-darkestGray text-white border border-gray-600 p-2 rounded w-full"
               >
-                Save
-              </button>
+                <option value="" disabled>
+                  Select a week
+                </option>
+                {groupedWeeks.map((_, weekIndex) => (
+                  <option key={weekIndex} value={weekIndex}>
+                    Week {weekIndex + 1}
+                  </option>
+                ))}
+              </select>
             </div>
+          )}
+          <div className="flex justify-center mt-4 mb-4">
+            <button
+              onClick={handleSave}
+              className="flex items-center justify-center bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-lg"
+            >
+              Save
+            </button>
           </div>
-        )}
-      </Modal>
+        </div>
+      </AppModal>
 
       <MesocycleDetailsModal
         isOpen={isDetailsModalOpen}

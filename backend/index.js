@@ -91,6 +91,7 @@ app.get("/api/me", async (req, res) => {
   }
 
   try {
+    // noinspection SqlResolve
     const { result } = await safeQuery`
       SELECT id, username, auth_provider, auth0_sub, email, email_verified, picture
       FROM users
@@ -121,7 +122,7 @@ app.delete(
       const responsePayload = buildResponsePayload(hadRetry);
       res.status(200).json(responsePayload);
     } catch (error) {
-      console.log("Database Error");
+      console.error("Database Error", error);
       res.status(500).json({ message: error.message });
     }
   }

@@ -1,4 +1,3 @@
-import React from "react";
 import MesocycleOverview from "../components/MesocycleOverview";
 import ProtectedRoute from "../components/ProtectedRoute";
 export default function Mesocycles() {

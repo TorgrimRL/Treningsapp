@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import Modal from "react-modal";
 import { normalizeProgressionSettings } from "../constants/constants";
 import {
   DEFAULT_DROPSET_SET_COUNT,
@@ -8,8 +7,7 @@ import {
   MIN_DROPSET_SET_COUNT,
   generateDropsetWeights,
 } from "../utils/dropsets";
-
-Modal.setAppElement("#root");
+import AppModal from "./AppModal";
 
 const getInitialStartWeight = (exercise) => {
   const firstSet = exercise?.sets?.[0] || {};
@@ -74,98 +72,86 @@ export default function DropsetModal({
   }
 
   return (
-    <Modal
+    <AppModal
       isOpen={isOpen}
       onRequestClose={onRequestClose}
       contentLabel="Dropsets"
-      className="relative mx-auto bg-darkGray text-white rounded focus:outline-none shadow-lg p-0 max-w-3xl mt-20 text-2sm"
-      overlayClassName="fixed inset-0 flex items-start justify-center bg-black bg-opacity-50 z-50"
+      title="Dropsets"
     >
-      <button
-        onClick={onRequestClose}
-        className="absolute top-0 right-2 text-3xl hover:text-gray-800"
-      >
-        &times;
-      </button>
-      <div className="flex flex-col p-4">
-        <header className="bold text-2xl mb-4 mt-2 border-b border-inputBGGray">
-          Dropsets
-        </header>
-        <div className="mb-4 text-sm text-gray-400 uppercase">
-          {exercise.exercise}
-        </div>
-        <label className="flex flex-col gap-2">
-          <span>Start weight</span>
-          <input
-            data-testid="dropset-start-weight"
-            type="number"
-            min={weightIncrement}
-            step={weightIncrement}
-            value={startWeight}
-            onChange={(event) => setStartWeight(event.target.value)}
-            className="bg-inputBGGray text-center w-full p-2"
-          />
-        </label>
-        <label className="mt-4 flex flex-col gap-2">
-          <span>Total sets</span>
-          <select
-            data-testid="dropset-set-count"
-            value={setCount}
-            onChange={(event) => setSetCount(Number(event.target.value))}
-            className="bg-inputBGGray text-center w-full p-2"
-          >
-            {Array.from(
-              {
-                length: MAX_DROPSET_SET_COUNT - MIN_DROPSET_SET_COUNT + 1,
-              },
-              (_, index) => MIN_DROPSET_SET_COUNT + index
-            ).map((count) => (
-              <option key={count} value={count}>
-                {count}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="mt-4 flex items-center gap-3">
-          <input
-            data-testid="dropset-apply-future"
-            type="checkbox"
-            checked={applyToFutureWeeks}
-            onChange={(event) => setApplyToFutureWeeks(event.target.checked)}
-            className="scale-125"
-          />
-          <span>Apply to rest of mesocycle</span>
-        </label>
-        <div className="mt-4 text-sm text-gray-300">
-          {preview.error ? (
-            <div className="text-red-400">{preview.error}</div>
-          ) : (
-            <div data-testid="dropset-preview">{preview.weights.join(" / ")}</div>
-          )}
-        </div>
-        <div className="mt-6 flex justify-center gap-3">
-          <button
-            data-testid="dropset-save"
-            onClick={() =>
-              onSave({
-                startWeight: Number(startWeight),
-                setCount,
-                applyToFutureWeeks,
-              })
-            }
-            disabled={!!preview.error}
-            className="flex items-center justify-center bg-red-600 disabled:bg-inputNRGrey text-white border-none py-2 px-4 cursor-pointer text-lg"
-          >
-            Save
-          </button>
-          <button
-            onClick={onRequestClose}
-            className="flex items-center justify-center bg-inputNRGrey text-white border-none py-2 px-4 cursor-pointer text-lg"
-          >
-            Cancel
-          </button>
-        </div>
+      <div className="mb-4 text-sm text-gray-400 uppercase">
+        {exercise.exercise}
       </div>
-    </Modal>
+      <label className="flex flex-col gap-2">
+        <span>Start weight</span>
+        <input
+          data-testid="dropset-start-weight"
+          type="number"
+          min={weightIncrement}
+          step={weightIncrement}
+          value={startWeight}
+          onChange={(event) => setStartWeight(event.target.value)}
+          className="bg-inputBGGray text-center w-full p-2"
+        />
+      </label>
+      <label className="mt-4 flex flex-col gap-2">
+        <span>Total sets</span>
+        <select
+          data-testid="dropset-set-count"
+          value={setCount}
+          onChange={(event) => setSetCount(Number(event.target.value))}
+          className="bg-inputBGGray text-center w-full p-2"
+        >
+          {Array.from(
+            {
+              length: MAX_DROPSET_SET_COUNT - MIN_DROPSET_SET_COUNT + 1,
+            },
+            (_, index) => MIN_DROPSET_SET_COUNT + index
+          ).map((count) => (
+            <option key={count} value={count}>
+              {count}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="mt-4 flex items-center gap-3">
+        <input
+          data-testid="dropset-apply-future"
+          type="checkbox"
+          checked={applyToFutureWeeks}
+          onChange={(event) => setApplyToFutureWeeks(event.target.checked)}
+          className="scale-125"
+        />
+        <span>Apply to rest of mesocycle</span>
+      </label>
+      <div className="mt-4 text-sm text-gray-300">
+        {preview.error ? (
+          <div className="text-red-400 break-words">{preview.error}</div>
+        ) : (
+          <div data-testid="dropset-preview">{preview.weights.join(" / ")}</div>
+        )}
+      </div>
+      <div className="mt-6 flex justify-center gap-3">
+        <button
+          data-testid="dropset-save"
+          onClick={() =>
+            onSave({
+              startWeight: Number(startWeight),
+              setCount,
+              applyToFutureWeeks,
+            })
+          }
+          disabled={!!preview.error}
+          className="flex items-center justify-center bg-red-600 disabled:bg-inputNRGrey text-white border-none py-2 px-4 cursor-pointer text-lg"
+        >
+          Save
+        </button>
+        <button
+          onClick={onRequestClose}
+          className="flex items-center justify-center bg-inputNRGrey text-white border-none py-2 px-4 cursor-pointer text-lg"
+        >
+          Cancel
+        </button>
+      </div>
+    </AppModal>
   );
 }

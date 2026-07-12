@@ -10,7 +10,6 @@ export default defineConfig({
       "@fortawesome/react-fontawesome",
       "react-icons/fa",
       "react-modal",
-      "react-router-dom",
     ],
   },
 

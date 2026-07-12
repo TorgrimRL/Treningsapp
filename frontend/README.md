@@ -33,20 +33,15 @@ Frontenden er skrevet i **React** (med Remix/Vite og Tailwind CSS) og er designe
 │   │   ├── CalendarModal.jsx
 │   │   ├── ChooseExerciseModal.jsx
 │   │   ├── CurrentWorkout.jsx
-│   │   ├── ExerciseForm.jsx
-│   │   ├── LandingPage.jsx
-│   │   ├── Login.jsx
-│   │   ├── Logout.jsx
+kan│   │   ├── LandingPage.jsx
 │   │   ├── MesocycleDetailsModal.jsx
 │   │   ├── MesocycleForm.jsx
 │   │   ├── MesocycleOverview.jsx
-│   │   ├── MuscleGroupModal.jsx
 │   │   ├── Navbar.jsx
 │   │   ├── NoteModal.jsx
 │   │   ├── ProgressBar.jsx
 │   │   ├── ProtectedRoute.jsx
 │   │   ├── RedoExerciseBlockModal.jsx
-│   │   ├── Register.jsx
 │   │   ├── TemplatePreviewModal.jsx
 │   │   └── TemplateSelector.jsx
 │   ├── constants
@@ -66,18 +61,10 @@ Frontenden er skrevet i **React** (med Remix/Vite og Tailwind CSS) og er designe
 │   └── utils
 │       ├── AuthContext.jsx       # Oppsett for global auth-status (useAuth)
 │       └── cookies.js
-├── cookies.txt
 ├── package.json
 ├── package-lock.json
 ├── postcss.config.js
 ├── public
-│   ├── build
-│   │   ├── entry.client-3V6UXJEJ.js
-│   │   ├── manifest-F08DB4F9.js
-│   │   ├── root-APDM2KSQ.css
-│   │   ├── root-EUR35J2N.js
-│   │   ├── routes
-│   │   └── _shared
 │   ├── favicon.ico
 │   └── images
 │       ├── dumbbells.jpg
@@ -141,16 +128,6 @@ Her ser du at **React-komponenter** ligger i `app/components`, at ruter definere
 - **Bygg og kjøring**:  
   Som standard kjører du `npm install` og `npm run dev` for å starte utviklingsserveren lokalt. For mer detaljer, se overordnet README i prosjektet.
 
-## Mulige Forbedringer
-
-- **Flere Enhetstester**:  
-  Selv om Hyperskills interne tester er bestått, kan enhetstester og e2e-tester (f.eks. med Cypress) øke stabilitet.  
-- **Offline-støtte/PWA**:  
-  Gjør det mulig å logge økter selv uten nettilgang.  
-- **Mer dynamisk layout**:  
-  For eksempel bedre støtte for store skjermstørrelser eller et mer omfattende dashbord.  
-- **Internasjonalisering (i18n)**:  
-  Oversettelser og språkstøtte kan gjøre appen mer tilgjengelig for et bredere publikum.
 
 ---
 

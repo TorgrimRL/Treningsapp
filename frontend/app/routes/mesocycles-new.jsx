@@ -72,8 +72,6 @@ export default function NewMesocycle() {
         );
         return;
       }
-      console.log("Fetched new mesocycle:", getData);
-
       navigate("/currentworkout");
     } catch (error) {
       console.error("There was a problem with the fetch operation", error);
