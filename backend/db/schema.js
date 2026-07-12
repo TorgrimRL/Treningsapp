@@ -1,10 +1,12 @@
-// noinspection SqlNoDataSourceInspection,SqlDialectInspection
+const auth0SubColumn = "auth0_sub";
+
+// noinspection SqlNoDataSourceInspection,SqlDialectInspection,SqlResolve
 const createUsersTableSql = `CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       username TEXT UNIQUE,
       password TEXT,
       auth_provider TEXT DEFAULT 'local',
-      auth0_sub TEXT,
+      ${auth0SubColumn} TEXT,
       email TEXT,
       email_verified INTEGER DEFAULT 0,
       picture TEXT
@@ -59,8 +61,8 @@ export const schemaMigrationStatements = [
   {
     name: "users.auth0_sub",
     table: "users",
-    column: "auth0_sub",
-    sql: "ALTER TABLE users ADD COLUMN auth0_sub TEXT",
+    column: auth0SubColumn,
+    sql: `ALTER TABLE users ADD COLUMN ${auth0SubColumn} TEXT`,
   },
   {
     name: "users.email",
@@ -82,9 +84,10 @@ export const schemaMigrationStatements = [
   },
   {
     name: "users.auth0_sub_unique",
+    // noinspection SqlNoDataSourceInspection,SqlDialectInspection,SqlResolve
     sql: `CREATE UNIQUE INDEX IF NOT EXISTS idx_users_auth0_sub
-      ON users(auth0_sub)
-      WHERE auth0_sub IS NOT NULL AND auth0_sub != ''`,
+      ON users(${auth0SubColumn})
+      WHERE ${auth0SubColumn} IS NOT NULL AND ${auth0SubColumn} != ''`,
   },
 ];
 
