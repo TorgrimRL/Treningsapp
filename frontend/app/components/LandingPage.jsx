@@ -1,144 +1,182 @@
+import PageContainer from "./PageContainer";
+
+const steps = [
+  {
+    title: "Create Your Routine",
+    description:
+      "Choose from templates OR build your own custom training block.",
+  },
+  {
+    title: "Begin Your Training",
+    description: "Get target reps and weights based on previous performance.",
+  },
+  {
+    title: "Evolve and Improve",
+    description:
+      "Fully customizable workouts let you change things on the fly when needed in the gym.",
+  },
+];
+
 function LandingPage() {
   const baseUrl = import.meta.env.VITE_API_URL;
+
   return (
-    <div className="flex flex-col">
-    
-      <div
-        className="relative h-screen bg-cover bg-center"
+    <div className="flex min-w-0 flex-col">
+      <section
+        data-testid="landing-hero"
+        className="relative min-h-[calc(100svh-3rem)] bg-cover bg-center bg-no-repeat"
         style={{
           backgroundImage:
             "url('/images/edgar-chaparro-sHfo3WOgGTU-unsplash.jpg')",
         }}
       >
-        <div className="absolute inset-0 flex flex-col justify-center items-center bg-black bg-opacity-50 text-center">
-          <h1 className="text-white text-4xl md:text-6xl">
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-55 px-4 text-center">
+          <h1 className="text-4xl text-white md:text-6xl">
             Simplifying Muscle Growth
           </h1>
-          <p className="text-gray-300 text-lg md:text-xl mt-4">
+          <p className="mt-4 text-lg text-gray-300 md:text-xl">
             Eliminate the Guesswork. Achieve Results.
           </p>
           <a
             href={`${baseUrl}/auth0/register`}
-            className="bg-red-600 text-white text-lg font-semibold py-3 px-8 rounded-full hover:bg-red-700 transition duration-300 mt-6"
+            className="mt-6 rounded-full bg-red-600 px-8 py-3 text-lg font-semibold text-white transition duration-300 hover:bg-red-700"
           >
             Register here
           </a>
         </div>
-      </div>
+      </section>
 
-      <div className="flex flex-col items-center p-10 text-center">
-        <img
-          src="/images/targetweightandreps.png"
-          alt="Target Reps and Weight"
-          className="shadow-lg max-w-full h-auto"
-        />
-        <p className="text-white text-lg md:text-xl mt-4">
-          Get your target reps and weight based on last week&apos;s performance.
-        </p>
-      </div>
-      <div className="relative">
-        <img
-          src="/images/dumbbells.jpg"
-          alt="Dumbbells"
-          className="shadow-lg max-w-full h-auto"
-          style={{ filter: "grayscale(100%)" }}
-        />
-        <div className="absolute inset-0 flex flex-col justify-center items-center bg-black bg-opacity-50 text-center">
-          <h2 className="text-white text-3xl md:text-4xl">
-            Progress Even When The Weights are Taken
-          </h2>
-        </div>
-      </div>
-      <div className="flex flex-col items-center relative p-10 text-center">
-        <img
-          src="/images/lastweeksreps.png"
-          alt="last weeks reps and weight"
-          className="shadow-lg max-w-full h-auto"
-        />
-        <p className="text-gray-300 text-lg mt-4">
-          No need to wait. Continue your progress with available weights.
-        </p>
-        <div className="flex flex-col items-center mt-2">
-          <img
-            src="/images/targetreps.png"
-            alt="different weights"
-            className="shadow-lg max-w-full h-auto"
-          />
-          <p className="text-gray-300 text-lg mt-4">
-            Our app calculates the ideal weight and reps for you. In this
-            session, the 16kg dumbbells were occupied, so the app adjusted your
-            target to the available 14kg dumbbells.
-          </p>
-        </div>
-      </div>
-      <div className="flex flex-col items-center p-10 bg-darkestGray text-center">
-        <h2 className="text-3xl font-bold text-white mb-8">How it works</h2>
-        <div className="flex flex-col space-y-8">
-          <div className="flex flex-col md:flex-row items-center">
-            <div className="w-12 h-12 bg-red-600 text-white flex items-center justify-center rounded-full text-xl font-bold">
-              1
-            </div>
-            <div className="ml-4 text-left">
-              <h3 className="text-xl font-bold text-white">
-                Create Your Routine
-              </h3>
-              <p className="text-gray-300">
-                Choose from templates OR build your own custom training block.
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-col md:flex-row items-center">
-            <div className="w-12 h-12 bg-red-600 text-white flex items-center justify-center rounded-full text-xl font-bold">
-              2
-            </div>
-            <div className="ml-4 text-left">
-              <h3 className="text-xl font-bold text-white">
-                Begin Your Training
-              </h3>
-              <p className="text-gray-300">
-                Get target reps and weights based on previous performance.
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-col md:flex-row items-center">
-            <div className="w-12 h-12 bg-red-600 text-white flex items-center justify-center rounded-full text-xl font-bold">
-              3
-            </div>
-            <div className="ml-4 text-left">
-              <h3 className="text-xl font-bold text-white">
-                Evolve and Improve
-              </h3>
-              <p className="text-gray-300">
-                Fully customizable workouts so you can change things on the fly
-                if needed in the gym.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div
-        className="relative h-screen "
-        style={{
-          backgroundImage: "url('/images/pexels-scottwebb-28076(1).jpg')",
-        }}
-      >
-        <div className="absolute inset-0 flex flex-col justify-center items-center bg-black bg-opacity-50 text-center">
-          {" "}
-          <h1 className="text-white text-4xl md:text-6xl">
-            Simplifying Muscle Growth
-          </h1>
-          <p className="text-gray-300 text-lg md:text-xl mt-4">
-            Eliminate the Guesswork. Achieve Results.
-          </p>
-          <a
-            href={`${baseUrl}/auth0/register`}
-            className="bg-red-600 text-white text-lg font-semibold py-3 px-8 rounded-full hover:bg-red-700 transition duration-300 mt-6"
+      <div data-testid="landing-features" className="bg-darkestGray">
+        <PageContainer size="standard" className="px-4 py-12 md:px-6 md:py-16">
+          <div
+            data-testid="landing-feature-content"
+            className="space-y-16 lg:space-y-24"
           >
-            Register now
-          </a>
-        </div>
+            <section className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
+              <div className="aspect-[4/3] min-w-0 overflow-hidden bg-darkGray p-3 shadow-lg md:rounded-xl">
+                <img
+                  src="/images/targetweightandreps.png"
+                  alt="Target reps and weight recommendations"
+                  className="h-full w-full object-contain"
+                />
+              </div>
+              <div className="text-center lg:text-left">
+                <h2 className="text-3xl font-bold text-white">
+                  Know Your Next Target
+                </h2>
+                <p className="mt-4 text-lg text-gray-300 md:text-xl">
+                  Get your target reps and weight based on last week&apos;s
+                  performance.
+                </p>
+              </div>
+            </section>
+
+            <section className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
+              <div className="aspect-video min-w-0 overflow-hidden shadow-lg md:rounded-xl lg:order-2">
+                <img
+                  src="/images/dumbbells.jpg"
+                  alt="Dumbbells on a gym rack"
+                  className="h-full w-full object-cover grayscale"
+                />
+              </div>
+              <div className="text-center lg:order-1 lg:text-left">
+                <h2 className="text-3xl font-bold text-white md:text-4xl">
+                  Progress Even When The Weights Are Taken
+                </h2>
+                <p className="mt-4 text-lg text-gray-300">
+                  Keep the progression moving with targets that adapt to the
+                  equipment available today.
+                </p>
+              </div>
+            </section>
+
+            <section className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
+              <div className="aspect-[4/3] min-w-0 overflow-hidden bg-darkGray p-3 shadow-lg md:rounded-xl">
+                <img
+                  src="/images/lastweeksreps.png"
+                  alt="Previous workout performance"
+                  className="h-full w-full object-contain"
+                />
+              </div>
+              <div className="text-center lg:text-left">
+                <h2 className="text-3xl font-bold text-white">
+                  Build On Every Session
+                </h2>
+                <p className="mt-4 text-lg text-gray-300">
+                  No need to wait. Continue your progress with available
+                  weights.
+                </p>
+              </div>
+            </section>
+
+            <section className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
+              <div className="aspect-[4/3] min-w-0 overflow-hidden bg-darkGray p-3 shadow-lg md:rounded-xl lg:order-2">
+                <img
+                  src="/images/targetreps.png"
+                  alt="Adjusted target for different weights"
+                  className="h-full w-full object-contain"
+                />
+              </div>
+              <div className="text-center lg:order-1 lg:text-left">
+                <h2 className="text-3xl font-bold text-white">
+                  Adapt Without Guesswork
+                </h2>
+                <p className="mt-4 text-lg text-gray-300">
+                  The app calculates ideal weight and reps for you. If the 16 kg
+                  dumbbells are occupied, your target can adapt to the available
+                  14 kg pair.
+                </p>
+              </div>
+            </section>
+
+            <section className="text-center">
+              <h2 className="mb-8 text-3xl font-bold text-white">
+                How it works
+              </h2>
+              <div className="grid gap-6 lg:grid-cols-3">
+                {steps.map((step, index) => (
+                  <article
+                    key={step.title}
+                    className="flex min-w-0 flex-col items-center bg-darkGray p-6 text-center md:rounded-xl md:border md:border-gray-700"
+                  >
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-red-600 text-xl font-bold text-white">
+                      {index + 1}
+                    </div>
+                    <h3 className="mt-4 text-xl font-bold text-white">
+                      {step.title}
+                    </h3>
+                    <p className="mt-2 text-gray-300">{step.description}</p>
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <section className="relative min-h-[60svh] overflow-hidden shadow-xl md:rounded-xl">
+              <img
+                src="/images/pexels-scottwebb-28076(1).jpg"
+                alt=""
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-55 px-4 text-center">
+                <h2 className="text-4xl text-white md:text-6xl">
+                  Simplifying Muscle Growth
+                </h2>
+                <p className="mt-4 text-lg text-gray-300 md:text-xl">
+                  Eliminate the Guesswork. Achieve Results.
+                </p>
+                <a
+                  href={`${baseUrl}/auth0/register`}
+                  className="mt-6 rounded-full bg-red-600 px-8 py-3 text-lg font-semibold text-white transition duration-300 hover:bg-red-700"
+                >
+                  Register now
+                </a>
+              </div>
+            </section>
+          </div>
+        </PageContainer>
       </div>
     </div>
   );
 }
+
 export default LandingPage;

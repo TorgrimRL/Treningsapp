@@ -3,6 +3,7 @@ import MesocycleForm from "../components/MesocycleForm";
 import { getCookie } from "../utils/cookies";
 import { useNavigate } from "@remix-run/react";
 import ProtectedRoute from "../components/ProtectedRoute";
+import PageContainer from "../components/PageContainer";
 import { useApiFetch } from "../utils/apiFetch";
 
 export default function NewMesocycle() {
@@ -26,19 +27,19 @@ export default function NewMesocycle() {
     try {
       const token = getCookie("token");
 
-      const {
-        ok: postOk,
-        data: postData,
-      } = await apiFetch(`${baseUrl}/mesocycles`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRF-Token": csrfToken,
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: "include",
-        body: JSON.stringify(mesocycle),
-      });
+      const { ok: postOk, data: postData } = await apiFetch(
+        `${baseUrl}/mesocycles`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRF-Token": csrfToken,
+            Authorization: `Bearer ${token}`,
+          },
+          credentials: "include",
+          body: JSON.stringify(mesocycle),
+        }
+      );
 
       if (!postOk) {
         console.error(
@@ -53,17 +54,17 @@ export default function NewMesocycle() {
         return;
       }
 
-      const {
-        ok: getOk,
-        data: getData,
-      } = await apiFetch(`${baseUrl}/mesocycles/${mesocycleId}`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-      });
+      const { ok: getOk, data: getData } = await apiFetch(
+        `${baseUrl}/mesocycles/${mesocycleId}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        }
+      );
 
       if (!getOk) {
         console.error(
@@ -83,11 +84,10 @@ export default function NewMesocycle() {
   };
   return (
     <ProtectedRoute>
-      <div className=" text-white bg-darkGray">
-        <div style={{ paddingTop: "30px" }}></div>
-
-        <MesocycleForm onSubmit={handleSubmit} />
-        <div id="root">{/* <TestModal /> */}</div>
+      <div className="min-h-full bg-darkGray text-white">
+        <PageContainer size="wide" className="lg:px-6">
+          <MesocycleForm onSubmit={handleSubmit} />
+        </PageContainer>
       </div>
     </ProtectedRoute>
   );

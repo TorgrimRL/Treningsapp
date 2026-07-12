@@ -15,7 +15,6 @@ import AddExerciseModal from "./AddExerciseModal";
 import MesocycleDetailsModal from "./MesocycleDetailsModal";
 import { useApiFetch } from "../utils/apiFetch";
 
-
 const emptySet = () => ({
   completed: false,
   targetWeight: 0,
@@ -189,47 +188,54 @@ const MesocycleForm = ({ onSubmit }) => {
 
         return {
           ...day,
-          exercises: day.exercises.map((currentExercise, currentExerciseIndex) => {
-            if (currentExerciseIndex !== exerciseIndex) {
-              return currentExercise;
-            }
+          exercises: day.exercises.map(
+            (currentExercise, currentExerciseIndex) => {
+              if (currentExerciseIndex !== exerciseIndex) {
+                return currentExercise;
+              }
 
-            const nextValue = field === "weightIncrement" ? Number(value) : value;
-            const nextMuscleGroup =
-              field === "muscleGroup" ? nextValue : currentExercise.muscleGroup;
-            const nextExerciseName =
-              field === "exercise" ? nextValue : currentExercise.exercise;
-            const selectedExercise = getSelectedExercise(
-              nextMuscleGroup,
-              nextExerciseName
-            );
-            const nextType = selectedExercise?.type || currentExercise.type;
-            const currentIncrement =
-              normalizeProgressionSettings(currentExercise).weightIncrement;
-            const shouldUseTypeDefaultIncrement =
-              field === "exercise" &&
-              nextType !== currentExercise.type &&
-              currentIncrement === getDefaultWeightIncrement(currentExercise.type);
-            const nextExercise = {
-              ...currentExercise,
-              [field]: nextValue,
-              muscleGroup: nextMuscleGroup,
-              exercise: nextExerciseName,
-              type: nextType,
-              videoLink: selectedExercise?.videoLink || currentExercise.videoLink,
-              weightIncrement:
-                field === "weightIncrement"
+              const nextValue =
+                field === "weightIncrement" ? Number(value) : value;
+              const nextMuscleGroup =
+                field === "muscleGroup"
                   ? nextValue
-                  : shouldUseTypeDefaultIncrement
+                  : currentExercise.muscleGroup;
+              const nextExerciseName =
+                field === "exercise" ? nextValue : currentExercise.exercise;
+              const selectedExercise = getSelectedExercise(
+                nextMuscleGroup,
+                nextExerciseName
+              );
+              const nextType = selectedExercise?.type || currentExercise.type;
+              const currentIncrement =
+                normalizeProgressionSettings(currentExercise).weightIncrement;
+              const shouldUseTypeDefaultIncrement =
+                field === "exercise" &&
+                nextType !== currentExercise.type &&
+                currentIncrement ===
+                  getDefaultWeightIncrement(currentExercise.type);
+              const nextExercise = {
+                ...currentExercise,
+                [field]: nextValue,
+                muscleGroup: nextMuscleGroup,
+                exercise: nextExerciseName,
+                type: nextType,
+                videoLink:
+                  selectedExercise?.videoLink || currentExercise.videoLink,
+                weightIncrement:
+                  field === "weightIncrement"
+                    ? nextValue
+                    : shouldUseTypeDefaultIncrement
                     ? getDefaultWeightIncrement(nextType)
                     : currentIncrement,
-            };
+              };
 
-            return {
-              ...nextExercise,
-              ...normalizeProgressionSettings(nextExercise),
-            };
-          }),
+              return {
+                ...nextExercise,
+                ...normalizeProgressionSettings(nextExercise),
+              };
+            }
+          ),
         };
       })
     );
@@ -374,259 +380,253 @@ const MesocycleForm = ({ onSubmit }) => {
         setNumberOfWeeks={setNumberOfWeeks}
       />
       <form data-testid="mesocycle-form" onSubmit={handleSubmit}>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
-          <div className="text-center mb-10 p-4">
+        <div className="flex min-w-0 flex-col items-center">
+          <div className="flex w-full flex-wrap justify-center gap-3 px-4 py-6">
             <button
               data-testid="save-training-plan"
               type="submit"
-              style={{ marginTop: "20px" }}
-              className="bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-lg mr-4"
+              className="w-full cursor-pointer bg-red-600 px-4 py-2 text-lg text-white sm:w-auto md:rounded"
             >
               Save Plan
             </button>
             <button
               data-testid="autofill-exercises"
               type="button"
-              style={{ marginTop: "20px" }}
-              className="bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-lg"
+              className="w-full cursor-pointer bg-red-600 px-4 py-2 text-lg text-white sm:w-auto md:rounded"
               onClick={handleAutofillExercises}
             >
               Auto Fill Exercises
             </button>
           </div>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "start",
-              width: "100%",
-              overflow: "auto",
-            }}
-          >
-            {plan.map((day, dayIndex) => (
-              <div
-                key={dayIndex}
-                style={{ margin: "0 5px", flex: 1 }}
-                className="bg-darkestGray border-gray-700 shadow-lg p-1 mb-6 max-w-sm"
-              >
-                <label className="flex items-center justify-between mb-2">
-                  <select
-                    data-testid={`day-label-${dayIndex}`}
-                    value={day.label}
-                    onChange={(event) =>
-                      handleLabelChange(dayIndex, event.target.value)
-                    }
-                    required
-                    className="bg-darkestGray text-center border border-gray-400 w-40 p-1 flex flex-col"
-                  >
-                    <option value="">Add a Label</option>
-                    {days.map((dayLabel) => (
-                      <option key={dayLabel} value={dayLabel}>
-                        {dayLabel}
-                      </option>
-                    ))}
-                  </select>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveDay(dayIndex)}
-                  >
-                    <FontAwesomeIcon icon={faTrash} />
-                  </button>
-                </label>
-
-                {day.exercises.map((exercise, exerciseIndex) => {
-                  const progressionSettings =
-                    normalizeProgressionSettings(exercise);
-                  const muscleGroupId = `muscle-group-${dayIndex}-${exerciseIndex}`;
-                  const exerciseId = `exercise-${dayIndex}-${exerciseIndex}`;
-                  const progressionModeId = `progression-mode-${dayIndex}-${exerciseIndex}`;
-                  const weightIncrementId = `weight-increment-${dayIndex}-${exerciseIndex}`;
-
-                  return (
-                    <div
-                      key={exerciseIndex}
-                      className="flex justify-between flex-col bg-darkGray border border-gray-700 max-w p-3 mb-3"
+          <div className="w-full min-w-0 lg:overflow-x-auto lg:pb-4">
+            <div
+              data-testid="planner-days"
+              className="flex w-full min-w-0 flex-col gap-3 lg:w-max lg:min-w-full lg:flex-row lg:items-start lg:justify-center lg:gap-4 lg:px-4"
+            >
+              {plan.map((day, dayIndex) => (
+                <div
+                  key={dayIndex}
+                  data-testid={"planner-day-" + dayIndex}
+                  className="w-full min-w-0 flex-none bg-darkestGray p-3 shadow-lg lg:w-80 lg:border lg:border-gray-700 lg:rounded-lg xl:w-96"
+                >
+                  <label className="mb-3 flex min-w-0 items-center justify-between gap-3">
+                    <select
+                      data-testid={`day-label-${dayIndex}`}
+                      value={day.label}
+                      onChange={(event) =>
+                        handleLabelChange(dayIndex, event.target.value)
+                      }
+                      required
+                      className="min-w-0 max-w-full flex-1 border border-gray-400 bg-darkestGray p-1 text-center"
                     >
-                      <div className="flex justify-between items-center mb-2">
-                        <div className="flex flex-col">
-                          <label htmlFor={muscleGroupId}>Muscle Group:</label>
+                      <option value="">Add a Label</option>
+                      {days.map((dayLabel) => (
+                        <option key={dayLabel} value={dayLabel}>
+                          {dayLabel}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveDay(dayIndex)}
+                      className="shrink-0 p-2"
+                    >
+                      <FontAwesomeIcon icon={faTrash} />
+                    </button>
+                  </label>
+
+                  {day.exercises.map((exercise, exerciseIndex) => {
+                    const progressionSettings =
+                      normalizeProgressionSettings(exercise);
+                    const muscleGroupId = `muscle-group-${dayIndex}-${exerciseIndex}`;
+                    const exerciseId = `exercise-${dayIndex}-${exerciseIndex}`;
+                    const progressionModeId = `progression-mode-${dayIndex}-${exerciseIndex}`;
+                    const weightIncrementId = `weight-increment-${dayIndex}-${exerciseIndex}`;
+
+                    return (
+                      <div
+                        key={exerciseIndex}
+                        className="mb-3 flex min-w-0 flex-col justify-between border border-gray-700 bg-darkGray p-3"
+                      >
+                        <div className="mb-2 flex min-w-0 items-start justify-between gap-2">
+                          <div className="flex min-w-0 flex-1 flex-col">
+                            <label htmlFor={muscleGroupId}>Muscle Group:</label>
+                            <select
+                              data-testid={`muscle-group-${dayIndex}-${exerciseIndex}`}
+                              id={muscleGroupId}
+                              value={exercise.muscleGroup}
+                              onChange={(event) =>
+                                handleChange(
+                                  dayIndex,
+                                  exerciseIndex,
+                                  "muscleGroup",
+                                  event.target.value
+                                )
+                              }
+                              className="w-full min-w-0 max-w-full rounded border border-gray-400 bg-darkestGray p-1 text-center"
+                              required
+                            >
+                              <option value="">Select a muscle group</option>
+                              {allMuscleGroups.map((group) => (
+                                <option key={group} value={group}>
+                                  {group}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleRemoveExercise(dayIndex, exerciseIndex)
+                            }
+                            className="shrink-0 p-2 text-white hover:text-red-800"
+                          >
+                            <FontAwesomeIcon icon={faTrash} />
+                          </button>
+                        </div>
+
+                        <div className="mb-2 flex min-w-0 flex-col">
+                          <label className="w-full" htmlFor={exerciseId}>
+                            Exercise:
+                          </label>
                           <select
-                            data-testid={`muscle-group-${dayIndex}-${exerciseIndex}`}
-                            id={muscleGroupId}
-                            value={exercise.muscleGroup}
+                            data-testid={`exercise-${dayIndex}-${exerciseIndex}`}
+                            id={exerciseId}
+                            value={exercise.exercise}
                             onChange={(event) =>
                               handleChange(
                                 dayIndex,
                                 exerciseIndex,
-                                "muscleGroup",
+                                "exercise",
                                 event.target.value
                               )
                             }
-                            className="bg-darkestGray text-center border border-gray-400 w-50 rounded p-1 flex flex-col"
                             required
+                            className="w-full min-w-0 max-w-full rounded border border-gray-400 bg-darkestGray p-1 text-center"
                           >
-                            <option value="">Select a muscle group</option>
-                            {allMuscleGroups.map((group) => (
-                              <option key={group} value={group}>
-                                {group}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
+                            <option value="" disabled hidden>
+                              Select an exercise
+                            </option>
 
-                        <button
-                          type="button"
-                          onClick={() =>
-                            handleRemoveExercise(dayIndex, exerciseIndex)
-                          }
-                          className="text-white hover:text-red-800 ml-2"
-                          style={{ position: "relative", top: "-1.1rem" }}
-                        >
-                          <FontAwesomeIcon icon={faTrash} />
-                        </button>
-                      </div>
-
-                      <div className="flex mb-2">
-                        <label className="flex flex-col w-full" htmlFor={exerciseId}>
-                          Exercise:
-                        </label>
-                        <select
-                          data-testid={`exercise-${dayIndex}-${exerciseIndex}`}
-                          id={exerciseId}
-                          value={exercise.exercise}
-                          onChange={(event) =>
-                            handleChange(
-                              dayIndex,
-                              exerciseIndex,
-                              "exercise",
-                              event.target.value
-                            )
-                          }
-                          required
-                          className="bg-darkestGray text-center border border-gray-400 w-full rounded p-1 flex flex-grow"
-                        >
-                          <option value="" disabled hidden>
-                            Select an exercise
-                          </option>
-
-                          {sortExercisesByName(exercises[exercise.muscleGroup]).map(
-                            (exerciseOption) => (
+                            {sortExercisesByName(
+                              exercises[exercise.muscleGroup]
+                            ).map((exerciseOption) => (
                               <option
                                 key={exerciseOption.name}
                                 value={exerciseOption.name}
                               >
                                 {exerciseOption.name}
                               </option>
-                            )
-                          )}
-                          <option disabled className="block w-full border-t border-black-300 my-2" />
-                          <option
-                            disabled
-                            className="block w-full border-t border-black-300 font-bold text-gray-700"
-                          >
-                            Custom Exercises
-                          </option>
-
-                          {sortExercisesByName(
-                            customExercises[exercise.muscleGroup]
-                          ).map((exerciseOption) => (
+                            ))}
                             <option
-                              key={exerciseOption.name}
-                              value={exerciseOption.name}
+                              disabled
+                              className="block w-full border-t border-black-300 my-2"
+                            />
+                            <option
+                              disabled
+                              className="block w-full border-t border-black-300 font-bold text-gray-700"
                             >
-                              {exerciseOption.name}
+                              Custom Exercises
                             </option>
-                          ))}
-                        </select>
-                      </div>
 
-                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 mb-2">
-                        <div className="flex flex-col">
-                          <label htmlFor={progressionModeId}>
-                            Progression mode:
-                          </label>
-                          <select
-                            data-testid={`progression-mode-${dayIndex}-${exerciseIndex}`}
-                            id={progressionModeId}
-                            value={progressionSettings.progressionMode}
-                            onChange={(event) =>
-                              handleChange(
-                                dayIndex,
-                                exerciseIndex,
-                                "progressionMode",
-                                event.target.value
-                              )
-                            }
-                            className="bg-darkestGray text-center border border-gray-400 rounded p-1"
-                          >
-                            {progressionModes.map((mode) => (
-                              <option key={mode.value} value={mode.value}>
-                                {mode.label}
+                            {sortExercisesByName(
+                              customExercises[exercise.muscleGroup]
+                            ).map((exerciseOption) => (
+                              <option
+                                key={exerciseOption.name}
+                                value={exerciseOption.name}
+                              >
+                                {exerciseOption.name}
                               </option>
                             ))}
                           </select>
                         </div>
 
-                        <div className="flex flex-col">
-                          <label htmlFor={weightIncrementId}>
-                            Weight increment:
-                          </label>
-                          <select
-                            data-testid={`weight-increment-${dayIndex}-${exerciseIndex}`}
-                            id={weightIncrementId}
-                            value={progressionSettings.weightIncrement}
-                            onChange={(event) =>
-                              handleChange(
-                                dayIndex,
-                                exerciseIndex,
-                                "weightIncrement",
-                                event.target.value
-                              )
-                            }
-                            className="bg-darkestGray text-center border border-gray-400 rounded p-1"
-                          >
-                            {weightIncrementOptions.map((increment) => (
-                              <option key={increment} value={increment}>
-                                {increment} kg
-                              </option>
-                            ))}
-                          </select>
+                        <div className="mb-2 grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2">
+                          <div className="flex min-w-0 flex-col">
+                            <label htmlFor={progressionModeId}>
+                              Progression mode:
+                            </label>
+                            <select
+                              data-testid={`progression-mode-${dayIndex}-${exerciseIndex}`}
+                              id={progressionModeId}
+                              value={progressionSettings.progressionMode}
+                              onChange={(event) =>
+                                handleChange(
+                                  dayIndex,
+                                  exerciseIndex,
+                                  "progressionMode",
+                                  event.target.value
+                                )
+                              }
+                              className="w-full min-w-0 rounded border border-gray-400 bg-darkestGray p-1 text-center"
+                            >
+                              {progressionModes.map((mode) => (
+                                <option key={mode.value} value={mode.value}>
+                                  {mode.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="flex min-w-0 flex-col">
+                            <label htmlFor={weightIncrementId}>
+                              Weight increment:
+                            </label>
+                            <select
+                              data-testid={`weight-increment-${dayIndex}-${exerciseIndex}`}
+                              id={weightIncrementId}
+                              value={progressionSettings.weightIncrement}
+                              onChange={(event) =>
+                                handleChange(
+                                  dayIndex,
+                                  exerciseIndex,
+                                  "weightIncrement",
+                                  event.target.value
+                                )
+                              }
+                              className="w-full min-w-0 rounded border border-gray-400 bg-darkestGray p-1 text-center"
+                            >
+                              {weightIncrementOptions.map((increment) => (
+                                <option key={increment} value={increment}>
+                                  {increment} kg
+                                </option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
+
+                        <button
+                          type="button"
+                          onClick={handleOpenAddExerciseModal}
+                          className="text-sm"
+                        >
+                          Add custom exercise
+                        </button>
                       </div>
+                    );
+                  })}
 
-                      <button
-                        type="button"
-                        onClick={handleOpenAddExerciseModal}
-                        className="text-sm"
-                      >
-                        Add custom exercise
-                      </button>
-                    </div>
-                  );
-                })}
-
+                  <button
+                    type="button"
+                    onClick={() => handleAddExercise(dayIndex)}
+                    className="mb-3 flex w-full items-center justify-between border border-gray-700 bg-darkGray p-3"
+                  >
+                    + ADD MUSCLE GROUP
+                  </button>
+                </div>
+              ))}
+              <div className="w-full flex-none lg:w-52">
                 <button
+                  data-testid="add-planner-day"
                   type="button"
-                  onClick={() => handleAddExercise(dayIndex)}
-                  className="flex w-full justify-between items-center bg-darkGray border border-gray-700 w-55 p-3 mb-3"
+                  onClick={handleAddDay}
+                  className="flex min-h-10 w-full items-center justify-between border border-gray-700 bg-darkestGray p-3 lg:rounded-lg"
                 >
-                  + ADD MUSCLE GROUP
+                  + Add a day
                 </button>
               </div>
-            ))}
-            <div style={{ flex: "0 0 200px", alignSelf: "flex-start" }}>
-              <button
-                type="button"
-                onClick={handleAddDay}
-                className="flex w-full justify-between items-center h-10 bg-darkestGray border border-gray-700 w-55 p-3 mb-3"
-              >
-                + Add a day
-              </button>
             </div>
           </div>
         </div>

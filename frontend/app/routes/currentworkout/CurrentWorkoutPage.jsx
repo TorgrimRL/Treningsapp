@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import PageContainer from "../../components/PageContainer";
 import { useApiFetch } from "../../utils/apiFetch";
 import CurrentWorkoutDayBar from "./components/CurrentWorkoutDayBar";
 import CurrentWorkoutHeader from "./components/CurrentWorkoutHeader";
@@ -16,7 +17,6 @@ import {
   getProgressionKey,
   getWeekAndDay,
 } from "./utils/workoutUtils";
-
 
 export default function CurrentWorkoutPage() {
   const baseUrl = import.meta.env.VITE_API_URL;
@@ -74,112 +74,121 @@ export default function CurrentWorkoutPage() {
   }
 
   return (
-    <div className="pt-[4.8rem]">
-      {currentMesocycle && (
-        <CurrentWorkoutHeader
-          currentMesocycle={currentMesocycle}
-          progress={progress}
-        />
-      )}
-      {currentDay ? (
-        <div className="mb-0">
-          <CurrentWorkoutDayBar
-            week={week}
-            currentMesocycle={currentMesocycle}
-            dayNumber={dayNumber}
-            dayLabel={getDayLabel(currentDay)}
-            onClick={workoutModals.openCalendarModal}
-          />
-
-          <div className="max-h-[calc(100vh-8rem)] overflow-y-auto relative">
-            <ul className="list-none list-inside text-white">
-              {currentDay.exercises.map((exercise, exerciseIndex) => (
-                <WorkoutExerciseCard
-                  key={exerciseIndex}
-                  applyToFutureWeeks={applyToFutureWeeks}
-                  currentDayIndex={currentDayIndex}
-                  exercise={exercise}
-                  exerciseIndex={exerciseIndex}
-                  exerciseSets={sets[currentDayIndex]?.[exerciseIndex] || []}
-                  isMenuOpen={!!menus.openMenus[exerciseIndex]}
-                  menuRef={(element) => {
-                    menus.menuRefs.current[exerciseIndex] = element;
-                  }}
-                  note={notes[currentDayIndex]?.[exerciseIndex] || ""}
-                  onAddSet={actions.addSet}
-                  onApplyToFutureWeeksChange={setApplyToFutureWeeks}
-                  onChangeExercise={workoutModals.openChooseExerciseModal}
-                  onOpenDropset={workoutModals.openDropsetModal}
-                  onOpenNote={workoutModals.openNoteModal}
-                  onOpenProgressionMode={workoutModals.openProgressionModeModal}
-                  onOpenWeightIncrement={workoutModals.openWeightIncrementModal}
-                  onRemoveSet={actions.removeSet}
-                  onRepsChange={actions.handleRepsChange}
-                  onSetCompletionChange={actions.handleSetCompletionChange}
-                  onToggleMenu={menus.toggleMenu}
-                  onToggleSetMenu={menus.toggleSetMenu}
-                  onWeightChange={actions.handleWeightChange}
-                  openSetMenus={menus.openSetMenus}
-                  setMenuRefs={menus.setMenuRefs}
-                  week={week}
-                />
-              ))}
-            </ul>
+    <PageContainer size="narrow" className="min-w-0 md:px-6">
+      <div data-testid="current-workout-layout" className="min-w-0">
+        {currentMesocycle && (
+          <div
+            data-testid="current-workout-sticky-header"
+            className="sticky top-12 z-20 border-b border-darkestGray bg-darkGray shadow-md"
+          >
+            <CurrentWorkoutHeader
+              currentMesocycle={currentMesocycle}
+              progress={progress}
+            />
+            {currentDay && (
+              <CurrentWorkoutDayBar
+                week={week}
+                currentMesocycle={currentMesocycle}
+                dayNumber={dayNumber}
+                dayLabel={getDayLabel(currentDay)}
+                onClick={workoutModals.openCalendarModal}
+              />
+            )}
           </div>
-        </div>
-      ) : (
-        <div className="text-red-500">No current workout found</div>
-      )}
-      <CurrentWorkoutModals
-        applyProgressionModeToFutureWeeks={
-          workoutModals.applyProgressionModeToFutureWeeks
-        }
-        applyWeightIncrementToFutureWeeks={
-          workoutModals.applyWeightIncrementToFutureWeeks
-        }
-        calendarIconRef={calendarIconRef}
-        currentDayIndex={currentDayIndex}
-        currentExercise={workoutModals.currentExercise}
-        currentMesocycle={currentMesocycle}
-        currentNote={workoutModals.currentNote}
-        getProgressionKey={getProgressionKey}
-        getProgressionModeDraft={workoutModals.getProgressionModeDraft}
-        getWeightIncrementDraft={workoutModals.getWeightIncrementDraft}
-        isCalendarModalOpen={workoutModals.isCalendarModalOpen}
-        isChooseExerciseModalOpen={workoutModals.isChooseExerciseModalOpen}
-        isDropsetModalOpen={workoutModals.isDropsetModalOpen}
-        isNoteModalOpen={workoutModals.isNoteModalOpen}
-        isProgressionModeModalOpen={workoutModals.isProgressionModeModalOpen}
-        isWeightIncrementModalOpen={workoutModals.isWeightIncrementModalOpen}
-        onApplyProgressionModeToFutureWeeksChange={
-          actions.handleApplyProgressionModeToFutureWeeksChange
-        }
-        onApplyWeightIncrementToFutureWeeksChange={
-          actions.handleApplyWeightIncrementToFutureWeeksChange
-        }
-        onChooseExerciseClose={() =>
-          workoutModals.setIsChooseExerciseModalOpen(false)
-        }
-        onChooseExerciseSave={actions.handleSaveExercise}
-        onDayClick={actions.handleDayClick}
-        onDropsetClose={() => workoutModals.setIsDropsetModalOpen(false)}
-        onDropsetSave={actions.handleSaveDropset}
-        onNoteChange={actions.handleNoteChange}
-        onNoteClose={() => workoutModals.setIsNoteModalOpen(false)}
-        onNoteSave={actions.handleSaveNote}
-        onProgressionModeChange={actions.handleProgressionModeChange}
-        onProgressionModeClose={() =>
-          workoutModals.setIsProgressionModeModalOpen(false)
-        }
-        onProgressionModeSave={actions.handleProgressionModeSave}
-        onWeightIncrementChange={actions.handleWeightIncrementChange}
-        onWeightIncrementClose={() =>
-          workoutModals.setIsWeightIncrementModalOpen(false)
-        }
-        onWeightIncrementSave={actions.handleWeightIncrementSave}
-        selectedExercise={selectedExercise}
-        setIsCalendarModalOpen={workoutModals.setIsCalendarModalOpen}
-      />
-    </div>
+        )}
+        {currentDay ? (
+          <ul
+            data-testid="current-workout-exercises"
+            className="list-inside list-none text-white md:space-y-4 md:py-4"
+          >
+            {currentDay.exercises.map((exercise, exerciseIndex) => (
+              <WorkoutExerciseCard
+                key={exerciseIndex}
+                applyToFutureWeeks={applyToFutureWeeks}
+                currentDayIndex={currentDayIndex}
+                exercise={exercise}
+                exerciseIndex={exerciseIndex}
+                exerciseSets={sets[currentDayIndex]?.[exerciseIndex] || []}
+                isMenuOpen={!!menus.openMenus[exerciseIndex]}
+                menuRef={(element) => {
+                  menus.menuRefs.current[exerciseIndex] = element;
+                }}
+                note={notes[currentDayIndex]?.[exerciseIndex] || ""}
+                onAddSet={actions.addSet}
+                onApplyToFutureWeeksChange={setApplyToFutureWeeks}
+                onChangeExercise={workoutModals.openChooseExerciseModal}
+                onOpenDropset={workoutModals.openDropsetModal}
+                onOpenNote={workoutModals.openNoteModal}
+                onOpenProgressionMode={workoutModals.openProgressionModeModal}
+                onOpenWeightIncrement={workoutModals.openWeightIncrementModal}
+                onRemoveSet={actions.removeSet}
+                onRepsChange={actions.handleRepsChange}
+                onSetCompletionChange={actions.handleSetCompletionChange}
+                onToggleMenu={menus.toggleMenu}
+                onToggleSetMenu={menus.toggleSetMenu}
+                onWeightChange={actions.handleWeightChange}
+                openSetMenus={menus.openSetMenus}
+                setMenuRefs={menus.setMenuRefs}
+                week={week}
+              />
+            ))}
+          </ul>
+        ) : (
+          <div className="px-4 py-8 text-center text-red-500">
+            No current workout found
+          </div>
+        )}
+        <CurrentWorkoutModals
+          applyProgressionModeToFutureWeeks={
+            workoutModals.applyProgressionModeToFutureWeeks
+          }
+          applyWeightIncrementToFutureWeeks={
+            workoutModals.applyWeightIncrementToFutureWeeks
+          }
+          calendarIconRef={calendarIconRef}
+          currentDayIndex={currentDayIndex}
+          currentExercise={workoutModals.currentExercise}
+          currentMesocycle={currentMesocycle}
+          currentNote={workoutModals.currentNote}
+          getProgressionKey={getProgressionKey}
+          getProgressionModeDraft={workoutModals.getProgressionModeDraft}
+          getWeightIncrementDraft={workoutModals.getWeightIncrementDraft}
+          isCalendarModalOpen={workoutModals.isCalendarModalOpen}
+          isChooseExerciseModalOpen={workoutModals.isChooseExerciseModalOpen}
+          isDropsetModalOpen={workoutModals.isDropsetModalOpen}
+          isNoteModalOpen={workoutModals.isNoteModalOpen}
+          isProgressionModeModalOpen={workoutModals.isProgressionModeModalOpen}
+          isWeightIncrementModalOpen={workoutModals.isWeightIncrementModalOpen}
+          onApplyProgressionModeToFutureWeeksChange={
+            actions.handleApplyProgressionModeToFutureWeeksChange
+          }
+          onApplyWeightIncrementToFutureWeeksChange={
+            actions.handleApplyWeightIncrementToFutureWeeksChange
+          }
+          onChooseExerciseClose={() =>
+            workoutModals.setIsChooseExerciseModalOpen(false)
+          }
+          onChooseExerciseSave={actions.handleSaveExercise}
+          onDayClick={actions.handleDayClick}
+          onDropsetClose={() => workoutModals.setIsDropsetModalOpen(false)}
+          onDropsetSave={actions.handleSaveDropset}
+          onNoteChange={actions.handleNoteChange}
+          onNoteClose={() => workoutModals.setIsNoteModalOpen(false)}
+          onNoteSave={actions.handleSaveNote}
+          onProgressionModeChange={actions.handleProgressionModeChange}
+          onProgressionModeClose={() =>
+            workoutModals.setIsProgressionModeModalOpen(false)
+          }
+          onProgressionModeSave={actions.handleProgressionModeSave}
+          onWeightIncrementChange={actions.handleWeightIncrementChange}
+          onWeightIncrementClose={() =>
+            workoutModals.setIsWeightIncrementModalOpen(false)
+          }
+          onWeightIncrementSave={actions.handleWeightIncrementSave}
+          selectedExercise={selectedExercise}
+          setIsCalendarModalOpen={workoutModals.setIsCalendarModalOpen}
+        />
+      </div>
+    </PageContainer>
   );
 }

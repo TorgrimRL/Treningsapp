@@ -77,44 +77,48 @@ const MesocycleOverview = () => {
 
   return (
     <>
-      <div className=" mx-auto p-5 text-white bg-darkGray">
-        <header className="flex justify-between items-center mb-5">
-          <h1 className="text-2xl m-0">Mesocycles</h1>
+      <div className="text-white">
+        <header className="flex items-center justify-between gap-4 px-4 py-6 md:px-0">
+          <h1 className="m-0 text-2xl">Mesocycles</h1>
           <Link
             to="/mesocycles-new"
-            className="bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-lg rounded"
+            className="cursor-pointer bg-red-600 px-4 py-2 text-lg text-white md:rounded"
           >
             + NEW
           </Link>
         </header>
-        <ul className="list-none p-0 m-0">
+        <ul
+          data-testid="history-grid"
+          className="m-0 grid list-none grid-cols-1 gap-2 p-0 md:grid-cols-2 md:gap-4 xl:grid-cols-3"
+        >
           {sortedPlans.map((mesocycle) => {
             const isCompleted = mesocycle.completedDate !== null;
 
             return (
               <li
                 key={mesocycle.id}
-                className={`flex justify-between items-center max-w-sm bg-darkestGray p-4 rounded mb-2 ${
-                  mesocycle.isCurrent ? "border-l-4 border-red-600" : ""
+                data-testid={"history-card-" + mesocycle.id}
+                className={`flex h-full min-w-0 items-start justify-between gap-3 bg-darkestGray p-4 md:rounded-lg md:border md:border-gray-700 ${
+                  mesocycle.isCurrent ? "border-l-4 !border-l-red-600" : ""
                 }`}
               >
-                <div>
-                  <h2 className="text-lg m-0 max-w-sm mb-1 truncate max-w-[200px]">
+                <div className="min-w-0 flex-1">
+                  <h2 className="mb-1 truncate text-lg" title={mesocycle.name}>
                     {mesocycle.name}
                   </h2>
-                  <p className="text-sm text-gray-400 m-0">
+                  <p className="m-0 break-words text-sm text-gray-400">
                     {mesocycle.weeks} WEEKS - {mesocycle.daysPerWeek} DAYS/WEEK
                   </p>
                   {isCompleted && (
-                    <p className="text-sm text-gray-400 m-0">
+                    <p className="m-0 break-words text-sm text-gray-400">
                       Completed:{" "}
                       {new Date(mesocycle.completedDate).toLocaleDateString()}
                     </p>
                   )}
                 </div>
-                <div className="flex items-center">
+                <div className="flex shrink-0 items-center">
                   <span
-                    className={`py-1 px-2 rounded text-sm mr-2 ${
+                    className={`mr-2 max-w-28 break-words rounded px-2 py-1 text-center text-xs sm:max-w-none sm:whitespace-nowrap sm:text-sm ${
                       mesocycle.isCurrent
                         ? "bg-orange-600"
                         : isCompleted
@@ -136,7 +140,7 @@ const MesocycleOverview = () => {
                       <FontAwesomeIcon icon={faEllipsisV} />
                     </button>
                     {openMenus[mesocycle.id] && (
-                      <div className="absolute right-0 mt-2 w-48 bg-darkGray rounded-lg shadow-lg p-2">
+                      <div className="absolute right-0 z-10 mt-2 w-48 rounded-lg bg-darkGray p-2 shadow-lg">
                         <button
                           className="block w-full text-left px-4 py-2 hover:bg-gray-700 text-sm text-white"
                           onClick={() => handleRedoExerciseBlock(mesocycle)}
