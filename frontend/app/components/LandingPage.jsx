@@ -24,13 +24,18 @@ function LandingPage() {
     <div className="flex min-w-0 flex-col">
       <section
         data-testid="landing-hero"
-        className="relative min-h-[calc(100svh-3rem)] bg-cover bg-center bg-no-repeat"
-        style={{
-          backgroundImage:
-            "url('/images/edgar-chaparro-sHfo3WOgGTU-unsplash.jpg')",
-        }}
+        className="relative isolate aspect-[2/3] w-full overflow-hidden bg-gradient-to-r from-darkestGray via-darkBackgroundRed to-darkestGray md:aspect-auto md:min-h-[calc(110svh-3rem)] lg:min-h-[min(150vw,2600px)]"
       >
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-55 px-4 text-center">
+        <img
+          data-testid="landing-hero-image"
+          src="/images/edgar-chaparro-sHfo3WOgGTU-unsplash.jpg"
+          alt="Athlete training with battle ropes"
+          className="absolute inset-0 h-full w-full object-contain object-top md:object-center"
+        />
+        <div
+          data-testid="landing-hero-content"
+          className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-45 px-4 text-center lg:justify-start lg:pt-[32svh]"
+        >
           <h1 className="text-4xl text-white md:text-6xl">
             Simplifying Muscle Growth
           </h1>
@@ -53,13 +58,14 @@ function LandingPage() {
             className="space-y-16 lg:space-y-24"
           >
             <section className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
-              <div className="aspect-[4/3] min-w-0 overflow-hidden bg-darkGray p-3 shadow-lg">
-                <img
-                  src="/images/targetweightandreps.png"
-                  alt="Target reps and weight recommendations"
-                  className="h-full w-full object-contain"
-                />
-              </div>
+              <img
+                data-testid="target-recommendation-image"
+                src="/images/targetweightandreps.png"
+                alt="Target reps and weight recommendations"
+                width="375"
+                height="782"
+                className="mx-auto h-auto w-full max-w-[26rem] shadow-lg"
+              />
               <div className="text-center lg:text-left">
                 <h2 className="text-3xl font-bold text-white">
                   Know Your Next Target
@@ -72,13 +78,14 @@ function LandingPage() {
             </section>
 
             <section className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
-              <div className="aspect-video min-w-0 overflow-hidden shadow-lg lg:order-2">
-                <img
-                  src="/images/dumbbells.jpg"
-                  alt="Dumbbells on a gym rack"
-                  className="h-full w-full object-cover grayscale"
-                />
-              </div>
+              <img
+                data-testid="landing-dumbbells-image"
+                src="/images/dumbbells.jpg"
+                alt="Dumbbells on a gym rack"
+                width="1280"
+                height="1919"
+                className="mx-auto h-auto w-full max-w-[32rem] shadow-lg grayscale lg:order-2"
+              />
               <div className="text-center lg:order-1 lg:text-left">
                 <h2 className="text-3xl font-bold text-white md:text-4xl">
                   Progress Even When The Weights Are Taken
@@ -91,13 +98,13 @@ function LandingPage() {
             </section>
 
             <section className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
-              <div className="aspect-[4/3] min-w-0 overflow-hidden bg-darkGray p-3 shadow-lg">
-                <img
-                  src="/images/lastweeksreps.png"
-                  alt="Previous workout performance"
-                  className="h-full w-full object-contain"
-                />
-              </div>
+              <img
+                src="/images/lastweeksreps.png"
+                alt="Previous workout performance"
+                width="358"
+                height="403"
+                className="mx-auto h-auto w-full max-w-[34rem] shadow-lg"
+              />
               <div className="text-center lg:text-left">
                 <h2 className="text-3xl font-bold text-white">
                   Build On Every Session
@@ -110,13 +117,13 @@ function LandingPage() {
             </section>
 
             <section className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
-              <div className="aspect-[4/3] min-w-0 overflow-hidden bg-darkGray p-3 shadow-lg lg:order-2">
-                <img
-                  src="/images/targetreps.png"
-                  alt="Adjusted target for different weights"
-                  className="h-full w-full object-contain"
-                />
-              </div>
+              <img
+                src="/images/targetreps.png"
+                alt="Adjusted target for different weights"
+                width="358"
+                height="403"
+                className="mx-auto h-auto w-full max-w-[34rem] shadow-lg lg:order-2"
+              />
               <div className="text-center lg:order-1 lg:text-left">
                 <h2 className="text-3xl font-bold text-white">
                   Adapt Without Guesswork

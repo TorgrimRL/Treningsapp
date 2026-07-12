@@ -66,6 +66,51 @@ test("landing shell and feature content stay within responsive bounds", async ({
   expect(heroBox.x).toBeLessThanOrEqual(1);
   expect(heroBox.width).toBeLessThanOrEqual(page.viewportSize().width + 1);
   expect(heroBox.y).toBeGreaterThanOrEqual(navbarBox.y + navbarBox.height - 1);
+  if (isDesktop(page)) {
+    expect(heroBox.height).toBeGreaterThanOrEqual(
+      Math.min(page.viewportSize().width * 1.5, 2600) - 1
+    );
+  } else {
+    expect(Math.abs(heroBox.height / heroBox.width - 1.5)).toBeLessThan(0.01);
+  }
+
+  const heroImage = page.getByTestId("landing-hero-image");
+  await expect(heroImage).toHaveCSS("object-fit", "contain");
+  await expect(heroImage).toHaveCSS(
+    "object-position",
+    isDesktop(page) ? "50% 50%" : "50% 0%"
+  );
+  await expect(
+    hero.locator('img[src="/images/edgar-chaparro-sHfo3WOgGTU-unsplash.jpg"]')
+  ).toHaveCount(1);
+  await expect(hero).toHaveCSS("background-image", /linear-gradient/);
+
+  const heroContentBox = await getBox(page.getByTestId("landing-hero-content"));
+  const heroHeadingBox = await getBox(
+    page.getByRole("heading", { name: "Simplifying Muscle Growth" }).first()
+  );
+  expect(heroContentBox.y).toBeGreaterThanOrEqual(heroBox.y - 1);
+  expect(heroHeadingBox.y).toBeLessThan(page.viewportSize().height * 0.75);
+
+  const targetImageBox = await getBox(
+    page.getByTestId("target-recommendation-image")
+  );
+  const dumbbellsImageBox = await getBox(
+    page.getByTestId("landing-dumbbells-image")
+  );
+
+  expect(
+    Math.abs(targetImageBox.width / targetImageBox.height - 375 / 782)
+  ).toBeLessThan(0.01);
+  expect(
+    Math.abs(dumbbellsImageBox.width / dumbbellsImageBox.height - 1280 / 1919)
+  ).toBeLessThan(0.01);
+
+  if (!isDesktop(page)) {
+    expect(targetImageBox.width).toBeGreaterThanOrEqual(
+      page.viewportSize().width - 34
+    );
+  }
 
   await expectNavbarUsesViewportEdges(page);
   await expectCenteredWithin(
