@@ -39,6 +39,7 @@ export default function WorkoutExerciseCard({
         menuRef={menuRef}
         muscleGroup={exercise.muscleGroup}
         onToggleMenu={onToggleMenu}
+
         onAddNote={() =>
           onOpenNote({
             dayIndex: currentDayIndex,
@@ -59,7 +60,7 @@ export default function WorkoutExerciseCard({
           onOpenWeightIncrement({ dayIndex: currentDayIndex, exerciseIndex })
         }
       />
-      <div className="break-words font-semibold text-white">
+      <div className="break-words font-semibold text-white ml-2">
         {exercise.exercise}
       </div>
       {note && <ExerciseNote note={note} />}

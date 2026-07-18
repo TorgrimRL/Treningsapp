@@ -27,7 +27,7 @@ export default function WorkoutExerciseMenu({
         type="button"
         data-testid={"exercise-menu-" + exerciseIndex}
         onClick={() => onToggleMenu(exerciseIndex)}
-        className="ml-2 shrink-0 text-white focus:outline-none"
+        className="mr-4 shrink-0 text-white focus:outline-none"
       >
         <FontAwesomeIcon icon={faEllipsisV} />
       </button>
