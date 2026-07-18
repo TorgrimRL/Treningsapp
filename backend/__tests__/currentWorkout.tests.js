@@ -427,6 +427,71 @@ describe("current workout regression", () => {
     ]);
   });
 
+  it("progresses every configured dropset set in reps mode without changing weights", async () => {
+    const { agent } = await createAuthenticatedUser(app, db, { username: "alice" });
+    const previousExercise = dropsetExercise({
+      exercise: "Configured Rep Dropset",
+      progressionMode: "reps",
+    });
+    previousExercise.sets = [
+      set({ weight: 100, reps: 10, completed: true }),
+      set({ weight: 80, reps: 12, completed: true }),
+    ];
+    const configuredExercise = {
+      ...previousExercise,
+      sets: [
+        set({ weight: 100, reps: 10 }),
+        set({ weight: 80, reps: 12 }),
+      ],
+    };
+
+    await agent
+      .post("/api/mesocycles")
+      .send({
+        name: "Configured dropset rep progression",
+        weeks: 3,
+        daysPerWeek: 1,
+        plan: [
+          { label: "Week 1", exercises: [previousExercise] },
+          { label: "Week 2", exercises: [configuredExercise] },
+          {
+            label: "Week 3",
+            exercises: [
+              {
+                ...configuredExercise,
+                sets: [
+                  set({ weight: 0, reps: 0 }),
+                  set({ weight: 0, reps: 0 }),
+                ],
+              },
+            ],
+          },
+        ],
+        completedDate: null,
+        isCurrent: true,
+      })
+      .expect(201);
+
+    const response = await agent.get("/api/current-workout").expect(200);
+    const configuredDropset = response.body.plan[1].exercises[0];
+
+    expect(configuredDropset.dropset.startWeight).toBe(100);
+    expect(configuredDropset.sets).toEqual([
+      expect.objectContaining({
+        weight: 100,
+        reps: 11,
+        targetWeight: 100,
+        targetReps: 11,
+      }),
+      expect.objectContaining({
+        weight: 80,
+        reps: 13,
+        targetWeight: 80,
+        targetReps: 13,
+      }),
+    ]);
+  });
+
   it("preserves configured dropsets when fetching the active workout", async () => {
     const { agent } = await createAuthenticatedUser(app, db, { username: "alice" });
 

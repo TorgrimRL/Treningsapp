@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import MesocycleDetailsModal from "./MesocycleDetailsModal";
 import { getCookie } from "../utils/cookies";
 import { useNavigate } from "@remix-run/react";
 import AppModal from "./AppModal";
+import { clearCurrentWorkoutQuery } from "../utils/currentWorkoutQuery";
 
 const RedoExerciseBlockModal = ({ isOpen, onRequestClose, exerciseBlock }) => {
   const [weekAsTarget, setWeekAsTarget] = useState(null);
@@ -16,6 +18,7 @@ const RedoExerciseBlockModal = ({ isOpen, onRequestClose, exerciseBlock }) => {
 
   const baseUrl = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const fetchCsrfToken = async () => {
@@ -165,6 +168,7 @@ const RedoExerciseBlockModal = ({ isOpen, onRequestClose, exerciseBlock }) => {
           console.error("Network response was not ok");
           return;
         }
+        await clearCurrentWorkoutQuery(queryClient);
 
         await response.json();
 

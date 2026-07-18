@@ -1,16 +1,19 @@
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import MesocycleForm from "../components/MesocycleForm";
 import { getCookie } from "../utils/cookies";
 import { useNavigate } from "@remix-run/react";
 import ProtectedRoute from "../components/ProtectedRoute";
 import PageContainer from "../components/PageContainer";
 import { useApiFetch } from "../utils/apiFetch";
+import { clearCurrentWorkoutQuery } from "../utils/currentWorkoutQuery";
 
 export default function NewMesocycle() {
   const [csrfToken, setCSRFToken] = useState("");
   const baseUrl = import.meta.env.VITE_API_URL;
   const { apiFetch } = useApiFetch();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   useEffect(() => {
     const fetchCsrfToken = async () => {
       const response = await fetch(`${baseUrl}/csrf-token`, {
@@ -47,6 +50,7 @@ export default function NewMesocycle() {
         );
         return;
       }
+      await clearCurrentWorkoutQuery(queryClient);
 
       const mesocycleId = postData.mesocycleId || postData.id;
       if (!mesocycleId) {

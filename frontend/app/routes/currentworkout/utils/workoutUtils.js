@@ -120,7 +120,12 @@ export const roundToIncrement = (value, increment) =>
   Number((Math.round(value / increment) * increment).toFixed(2));
 
 export const getSetProgressionReps = (set = {}) => {
-  const reps = isUnsetRepValue(set.reps) ? set.targetReps : set.reps;
+  const reps =
+    set.completed && !isUnsetRepValue(set.reps)
+      ? set.reps
+      : isUnsetRepValue(set.targetReps)
+        ? set.reps
+        : set.targetReps;
   const parsedReps = Number(reps);
 
   return Number.isFinite(parsedReps) ? parsedReps : 0;

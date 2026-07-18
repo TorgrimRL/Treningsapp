@@ -105,7 +105,7 @@ export function buildDropsetSets({
   setCount,
   increment,
   dropPercent = DROPSET_DROP_PERCENT,
-  targetReps: targetRepsOverride,
+  targetRepsBySet = [],
 }) {
   const { weights, error } = generateDropsetWeights({
     startWeight,
@@ -119,22 +119,24 @@ export function buildDropsetSets({
   }
 
   const firstSet = existingSets[0] || {};
-  const fallbackTargetReps = isUnsetRepValue(targetRepsOverride)
-    ? isUnsetRepValue(firstSet.targetReps)
-      ? firstSet.reps ?? 0
-      : firstSet.targetReps
-    : targetRepsOverride;
+  const fallbackTargetReps = isUnsetRepValue(firstSet.targetReps)
+    ? firstSet.reps ?? 0
+    : firstSet.targetReps;
 
   const sets = weights.map((weight, index) => {
     const existingSet = existingSets[index] || {};
-    const targetReps = isUnsetRepValue(targetRepsOverride)
-      ? isUnsetRepValue(existingSet.targetReps)
+    const targetRepsOverride = targetRepsBySet[index];
+    const hasTargetRepsOverride = !isUnsetRepValue(targetRepsOverride);
+    const targetReps = hasTargetRepsOverride
+      ? targetRepsOverride
+      : isUnsetRepValue(existingSet.targetReps)
         ? fallbackTargetReps
-        : existingSet.targetReps
-      : targetRepsOverride;
-    const reps = isUnsetRepValue(existingSet.reps)
+        : existingSet.targetReps;
+    const reps = hasTargetRepsOverride
       ? targetReps
-      : existingSet.reps;
+      : isUnsetRepValue(existingSet.reps)
+        ? targetReps
+        : existingSet.reps;
 
     return {
       ...existingSet,
