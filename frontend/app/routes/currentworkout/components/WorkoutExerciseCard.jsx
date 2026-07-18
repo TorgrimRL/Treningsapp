@@ -60,7 +60,7 @@ export default function WorkoutExerciseCard({
           onOpenWeightIncrement({ dayIndex: currentDayIndex, exerciseIndex })
         }
       />
-      <div className="break-words font-semibold text-white ml-2">
+      <div className="break-words font-semibold text-white">
         {exercise.exercise}
       </div>
       {note && <ExerciseNote note={note} />}
