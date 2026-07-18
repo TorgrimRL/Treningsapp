@@ -156,7 +156,7 @@ export default function CurrentWorkoutPage() {
         {currentDay ? (
           <ul
             data-testid="current-workout-exercises"
-            className="list-inside list-none text-white md:space-y-4 md:py-4"
+            className="list-inside list-none text-white"
           >
             {currentDay.exercises.map((exercise, exerciseIndex) => (
               <WorkoutExerciseCard
