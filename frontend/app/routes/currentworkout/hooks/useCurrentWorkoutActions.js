@@ -18,17 +18,24 @@ export default function useCurrentWorkoutActions({
   baseUrl,
   currentDayIndex,
   currentMesocycle,
+  commitWorkoutData,
+  markWorkoutDirty,
   menus,
   refreshWorkoutData,
   selectedExercise,
   setApplyToFutureWeeks,
+  setCurrentDayIndex,
   setCurrentMesocycle,
   setNotes,
   setSets,
   sets,
   workoutModals,
 }) {
-  const saveMesocycle = async (updatedMesocycle, failureMessage) => {
+  const saveMesocycle = async (
+    updatedMesocycle,
+    failureMessage,
+    revision
+  ) => {
     try {
       const { ok, data } = await apiFetch(
         baseUrl + "/mesocycles/" + updatedMesocycle.id,
@@ -46,6 +53,7 @@ export default function useCurrentWorkoutActions({
         return false;
       }
 
+      commitWorkoutData(updatedMesocycle, revision);
       return true;
     } catch (error) {
       console.error(failureMessage + ":", error);
@@ -54,6 +62,7 @@ export default function useCurrentWorkoutActions({
   };
 
   const handleSetCompletionChange = (dayIndex, exerciseIndex, setIndex, value) => {
+    const revision = markWorkoutDirty();
     setSets((prev) => {
       const updatedSets = {
         ...prev,
@@ -79,7 +88,11 @@ export default function useCurrentWorkoutActions({
       );
 
       setCurrentMesocycle(updatedMesocycle);
-      saveMesocycle(updatedMesocycle, "Failed to update mesocycle");
+      saveMesocycle(
+        updatedMesocycle,
+        "Failed to update mesocycle",
+        revision
+      );
 
       return updatedSets;
     });
@@ -97,6 +110,7 @@ export default function useCurrentWorkoutActions({
     const { dayIndex, exerciseIndex } = workoutModals.currentExercise;
     const daysPerWeek = currentMesocycle.daysPerWeek;
     const currentNote = workoutModals.currentNote;
+    const revision = markWorkoutDirty();
 
     setNotes((prevNotes) => {
       const updatedNotes = { ...prevNotes };
@@ -154,7 +168,8 @@ export default function useCurrentWorkoutActions({
 
     const saved = await saveMesocycle(
       updatedMesocycle,
-      "Failed to update mesocycle"
+      "Failed to update mesocycle",
+      revision
     );
 
     if (saved) {
@@ -176,6 +191,7 @@ export default function useCurrentWorkoutActions({
         : selectedExerciseValue;
     const selectedExerciseName =
       selectedExerciseDetails.exercise || selectedExerciseDetails.name;
+    const revision = markWorkoutDirty();
 
     const applySelectedExercise = (exercise) => ({
       ...exercise,
@@ -221,7 +237,11 @@ export default function useCurrentWorkoutActions({
     };
 
     setCurrentMesocycle(updatedMesocycle);
-    saveMesocycle(updatedMesocycle, "Failed to update mesocycle");
+    saveMesocycle(
+      updatedMesocycle,
+      "Failed to update mesocycle",
+      revision
+    );
     workoutModals.setIsChooseExerciseModalOpen(false);
   };
 
@@ -270,6 +290,7 @@ export default function useCurrentWorkoutActions({
               startWeight
             );
             const previousTargetReps = getSetProgressionReps(previousWeekSets?.[0]);
+            const progressionSettings = normalizeProgressionSettings(exercise);
             const progressedTarget =
               shouldApplyToFutureWeeks && dIndex > dayIndex
                 ? calculateProgressedTarget({
@@ -279,15 +300,29 @@ export default function useCurrentWorkoutActions({
                     currentWeek,
                   })
                 : { weight: startWeight, reps: undefined };
+            const targetRepsBySet =
+              progressedTarget.reps === undefined
+                ? []
+                : progressionSettings.progressionMode === "reps"
+                  ? Array.from({ length: setCount }, (_, setIndex) =>
+                      calculateProgressedTarget({
+                        weight: previousStartWeight,
+                        reps: getSetProgressionReps(
+                          previousWeekSets?.[setIndex]
+                        ),
+                        exercise,
+                        currentWeek,
+                      }).reps
+                    )
+                  : Array(setCount).fill(progressedTarget.reps);
             const dropsetStartWeight = progressedTarget.weight;
-            const increment = normalizeProgressionSettings(exercise).weightIncrement;
             const { sets: dropsetSets, error } = buildDropsetSets({
               existingSets,
               startWeight: dropsetStartWeight,
               setCount,
-              increment,
+              increment: progressionSettings.weightIncrement,
               dropPercent: DROPSET_DROP_PERCENT,
-              targetReps: progressedTarget.reps,
+              targetRepsBySet,
             });
 
             if (error) {
@@ -320,12 +355,14 @@ export default function useCurrentWorkoutActions({
       return;
     }
 
+    const revision = markWorkoutDirty();
     setSets(updatedSets);
     setCurrentMesocycle(updatedMesocycle);
 
     const saved = await saveMesocycle(
       updatedMesocycle,
-      "Failed to update dropsets"
+      "Failed to update dropsets",
+      revision
     );
 
     if (saved) {
@@ -382,16 +419,21 @@ export default function useCurrentWorkoutActions({
       }),
     };
 
+    const revision = markWorkoutDirty();
     const saved = await saveMesocycle(
       updatedMesocycle,
-      "Failed to update " + field
+      "Failed to update " + field,
+      revision
     );
 
     if (!saved) {
       return;
     }
 
-    const refreshed = await refreshWorkoutData({ dayIndex: currentDayIndex });
+    const refreshed = await refreshWorkoutData({
+      dayIndex: currentDayIndex,
+      force: true,
+    });
     if (!refreshed.ok) {
       setCurrentMesocycle(updatedMesocycle);
     }
@@ -407,6 +449,7 @@ export default function useCurrentWorkoutActions({
   };
 
   const handleRepsChange = (dayIndex, exerciseIndex, setIndex, value) => {
+    markWorkoutDirty();
     setSets((prev) => ({
       ...prev,
       [dayIndex]: {
@@ -419,6 +462,7 @@ export default function useCurrentWorkoutActions({
   };
 
   const handleWeightChange = (dayIndex, exerciseIndex, setIndex, value, exercise) => {
+    markWorkoutDirty();
     const currentWeight = parseFloat(value);
 
     if (exercise.dropset?.enabled && setIndex === 0) {
@@ -516,6 +560,7 @@ export default function useCurrentWorkoutActions({
   };
 
   const addSet = (dayIndex, exerciseIndex, shouldApplyToFutureWeeks) => {
+    const revision = markWorkoutDirty();
     const daysPerWeek = currentMesocycle.daysPerWeek;
     let updatedSets = {};
 
@@ -571,12 +616,17 @@ export default function useCurrentWorkoutActions({
         currentMesocycle,
         updatedSets
       );
-      saveMesocycle(updatedMesocycle, "Error response from server");
+      saveMesocycle(
+        updatedMesocycle,
+        "Error response from server",
+        revision
+      );
     }, 100);
     setApplyToFutureWeeks(false);
   };
 
   const removeSet = (dayIndex, exerciseIndex, setIndex, shouldApplyToFutureWeeks) => {
+    const revision = markWorkoutDirty();
     const daysPerWeek = currentMesocycle.daysPerWeek;
     let updatedSets = {};
 
@@ -616,17 +666,16 @@ export default function useCurrentWorkoutActions({
       );
       saveMesocycle(
         updatedMesocycle,
-        "Error updating mesocycle after removing set"
+        "Error updating mesocycle after removing set",
+        revision
       );
     }, 100);
     setApplyToFutureWeeks(false);
   };
 
-  const handleDayClick = async (index) => {
-    const refreshed = await refreshWorkoutData({ dayIndex: index });
-    if (refreshed.ok) {
-      workoutModals.setIsCalendarModalOpen(false);
-    }
+  const handleDayClick = (index) => {
+    setCurrentDayIndex(index);
+    workoutModals.setIsCalendarModalOpen(false);
   };
 
   const handleProgressionModeChange = (value) => {

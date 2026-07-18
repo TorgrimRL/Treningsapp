@@ -98,6 +98,7 @@ export default function Navbar() {
             <>
               <Link
                 to="/currentworkout"
+                prefetch="intent"
                 className="text-white h-full flex items-center "
               >
                 Current workout
@@ -131,7 +132,7 @@ export default function Navbar() {
           )}
         </div>
         {isOpen && (
-          <div className="absolute right-4 top-12 z-[1000] w-48 rounded-md bg-white shadow-lg md:hidden">
+          <div className="absolute right-0 top-12 z-[1000] w-48 rounded-md bg-white shadow-lg md:hidden">
             <ul className="py-1 bg-hamburgerbackground text-white ">
               <li className="block px-4 py-2 hover:bg-darkGray ">
                 <Link
@@ -167,6 +168,7 @@ export default function Navbar() {
                   <li className="block px-4 py-2 hover:bg-darkGray ">
                     <Link
                       to="/currentworkout"
+                      prefetch="intent"
                       onClick={closeMenu}
                       className="focus:outline-none block w-full text-left cursor-pointer"
                     >

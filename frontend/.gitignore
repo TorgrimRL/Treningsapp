@@ -4,6 +4,8 @@ node_modules/
 # Ignore build artifacts
 build/
 dist/
+playwright-report/
+test-results/
 
 # Ignore environment variables
 .env

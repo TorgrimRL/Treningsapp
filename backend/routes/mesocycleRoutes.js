@@ -255,6 +255,33 @@ function getDropsetSetCount(exercise) {
   return Array.isArray(exercise.sets) ? exercise.sets.length : 1;
 }
 
+function getDropsetTargetRepsBySet(
+  previousWeekExercise,
+  currentWeek,
+  progressionSettings
+) {
+  if (
+    progressionSettings.progressionMode !== "reps" ||
+    !Array.isArray(previousWeekExercise.sets)
+  ) {
+    return null;
+  }
+
+  const { previousFactor, currentFactor } = getProgressionFactors(currentWeek);
+
+  return previousWeekExercise.sets.map((previousSet) => {
+    const { weight, reps } = getSetProgressionValues(previousSet);
+    return calculateNewTarget(
+      weight,
+      reps,
+      previousWeekExercise.type,
+      previousFactor,
+      currentFactor,
+      progressionSettings
+    ).reps;
+  });
+}
+
 function hasConfiguredDropsetStart(exercise) {
   const configuredStartWeight = getPositiveNumber(exercise.dropset?.startWeight);
   const firstSet = exercise.sets?.[0] || {};
@@ -268,6 +295,7 @@ function buildDropsetSetsFromTargets({
   exercise,
   startWeight,
   targetReps,
+  targetRepsBySet,
   progressionSettings,
   useTargetsForValues,
 }) {
@@ -285,9 +313,16 @@ function buildDropsetSetsFromTargets({
 
   return weights.map((weight, setIndex) => {
     const set = exercise.sets[setIndex] || {};
-    const nextTargetReps = isUnsetRepValue(set.targetReps)
-      ? targetReps
-      : set.targetReps;
+    const hasSetSpecificTargetReps =
+      targetRepsBySet?.[setIndex] !== undefined;
+    const progressedTargetReps = hasSetSpecificTargetReps
+      ? targetRepsBySet[setIndex]
+      : targetReps;
+    const hasProgressedTargetReps = Array.isArray(targetRepsBySet);
+    const nextTargetReps =
+      hasProgressedTargetReps || isUnsetRepValue(set.targetReps)
+        ? progressedTargetReps
+        : set.targetReps;
 
     return {
       ...set,
@@ -297,7 +332,7 @@ function buildDropsetSetsFromTargets({
           : set.weight ?? weight,
       reps:
         useTargetsForValues && !set.completed
-          ? targetReps
+          ? progressedTargetReps
           : set.reps ?? nextTargetReps,
       targetWeight: weight,
       targetReps: nextTargetReps,
@@ -312,17 +347,23 @@ function getUpdatedDropsetSets(
   progressionSettings
 ) {
   const configuredStartWeight = getPositiveNumber(exercise.dropset?.startWeight);
+  const targetRepsBySet = getDropsetTargetRepsBySet(
+    previousWeekExercise,
+    currentWeek,
+    progressionSettings
+  );
 
   if (hasConfiguredDropsetStart(exercise)) {
     const firstSet = exercise.sets[0] || {};
-    const targetReps = isUnsetRepValue(firstSet.targetReps)
+    const configuredTargetReps = isUnsetRepValue(firstSet.targetReps)
       ? firstSet.reps ?? 0
       : firstSet.targetReps;
 
     return buildDropsetSetsFromTargets({
       exercise,
       startWeight: configuredStartWeight,
-      targetReps,
+      targetReps: targetRepsBySet?.[0] ?? configuredTargetReps,
+      targetRepsBySet,
       progressionSettings,
       useTargetsForValues: true,
     });
@@ -349,6 +390,7 @@ function getUpdatedDropsetSets(
     exercise,
     startWeight: newTarget.weight,
     targetReps: newTarget.reps,
+    targetRepsBySet,
     progressionSettings,
     useTargetsForValues: previousFirstSet.completed,
   });
