@@ -5,6 +5,7 @@ import {
   calculateWorkoutProgress,
   getSetLogReps,
   getSetProgressionReps,
+  getWeightOptions,
   updateDropsetSetsFromStartWeight,
 } from "./workoutUtils";
 
@@ -41,6 +42,10 @@ describe("workoutUtils", () => {
   it("progresses reps from the completed set before using the next target", () => {
     expect(getSetProgressionReps({ completed: true, reps: 9, targetReps: 8 })).toBe(9);
     expect(getSetProgressionReps({ completed: false, reps: 0, targetReps: 8 })).toBe(8);
+  });
+
+  it("always includes zero as a selectable weight", () => {
+    expect(getWeightOptions({ type: "barbell", weightIncrement: 2.5, minimumWeight: 2.5 }, 80)).toContain(0);
   });
 
   it("applies the configured progression mode", () => {
