@@ -102,13 +102,16 @@ const RedoExerciseBlockModal = ({ isOpen, onRequestClose, exerciseBlock }) => {
                             return set;
                           }
 
+                          const targetWeight = parseFloat(targetSet.weight);
+                          const targetReps = parseInt(targetSet.reps, 10);
+
                           return {
                             ...set,
-                            targetWeight: parseFloat(targetSet.weight),
-                            targetReps: parseInt(targetSet.reps, 10),
+                            targetWeight,
+                            targetReps,
                             completed: false,
-                            weight: 0,
-                            reps: 0,
+                            weight: targetWeight,
+                            reps: targetReps,
                           };
                         }),
                       };
