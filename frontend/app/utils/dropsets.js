@@ -9,23 +9,45 @@ const isBlankValue = (value) =>
 const isUnsetRepValue = (value) =>
   isBlankValue(value) || Number(value) === 0;
 
-const roundToIncrement = (value, increment) =>
-  Number((Math.round(value / increment) * increment).toFixed(2));
+const roundToWeightGrid = (value, increment, minimumWeight) => {
+  const valueCenti = Math.round(value * 100);
+  const incrementCenti = Math.round(increment * 100);
+  const minimumCenti = Math.round(minimumWeight * 100);
 
-const ceilToIncrement = (value, increment) =>
-  Number((Math.ceil(value / increment) * increment).toFixed(2));
+  return Number(
+    ((minimumCenti + Math.round((valueCenti - minimumCenti) / incrementCenti) * incrementCenti) / 100).toFixed(2)
+  );
+};
+
+const ceilToWeightGrid = (value, increment, minimumWeight) => {
+  const valueCenti = Math.round(value * 100);
+  const incrementCenti = Math.round(increment * 100);
+  const minimumCenti = Math.round(minimumWeight * 100);
+
+  return Number(
+    ((minimumCenti + Math.ceil((valueCenti - minimumCenti) / incrementCenti) * incrementCenti) / 100).toFixed(2)
+  );
+};
 
 export function generateDropsetWeights({
   startWeight,
   setCount,
   increment,
+  minimumWeight = 0,
   dropPercent = DROPSET_DROP_PERCENT,
 }) {
   const parsedStartWeight = Number(startWeight);
   const parsedSetCount = Number(setCount);
   const parsedIncrement = Number(increment);
+  const parsedMinimumWeight = Number(minimumWeight);
 
-  if (!Number.isFinite(parsedStartWeight) || parsedStartWeight <= 0) {
+  if (
+    !Number.isFinite(parsedStartWeight) ||
+    parsedStartWeight <= 0 ||
+    !Number.isFinite(parsedMinimumWeight) ||
+    parsedMinimumWeight < 0 ||
+    parsedStartWeight < parsedMinimumWeight
+  ) {
     return { weights: [], error: "Choose a start weight above 0." };
   }
 
@@ -44,15 +66,20 @@ export function generateDropsetWeights({
     return { weights: [], error: "Choose a valid weight increment." };
   }
 
-  const roundedStartWeight = roundToIncrement(
+  const roundedStartWeight = roundToWeightGrid(
     parsedStartWeight,
-    parsedIncrement
+    parsedIncrement,
+    parsedMinimumWeight
   );
   const weights = [];
   const dropMultiplier = 1 - dropPercent / 100;
-  const minimumFinalWeight = ceilToIncrement(
-    roundedStartWeight * 0.5,
-    parsedIncrement
+  const minimumFinalWeight = Math.max(
+    ceilToWeightGrid(
+      roundedStartWeight * 0.5,
+      parsedIncrement,
+      parsedMinimumWeight
+    ),
+    parsedMinimumWeight
   );
   const minimumStartWeight = Number(
     (minimumFinalWeight + (parsedSetCount - 1) * parsedIncrement).toFixed(2)
@@ -69,7 +96,11 @@ export function generateDropsetWeights({
   for (let index = 0; index < parsedSetCount; index += 1) {
     const rawWeight =
       index === 0 ? roundedStartWeight : weights[index - 1] * dropMultiplier;
-    let nextWeight = roundToIncrement(rawWeight, parsedIncrement);
+    let nextWeight = roundToWeightGrid(
+      rawWeight,
+      parsedIncrement,
+      parsedMinimumWeight
+    );
     const remainingDrops = parsedSetCount - index - 1;
     const minimumWeightForRealDrops = Number(
       (minimumFinalWeight + remainingDrops * parsedIncrement).toFixed(2)
@@ -104,6 +135,7 @@ export function buildDropsetSets({
   startWeight,
   setCount,
   increment,
+  minimumWeight = 0,
   dropPercent = DROPSET_DROP_PERCENT,
   targetRepsBySet = [],
 }) {
@@ -111,6 +143,7 @@ export function buildDropsetSets({
     startWeight,
     setCount,
     increment,
+    minimumWeight,
     dropPercent,
   });
 

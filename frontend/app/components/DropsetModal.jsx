@@ -44,7 +44,7 @@ export default function DropsetModal({
   const [setCount, setSetCount] = useState(DEFAULT_DROPSET_SET_COUNT);
   const [applyToFutureWeeks, setApplyToFutureWeeks] = useState(false);
 
-  const weightIncrement = normalizeProgressionSettings(exercise || {}).weightIncrement;
+  const { weightIncrement, minimumWeight } = normalizeProgressionSettings(exercise || {});
 
   useEffect(() => {
     if (!isOpen) {
@@ -62,9 +62,10 @@ export default function DropsetModal({
         startWeight,
         setCount,
         increment: weightIncrement,
+        minimumWeight,
         dropPercent: DROPSET_DROP_PERCENT,
       }),
-    [setCount, startWeight, weightIncrement]
+    [setCount, startWeight, weightIncrement, minimumWeight]
   );
 
   if (!exercise) {
@@ -86,8 +87,8 @@ export default function DropsetModal({
         <input
           data-testid="dropset-start-weight"
           type="number"
-          min={weightIncrement}
-          step={weightIncrement}
+          min={minimumWeight}
+          step="0.25"
           value={startWeight}
           onChange={(event) => setStartWeight(event.target.value)}
           className="bg-inputBGGray text-center w-full p-2"

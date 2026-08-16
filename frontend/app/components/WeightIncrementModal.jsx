@@ -1,6 +1,8 @@
 import {
   weightIncrementOptions,
+  minimumWeightOptions,
   normalizeProgressionSettings,
+  formatWeightSetting,
 } from "../constants/constants";
 import AppModal from "./AppModal";
 
@@ -9,8 +11,10 @@ const WeightIncrementModal = ({
   onRequestClose,
   exercise,
   weightIncrement,
+  minimumWeight,
   applyToFutureWeeks,
   onWeightIncrementChange,
+  onMinimumWeightChange,
   onApplyToFutureWeeksChange,
   onSave,
 }) => {
@@ -20,6 +24,7 @@ const WeightIncrementModal = ({
 
   const currentSettings = normalizeProgressionSettings(exercise);
   const selectedIncrement = weightIncrement ?? currentSettings.weightIncrement;
+  const selectedMinimumWeight = minimumWeight ?? currentSettings.minimumWeight;
 
   return (
     <AppModal
@@ -40,10 +45,30 @@ const WeightIncrementModal = ({
         >
           {weightIncrementOptions.map((increment) => (
             <option key={increment} value={increment}>
-              {increment} kg
+              {formatWeightSetting(increment)} kg
             </option>
           ))}
         </select>
+      </label>
+      <label className="mt-4 flex flex-col gap-2">
+        <span>Lowest available weight</span>
+        <select
+          data-testid="minimum-weight-input"
+          value={selectedMinimumWeight}
+          onChange={(event) => onMinimumWeightChange(Number(event.target.value))}
+          className="bg-inputBGGray text-center w-full p-2"
+        >
+          {minimumWeightOptions.map((weight) => (
+            <option key={weight} value={weight}>
+              {formatWeightSetting(weight)} kg
+            </option>
+          ))}
+        </select>
+        <span className="text-xs text-gray-400">
+          {formatWeightSetting(selectedMinimumWeight)} → {formatWeightSetting(
+            Number(selectedMinimumWeight) + Number(selectedIncrement)
+          )} kg
+        </span>
       </label>
       <label className="mt-4 flex items-center gap-3">
         <input
