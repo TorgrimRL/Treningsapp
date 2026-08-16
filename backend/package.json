@@ -5,11 +5,11 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "start": "nodemon index.js",
-    "dev": "DB_MODE=local PORT=3000 AUTH0_BASE_URL=http://localhost:3000 FRONTEND_URL=http://localhost:5173 nodemon index.js",
-    "dev:cloud": "DB_MODE=cloud PORT=3000 AUTH0_BASE_URL=http://localhost:3000 FRONTEND_URL=http://localhost:5173 nodemon index.js",
+    "start": "node --watch index.js",
+    "dev": "DB_MODE=local PORT=3000 AUTH0_BASE_URL=http://localhost:3000 FRONTEND_URL=http://localhost:5173 node --watch index.js",
+    "dev:cloud": "DB_MODE=cloud PORT=3000 AUTH0_BASE_URL=http://localhost:3000 FRONTEND_URL=http://localhost:5173 node --watch index.js",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
-    "dev:local": "DB_MODE=local PORT=3000 AUTH0_BASE_URL=http://localhost:3000 FRONTEND_URL=http://localhost:5173 nodemon index.js",
+    "dev:local": "DB_MODE=local PORT=3000 AUTH0_BASE_URL=http://localhost:3000 FRONTEND_URL=http://localhost:5173 node --watch index.js",
     "db:seed": "DB_MODE=local node scripts/seedLocalDb.js",
     "db:reset": "npm run db:seed"
   },
@@ -31,7 +31,9 @@
   "devDependencies": {
     "@types/node": "^20.14.2",
     "jest": "^30.4.2",
-    "nodemon": "^3.1.14",
     "supertest": "^7.0.0"
+  },
+  "engines": {
+    "node": "24.x"
   }
 }

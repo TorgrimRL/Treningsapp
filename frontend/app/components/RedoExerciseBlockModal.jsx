@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import MesocycleDetailsModal from "./MesocycleDetailsModal";
 import { getCookie } from "../utils/cookies";
-import { useNavigate } from "@remix-run/react";
+import { useNavigate } from "react-router";
 import AppModal from "./AppModal";
 import { clearCurrentWorkoutQuery } from "../utils/currentWorkoutQuery";
 

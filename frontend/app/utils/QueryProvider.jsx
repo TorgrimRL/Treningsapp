@@ -3,7 +3,7 @@ import {
   QueryClientProvider,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useLocation } from "@remix-run/react";
+import { useLocation } from "react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "./AuthContext";
 import { useApiFetch } from "./apiFetch";

@@ -4,7 +4,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-} from "@remix-run/react";
+} from "react-router";
 import Navbar from "./components/Navbar";
 import "./tailwind.css";
 import { AuthProvider } from "./utils/AuthContext";

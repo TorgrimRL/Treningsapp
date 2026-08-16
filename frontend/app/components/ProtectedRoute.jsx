@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useAuth } from "../utils/AuthContext";
-import { useNavigate } from "@remix-run/react";
+import { useNavigate } from "react-router";
 
 const ProtectedRoute = ({ children, loadingFallback = <div>Loading...</div> }) => {
   const { isLoggedIn, authCheckInProgress } = useAuth();

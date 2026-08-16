@@ -1,5 +1,5 @@
 import TemplateSelector from "../components/TemplateSelector";
-import { useNavigate } from "@remix-run/react";
+import { useNavigate } from "react-router";
 import ProtectedRoute from "../components/ProtectedRoute";
 import PageContainer from "../components/PageContainer";
 
