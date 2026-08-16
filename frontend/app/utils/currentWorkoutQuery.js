@@ -4,6 +4,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { useCallback } from "react";
+import { enrichWorkoutWithPersonalRecords } from "./personalRecords";
 
 export const currentWorkoutQueryKey = ["current-workout"];
 
@@ -49,7 +50,8 @@ export async function fetchCurrentWorkout(apiFetch, baseUrl, signal) {
     throw new CurrentWorkoutQueryError(response.status, response.data);
   }
 
-  return response.data?.data ?? response.data;
+  const workout = response.data?.data ?? response.data;
+  return enrichWorkoutWithPersonalRecords(workout);
 }
 
 export function currentWorkoutQueryOptions(

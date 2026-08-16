@@ -27,6 +27,42 @@ function makePlan(completed = false) {
   ];
 }
 
+function makeWorkoutDay({
+  completedSets = [false, false],
+  reps = ["8", "10"],
+  transientRecords = false,
+} = {}) {
+  return {
+    label: "Day 1",
+    exercises: [
+      {
+        exercise: "Bench Press",
+        type: "barbell",
+        muscleGroup: "Chest",
+        ...(transientRecords
+          ? {
+              personalRecordsByWeight: {
+                50: {
+                  previousRecord: 8,
+                  workoutBestReps: 10,
+                  isNewRecord: true,
+                  recordSetIndex: 1,
+                },
+              },
+            }
+          : {}),
+        sets: completedSets.map((completed, index) => ({
+          weight: "50",
+          reps: reps[index],
+          targetWeight: "50",
+          targetReps: reps[index],
+          completed,
+        })),
+      },
+    ],
+  };
+}
+
 async function createMesocycle(agent, overrides = {}) {
   const body = {
     name: "Hypertrophy",
@@ -40,6 +76,21 @@ async function createMesocycle(agent, overrides = {}) {
 
   const response = await agent.post("/api/mesocycles").send(body).expect(201);
   return { id: response.body.mesocycleId, body, response };
+}
+
+async function updateMesocycle(agent, id, plan, overrides = {}) {
+  return agent
+    .put(`/api/mesocycles/${id}`)
+    .send({
+      name: "Updated plan",
+      weeks: 1,
+      daysPerWeek: 1,
+      plan,
+      isCurrent: true,
+      completedDate: null,
+      ...overrides,
+    })
+    .expect(200);
 }
 
 describe("exercise and mesocycle regression", () => {
@@ -169,15 +220,192 @@ describe("exercise and mesocycle regression", () => {
       })
       .expect(200);
 
+    expect(Object.keys(response.body).sort()).toEqual(
+      ["changes", "mesocycle", "message", "personalRecordHistory"].sort()
+    );
     expect(response.body).toMatchObject({
       changes: 1,
       message: "Mesocycle updated successfully",
+      mesocycle: {
+        id,
+        name: "Finished plan",
+        isCurrent: true,
+        completedDate: expect.any(String),
+        plan: expect.any(Array),
+      },
+      personalRecordHistory: expect.any(Array),
     });
+
+    const returnedDay = response.body.mesocycle.plan[0];
+    expect(returnedDay.startedAt).toEqual(expect.any(String));
+    expect(returnedDay.completedAt).toEqual(expect.any(String));
+    expect(returnedDay.startedAt).toBe(returnedDay.completedAt);
 
     // noinspection SqlNoDataSourceInspection
     const row = await db.get("SELECT * FROM mesocycles WHERE id = ?", [id]);
     expect(row.completedDate).toEqual(expect.any(String));
     expect(Number.isNaN(Date.parse(row.completedDate))).toBe(false);
+    expect(JSON.parse(row.plan)).toEqual(response.body.mesocycle.plan);
+  });
+
+  it("manages workout-day timestamps across completion and corrections", async () => {
+    const { agent } = await createAuthenticatedUser(app, db, {
+      username: "alice",
+    });
+    const { id } = await createMesocycle(agent, {
+      name: "Timestamp plan",
+      plan: [makeWorkoutDay()],
+    });
+
+    const partialResponse = await updateMesocycle(agent, id, [
+      makeWorkoutDay({ completedSets: [true, false] }),
+    ]);
+    const partiallyCompletedDay = partialResponse.body.mesocycle.plan[0];
+
+    expect(partiallyCompletedDay.startedAt).toEqual(expect.any(String));
+    expect(Number.isNaN(Date.parse(partiallyCompletedDay.startedAt))).toBe(false);
+    expect(partiallyCompletedDay).not.toHaveProperty("completedAt");
+
+    const preservedStartedAt = "2024-01-02T10:00:00.000Z";
+    const partialRow = await db.get(
+      "SELECT plan FROM mesocycles WHERE id = ?",
+      [id]
+    );
+    const storedPartialPlan = JSON.parse(partialRow.plan);
+    storedPartialPlan[0].startedAt = preservedStartedAt;
+    await db.run("UPDATE mesocycles SET plan = ? WHERE id = ?", [
+      JSON.stringify(storedPartialPlan),
+      id,
+    ]);
+
+    const correctedPartialResponse = await updateMesocycle(agent, id, [
+      makeWorkoutDay({
+        completedSets: [true, false],
+        reps: ["9", "10"],
+      }),
+    ]);
+    expect(correctedPartialResponse.body.mesocycle.plan[0]).toMatchObject({
+      startedAt: preservedStartedAt,
+    });
+    expect(
+      correctedPartialResponse.body.mesocycle.plan[0]
+    ).not.toHaveProperty("completedAt");
+
+    const completedResponse = await updateMesocycle(agent, id, [
+      makeWorkoutDay({
+        completedSets: [true, true],
+        reps: ["9", "10"],
+      }),
+    ]);
+    const completedDay = completedResponse.body.mesocycle.plan[0];
+    expect(completedDay.startedAt).toBe(preservedStartedAt);
+    expect(completedDay.completedAt).toEqual(expect.any(String));
+    expect(Number.isNaN(Date.parse(completedDay.completedAt))).toBe(false);
+
+    const preservedCompletedAt = "2024-01-02T11:00:00.000Z";
+    const completedRow = await db.get(
+      "SELECT plan FROM mesocycles WHERE id = ?",
+      [id]
+    );
+    const storedCompletedPlan = JSON.parse(completedRow.plan);
+    storedCompletedPlan[0].completedAt = preservedCompletedAt;
+    await db.run("UPDATE mesocycles SET plan = ? WHERE id = ?", [
+      JSON.stringify(storedCompletedPlan),
+      id,
+    ]);
+
+    const correctedCompleteResponse = await updateMesocycle(agent, id, [
+      makeWorkoutDay({
+        completedSets: [true, true],
+        reps: ["9", "11"],
+      }),
+    ]);
+    expect(correctedCompleteResponse.body.mesocycle.plan[0]).toMatchObject({
+      startedAt: preservedStartedAt,
+      completedAt: preservedCompletedAt,
+    });
+
+    const reopenedResponse = await updateMesocycle(agent, id, [
+      makeWorkoutDay({
+        completedSets: [true, false],
+        reps: ["9", "11"],
+      }),
+    ]);
+    const reopenedDay = reopenedResponse.body.mesocycle.plan[0];
+    expect(reopenedDay.startedAt).toBe(preservedStartedAt);
+    expect(reopenedDay).not.toHaveProperty("completedAt");
+
+    const finalRow = await db.get("SELECT plan FROM mesocycles WHERE id = ?", [
+      id,
+    ]);
+    expect(JSON.parse(finalRow.plan)[0]).toEqual(reopenedDay);
+  });
+
+  it("does not fabricate timestamps for an already completed legacy day", async () => {
+    const { agent } = await createAuthenticatedUser(app, db, {
+      username: "alice",
+    });
+    const { id } = await createMesocycle(agent, { name: "Legacy plan" });
+    const legacyPlan = [
+      makeWorkoutDay({
+        completedSets: [true, true],
+        reps: ["8", "10"],
+      }),
+    ];
+
+    await db.run("UPDATE mesocycles SET plan = ? WHERE id = ?", [
+      JSON.stringify(legacyPlan),
+      id,
+    ]);
+
+    const response = await updateMesocycle(agent, id, legacyPlan);
+    const returnedDay = response.body.mesocycle.plan[0];
+
+    expect(returnedDay).not.toHaveProperty("startedAt");
+    expect(returnedDay).not.toHaveProperty("completedAt");
+
+    const row = await db.get("SELECT plan FROM mesocycles WHERE id = ?", [id]);
+    expect(JSON.parse(row.plan)[0]).not.toHaveProperty("startedAt");
+    expect(JSON.parse(row.plan)[0]).not.toHaveProperty("completedAt");
+  });
+
+  it("strips transient personal-record data on create and update", async () => {
+    const { agent } = await createAuthenticatedUser(app, db, {
+      username: "alice",
+    });
+    const transientPlan = [
+      makeWorkoutDay({
+        completedSets: [false, false],
+        transientRecords: true,
+      }),
+    ];
+    const { id } = await createMesocycle(agent, { plan: transientPlan });
+
+    const createdRow = await db.get(
+      "SELECT plan FROM mesocycles WHERE id = ?",
+      [id]
+    );
+    expect(
+      JSON.parse(createdRow.plan)[0].exercises[0]
+    ).not.toHaveProperty("personalRecordsByWeight");
+
+    const response = await updateMesocycle(agent, id, [
+      makeWorkoutDay({
+        completedSets: [true, false],
+        transientRecords: true,
+      }),
+    ]);
+    expect(
+      response.body.mesocycle.plan[0].exercises[0]
+    ).not.toHaveProperty("personalRecordsByWeight");
+
+    const updatedRow = await db.get(
+      "SELECT plan FROM mesocycles WHERE id = ?",
+      [id]
+    );
+    expect(
+      JSON.parse(updatedRow.plan)[0].exercises[0]
+    ).not.toHaveProperty("personalRecordsByWeight");
   });
 
   it("keeps progression mode and weight increment independent during updates", async () => {

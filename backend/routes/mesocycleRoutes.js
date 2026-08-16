@@ -5,7 +5,44 @@ import createDeloadWeek from "../utils/createDeloadWeek.js";
 import processPlan from "../utils/processPlan.js";
 import { safeQuery } from "../utils/safeQuery.js";
 import { buildResponsePayload } from "../utils/buildResponsePayload.js";
+import {
+  buildPersonalRecordHistory,
+  buildPersonalRecordOverview,
+} from "../utils/personalRecords.js";
+import {
+  applyWorkoutDayTimestamps,
+  isWorkoutDayComplete,
+} from "../utils/planPersistence.js";
 const router = express.Router();
+
+function parsePlan(plan) {
+  const parsedPlan = typeof plan === "string" ? JSON.parse(plan) : plan;
+
+  if (!Array.isArray(parsedPlan)) {
+    throw new TypeError("Plan must be an array");
+  }
+
+  return parsedPlan;
+}
+
+function normalizeMesocycleRow(row, plan = parsePlan(row.plan)) {
+  return {
+    ...row,
+    plan,
+    isCurrent: !!row.isCurrent,
+    completedDate: row.completedDate
+      ? new Date(row.completedDate).toISOString()
+      : null,
+  };
+}
+
+function getMesocycleCompletion(plan) {
+  return (
+    Array.isArray(plan) &&
+    plan.length > 0 &&
+    plan.every((day) => isWorkoutDayComplete(day))
+  );
+}
 
 // Endpoint to add a new mesocycle
 router.post("/mesocycles", authenticateToken, async (req, res) => {
@@ -19,7 +56,7 @@ router.post("/mesocycles", authenticateToken, async (req, res) => {
       WHERE user_id = ${userId}
     `;
 
-    const planJson = JSON.stringify(plan);
+    const planJson = JSON.stringify(applyWorkoutDayTimestamps(plan, []));
 
     const { result: insertResult, hadRetry: insertHadRetry } = await safeQuery`
       INSERT INTO mesocycles (name, weeks, daysPerWeek, plan, user_id, completedDate, isCurrent)
@@ -74,29 +111,57 @@ router.put("/mesocycles/:id", authenticateToken, async (req, res) => {
     const { name, weeks, plan, daysPerWeek, isCurrent, completedDate } =
       req.body;
     const userID = req.user.id;
-    const allDaysCompleted = plan.every((day) =>
-      day.exercises.every(
-        (exercise) =>
-          Array.isArray(exercise.sets) &&
-          exercise.sets.every((set) => set.completed)
-      )
-    );
+    const { result: existingRows, hadRetry: selectHadRetry } = await safeQuery`
+      SELECT * FROM mesocycles WHERE id = ${id} AND user_id = ${userID}
+    `;
+
+    if (!existingRows || existingRows.length === 0) {
+      const { result: userRows, hadRetry: historyHadRetry } = await safeQuery`
+        SELECT * FROM mesocycles WHERE user_id = ${userID} ORDER BY id ASC
+      `;
+      const responsePayload = buildResponsePayload(
+        selectHadRetry || historyHadRetry,
+        {
+          changes: 0,
+          message: "Mesocycle updated successfully",
+          mesocycle: null,
+          personalRecordHistory: buildPersonalRecordHistory(userRows),
+        }
+      );
+      return res.status(200).json(responsePayload);
+    }
+
+    const existingRow = existingRows[0];
+    const existingPlan = parsePlan(existingRow.plan);
+    const normalizedPlan = applyWorkoutDayTimestamps(plan, existingPlan);
+    const allDaysCompleted = getMesocycleCompletion(normalizedPlan);
     const newCompletedDate =
       allDaysCompleted && !completedDate
         ? new Date().toISOString()
         : completedDate;
-    const { result, hadRetry } = await safeQuery`
+    const { result, hadRetry: updateHadRetry } = await safeQuery`
       UPDATE mesocycles
-      SET name = ${name}, weeks = ${weeks}, plan = ${JSON.stringify(plan)}, 
-          daysPerWeek = ${daysPerWeek}, isCurrent = ${isCurrent ? 1 : 0}, 
+      SET name = ${name}, weeks = ${weeks}, plan = ${JSON.stringify(normalizedPlan)},
+          daysPerWeek = ${daysPerWeek}, isCurrent = ${isCurrent ? 1 : 0},
           completedDate = ${newCompletedDate}
       WHERE id = ${id} AND user_id = ${userID}
     `;
+    const { result: userRows, hadRetry: historyHadRetry } = await safeQuery`
+      SELECT * FROM mesocycles WHERE user_id = ${userID} ORDER BY id ASC
+    `;
+    const storedRow = userRows.find(
+      (row) => String(row.id) === String(id)
+    );
     const basePayload = {
       changes: result.changes,
       message: "Mesocycle updated successfully",
+      mesocycle: storedRow ? normalizeMesocycleRow(storedRow) : null,
+      personalRecordHistory: buildPersonalRecordHistory(userRows),
     };
-    const responsePayload = buildResponsePayload(hadRetry, basePayload);
+    const responsePayload = buildResponsePayload(
+      selectHadRetry || updateHadRetry || historyHadRetry,
+      basePayload
+    );
     res.status(200).json(responsePayload);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -483,6 +548,39 @@ function getFinalPlan(updatedPlan, daysPerWeek, plan, totalWeeks) {
   });
 }
 
+// Compact record data for the standalone personal-records page. This route is
+// intentionally independent of whether the user currently has an active plan.
+router.get(
+  "/personal-records",
+  authenticateToken,
+  csrfProtection,
+  async (req, res) => {
+    try {
+      const userID = req.user.id;
+      const { result: rows, hadRetry } = await safeQuery`
+        SELECT * FROM mesocycles WHERE user_id = ${userID} ORDER BY id ASC
+      `;
+      const currentRow = rows?.find(
+        (mesocycle) =>
+          mesocycle.isCurrent === true || Number(mesocycle.isCurrent) === 1
+      );
+
+      if (currentRow) {
+        try {
+          parsePlan(currentRow.plan);
+        } catch {
+          return res.status(500).json({ error: "Invalid plan data" });
+        }
+      }
+
+      const overview = buildPersonalRecordOverview(rows);
+      res.json(buildResponsePayload(hadRetry, overview));
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
 // Endpoint to fetch the current workout
 router.get(
   "/current-workout",
@@ -492,15 +590,18 @@ router.get(
     try {
       const userID = req.user.id;
       const { result: rows, hadRetry } = await safeQuery`
-      SELECT * FROM mesocycles WHERE isCurrent = 1 AND user_id = ${userID}
-    `;
-      if (!rows || rows.length === 0) {
+        SELECT * FROM mesocycles WHERE user_id = ${userID} ORDER BY id ASC
+      `;
+      const row = rows?.find(
+        (mesocycle) =>
+          mesocycle.isCurrent === true || Number(mesocycle.isCurrent) === 1
+      );
+      if (!row) {
         return res.status(404).json({ error: "Current workout not found" });
       }
-      const row = rows[0];
       let plan;
       try {
-        plan = JSON.parse(row.plan);
+        plan = parsePlan(row.plan);
       } catch (error) {
         return res.status(500).json({ error: "Invalid plan data" });
       }
@@ -520,6 +621,7 @@ router.get(
         totalWeeks: row.weeks,
         daysPerWeek: row.daysPerWeek,
         firstIncompleteDayIndex,
+        personalRecordHistory: buildPersonalRecordHistory(rows),
       };
 
       const responsePayload = hadRetry

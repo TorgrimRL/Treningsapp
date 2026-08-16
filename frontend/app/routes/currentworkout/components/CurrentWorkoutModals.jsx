@@ -2,10 +2,13 @@ import CalendarModal from "../../../components/CalendarModal";
 import ChooseExerciseModal from "../../../components/ChooseExerciseModal";
 import DropsetModal from "../../../components/DropsetModal";
 import NoteModal from "../../../components/NoteModal";
+import PersonalRecordModal from "./PersonalRecordModal";
 import ProgressionModeModal from "../../../components/ProgressionModeModal";
 import WeightIncrementModal from "../../../components/WeightIncrementModal";
 
 export default function CurrentWorkoutModals({
+  apiFetch,
+  baseUrl,
   applyProgressionModeToFutureWeeks,
   applyWeightIncrementToFutureWeeks,
   calendarIconRef,
@@ -21,6 +24,7 @@ export default function CurrentWorkoutModals({
   isDropsetModalOpen,
   isNoteModalOpen,
   isProgressionModeModalOpen,
+  isPersonalRecordModalOpen,
   isWeightIncrementModalOpen,
   onApplyProgressionModeToFutureWeeksChange,
   onApplyWeightIncrementToFutureWeeksChange,
@@ -35,6 +39,8 @@ export default function CurrentWorkoutModals({
   onProgressionModeChange,
   onProgressionModeClose,
   onProgressionModeSave,
+  onPersonalRecordClose,
+  personalRecordContext,
   onWeightIncrementChange,
   onWeightIncrementClose,
   onWeightIncrementSave,
@@ -117,6 +123,14 @@ export default function CurrentWorkoutModals({
         onRequestClose={onChooseExerciseClose}
         onSave={onChooseExerciseSave}
         currentExercise={currentExercise}
+      />
+      <PersonalRecordModal
+        apiFetch={apiFetch}
+        baseUrl={baseUrl}
+        currentMesocycle={currentMesocycle}
+        isOpen={isPersonalRecordModalOpen}
+        onRequestClose={onPersonalRecordClose}
+        recordContext={personalRecordContext}
       />
     </>
   );

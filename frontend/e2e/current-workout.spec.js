@@ -418,8 +418,8 @@ test("logging a bodyweight set keeps target reps when target weight is zero", as
 
   await page.goto("/currentworkout");
 
-  const bodyweightExercise = page.getByTestId("workout-exercise-2");
-  const bodyweightSet = page.getByTestId("workout-set-2-0");
+  const bodyweightExercise = page.getByTestId("workout-exercise-6");
+  const bodyweightSet = page.getByTestId("workout-set-6-0");
   await expect(bodyweightExercise).toContainText("Pushup");
   await expect(bodyweightSet.getByTestId("set-weight-select")).toHaveValue("0");
   await expect(bodyweightSet.getByTestId("set-reps-select")).toHaveValue("11");
@@ -435,7 +435,7 @@ test("logging a bodyweight set keeps target reps when target weight is zero", as
   ]);
 
   await page.reload();
-  const reloadedBodyweightSet = page.getByTestId("workout-set-2-0");
+  const reloadedBodyweightSet = page.getByTestId("workout-set-6-0");
   await expect(
     reloadedBodyweightSet.getByTestId("set-log-checkbox")
   ).toBeChecked();
@@ -610,7 +610,7 @@ test("future dropsets progress reps from each matching set", async ({ page }) =>
     page
       .getByTestId("workout-set-0-0")
       .getByTestId("set-reps-select")
-  ).toHaveValue("9");
+  ).toHaveValue("7");
   await expect(
     page
       .getByTestId("workout-set-0-1")
@@ -649,10 +649,10 @@ test("future dropsets progress reps from each matching set", async ({ page }) =>
   });
 
   expect(futureSets.map((set) => Number(set.reps))).toEqual([
-    10, 12, 10, 10, 10,
+    8, 12, 10, 8, 8,
   ]);
   expect(futureSets.map((set) => Number(set.targetReps))).toEqual([
-    10, 12, 10, 10, 10,
+    8, 12, 10, 8, 8,
   ]);
 });
 

@@ -23,6 +23,7 @@ export default function CurrentWorkoutPage() {
   const { apiFetch } = useApiFetch();
   const calendarIconRef = useRef(null);
   const [applyToFutureWeeks, setApplyToFutureWeeks] = useState(false);
+  const [personalRecordContext, setPersonalRecordContext] = useState(null);
 
   const workoutData = useCurrentWorkoutData(apiFetch, baseUrl);
   const {
@@ -177,6 +178,7 @@ export default function CurrentWorkoutPage() {
                 onOpenDropset={workoutModals.openDropsetModal}
                 onOpenNote={workoutModals.openNoteModal}
                 onOpenProgressionMode={workoutModals.openProgressionModeModal}
+                onOpenPersonalRecords={setPersonalRecordContext}
                 onOpenWeightIncrement={workoutModals.openWeightIncrementModal}
                 onRemoveSet={actions.removeSet}
                 onRepsChange={actions.handleRepsChange}
@@ -196,6 +198,8 @@ export default function CurrentWorkoutPage() {
           </div>
         )}
         <CurrentWorkoutModals
+          apiFetch={apiFetch}
+          baseUrl={baseUrl}
           applyProgressionModeToFutureWeeks={
             workoutModals.applyProgressionModeToFutureWeeks
           }
@@ -215,6 +219,7 @@ export default function CurrentWorkoutPage() {
           isDropsetModalOpen={workoutModals.isDropsetModalOpen}
           isNoteModalOpen={workoutModals.isNoteModalOpen}
           isProgressionModeModalOpen={workoutModals.isProgressionModeModalOpen}
+          isPersonalRecordModalOpen={Boolean(personalRecordContext)}
           isWeightIncrementModalOpen={workoutModals.isWeightIncrementModalOpen}
           onApplyProgressionModeToFutureWeeksChange={
             actions.handleApplyProgressionModeToFutureWeeksChange
@@ -237,6 +242,8 @@ export default function CurrentWorkoutPage() {
             workoutModals.setIsProgressionModeModalOpen(false)
           }
           onProgressionModeSave={actions.handleProgressionModeSave}
+          onPersonalRecordClose={() => setPersonalRecordContext(null)}
+          personalRecordContext={personalRecordContext}
           onWeightIncrementChange={actions.handleWeightIncrementChange}
           onWeightIncrementClose={() =>
             workoutModals.setIsWeightIncrementModalOpen(false)

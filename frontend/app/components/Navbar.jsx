@@ -104,6 +104,14 @@ export default function Navbar() {
                 Current workout
               </Link>
               <Link
+                to="/personal-records"
+                prefetch="intent"
+                data-testid="personal-records-desktop-nav-link"
+                className="text-white h-full flex items-center "
+              >
+                PRs
+              </Link>
+              <Link
                 to="/mesocycles-new"
                 className="text-white h-full flex items-center"
               >
@@ -173,6 +181,17 @@ export default function Navbar() {
                       className="focus:outline-none block w-full text-left cursor-pointer"
                     >
                       Current workout
+                    </Link>
+                  </li>
+                  <li className="block px-4 py-2 hover:bg-darkGray ">
+                    <Link
+                      to="/personal-records"
+                      prefetch="intent"
+                      data-testid="personal-records-mobile-nav-link"
+                      onClick={closeMenu}
+                      className="focus:outline-none block w-full text-left cursor-pointer"
+                    >
+                      Personal records
                     </Link>
                   </li>
                   <li className="block px-4 py-2 hover:bg-darkGray ">

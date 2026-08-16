@@ -17,6 +17,7 @@ export default function WorkoutExerciseCard({
   onOpenDropset,
   onOpenNote,
   onOpenProgressionMode,
+  onOpenPersonalRecords,
   onOpenWeightIncrement,
   onRemoveSet,
   onRepsChange,
@@ -103,6 +104,14 @@ export default function WorkoutExerciseCard({
               )
             }
             onToggleSetMenu={onToggleSetMenu}
+            onOpenPersonalRecords={(record) =>
+              onOpenPersonalRecords({
+                ...record,
+                dayIndex: currentDayIndex,
+                exerciseIndex,
+                exercise: exercise.exercise,
+              })
+            }
             onWeightChange={(targetSetIndex, value) =>
               onWeightChange(
                 currentDayIndex,
