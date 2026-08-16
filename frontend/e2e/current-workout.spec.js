@@ -38,7 +38,7 @@ async function clickNavbarLink(page, name) {
   await link.click();
 }
 
-test("logged-in user can open current workout and log a set", async ({ page }) => {
+test("@e2e logged-in user can open current workout and log a set", async ({ page }) => {
   await loginAsDemoUser(page);
   await page.goto("/currentworkout");
 
@@ -695,7 +695,7 @@ test("changing exercise updates the muscle group display", async ({ page }) => {
   await expect(reloadedFirstExercise).toContainText("Side Delts");
 });
 
-test("changing exercise can create and select a custom exercise", async ({ page }) => {
+test("@e2e changing exercise can create and select a custom exercise", async ({ page }) => {
   await loginAsDemoUser(page);
   await page.goto("/currentworkout");
 

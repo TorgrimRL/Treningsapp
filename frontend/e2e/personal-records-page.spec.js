@@ -218,7 +218,7 @@ test("exercise records load each selected workout once and reuse cached history"
   expect(historicalMesocycleGetCount).toBe(1);
 });
 
-test("page and exercise modal stay inside a 393 px viewport", async ({
+test("@responsive page and exercise modal stay inside a 393 px viewport", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 393, height: 852 });

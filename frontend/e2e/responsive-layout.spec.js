@@ -53,7 +53,7 @@ async function expectNavbarUsesViewportEdges(page) {
   expect(Math.abs(rightGap - edgePadding)).toBeLessThanOrEqual(1);
 }
 
-test("landing shell and feature content stay within responsive bounds", async ({
+test("@responsive landing shell and feature content stay within responsive bounds", async ({
   page,
 }) => {
   await page.goto("/");
@@ -137,7 +137,7 @@ test("landing shell and feature content stay within responsive bounds", async ({
   await expectNoDocumentOverflow(page);
 });
 
-test("current workout is centered, sticky, and remains one column", async ({
+test("@responsive current workout is centered, sticky, and remains one column", async ({
   page,
 }) => {
   await loginAsDemoUser(page);
@@ -189,7 +189,7 @@ test("current workout is centered, sticky, and remains one column", async ({
   await expectNoDocumentOverflow(page);
 });
 
-test("mobile set controls and five-week calendar remain aligned without overflow", async ({
+test("@responsive mobile set controls and five-week calendar remain aligned without overflow", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 393, height: 852 });
@@ -241,7 +241,7 @@ test("mobile set controls and five-week calendar remain aligned without overflow
   await expectNoDocumentOverflow(page);
 });
 
-test("templates switch from a list to a three-column desktop grid", async ({
+test("@responsive templates switch from a list to a three-column desktop grid", async ({
   page,
 }) => {
   await loginAsDemoUser(page);
@@ -269,7 +269,7 @@ test("templates switch from a list to a three-column desktop grid", async ({
   await expectNoDocumentOverflow(page);
 });
 
-test("history switches from a list to a three-column desktop grid", async ({
+test("@responsive history switches from a list to a three-column desktop grid", async ({
   page,
 }) => {
   await loginAsDemoUser(page);
@@ -297,7 +297,7 @@ test("history switches from a list to a three-column desktop grid", async ({
   await expectNoDocumentOverflow(page);
 });
 
-test("planner days stack on mobile and use fixed horizontal columns on desktop", async ({
+test("@responsive planner days stack on mobile and use fixed horizontal columns on desktop", async ({
   page,
 }) => {
   await loginAsDemoUser(page);
@@ -342,7 +342,7 @@ test("planner days stack on mobile and use fixed horizontal columns on desktop",
   await expectNoDocumentOverflow(page);
 });
 
-test("tablet breakpoint uses two columns without navbar overflow", async ({
+test("@responsive tablet breakpoint uses two columns without navbar overflow", async ({
   page,
 }, testInfo) => {
   test.skip(
