@@ -21,8 +21,7 @@ export default function PerformanceStatusIcon({ status }) {
   return (
     <FontAwesomeIcon
       icon={icon}
-      className="mt-2 ml-0 text-white-500 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2"
-      style={{ top: "50%", transform: "translateY(-10%)" }}
+      className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white"
     />
   );
 }

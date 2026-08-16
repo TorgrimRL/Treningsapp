@@ -20,7 +20,7 @@ export default function CurrentWorkoutDayBar({
         type="button"
         aria-label="Open workout calendar"
         onClick={onClick}
-        className="shrink-0 p-1 text-xl text-white mr-1.5"
+        className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center text-xl text-white focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
       >
         <FaCalendarAlt aria-hidden="true" />
       </button>
