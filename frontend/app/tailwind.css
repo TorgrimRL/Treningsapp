@@ -1,6 +1,5 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@config "../tailwind.config.js";
+@import "tailwindcss";
 
 input[type="checkbox"] {
   accent-color: #38a169; /* Tailwind green-500 */
