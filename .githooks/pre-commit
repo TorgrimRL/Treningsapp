@@ -3,30 +3,9 @@ set -euo pipefail
 
 staged_files=$(git diff --cached --name-only --diff-filter=ACMR)
 
-run_backend_tests=false
-run_frontend_checks=false
-
-while IFS= read -r file; do
-  case "$file" in
-    backend/*)
-      run_backend_tests=true
-      ;;
-    frontend/*)
-      run_frontend_checks=true
-      ;;
-  esac
-done <<< "$staged_files"
-
-if [ "$run_backend_tests" = true ]; then
-  echo "Running backend tests before commit..."
-  (cd backend && npm test -- --runInBand)
-fi
-
-if [ "$run_frontend_checks" = true ]; then
-  echo "Running frontend build before commit..."
-  (cd frontend && npm run build)
-fi
-
-if [ "$run_backend_tests" = false ] && [ "$run_frontend_checks" = false ]; then
-  echo "No backend or frontend changes detected; skipping test run."
+if printf "%s\n" "$staged_files" | grep -q "^frontend/"; then
+  echo "Running frontend lint before commit..."
+  (cd frontend && npm run lint)
+else
+  echo "No staged frontend changes detected; skipping lint."
 fi
