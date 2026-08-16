@@ -214,6 +214,7 @@ export default function CurrentWorkoutPage() {
           getProgressionKey={getProgressionKey}
           getProgressionModeDraft={workoutModals.getProgressionModeDraft}
           getWeightIncrementDraft={workoutModals.getWeightIncrementDraft}
+          getMinimumWeightDraft={workoutModals.getMinimumWeightDraft}
           isCalendarModalOpen={workoutModals.isCalendarModalOpen}
           isChooseExerciseModalOpen={workoutModals.isChooseExerciseModalOpen}
           isDropsetModalOpen={workoutModals.isDropsetModalOpen}
@@ -245,6 +246,7 @@ export default function CurrentWorkoutPage() {
           onPersonalRecordClose={() => setPersonalRecordContext(null)}
           personalRecordContext={personalRecordContext}
           onWeightIncrementChange={actions.handleWeightIncrementChange}
+          onMinimumWeightChange={actions.handleMinimumWeightChange}
           onWeightIncrementClose={() =>
             workoutModals.setIsWeightIncrementModalOpen(false)
           }

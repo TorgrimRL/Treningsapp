@@ -16,6 +16,7 @@ export default function useCurrentWorkoutModals() {
   const [currentExercise, setCurrentExercise] = useState(null);
   const [progressionModeDrafts, setProgressionModeDrafts] = useState({});
   const [weightIncrementDrafts, setWeightIncrementDrafts] = useState({});
+  const [minimumWeightDrafts, setMinimumWeightDrafts] = useState({});
   const [applyProgressionModeToFutureWeeks, setApplyProgressionModeToFutureWeeks] =
     useState({});
   const [applyWeightIncrementToFutureWeeks, setApplyWeightIncrementToFutureWeeks] =
@@ -53,6 +54,11 @@ export default function useCurrentWorkoutModals() {
   const openWeightIncrementModal = useCallback(({ dayIndex, exerciseIndex }) => {
     const key = getProgressionKey(dayIndex, exerciseIndex);
     setCurrentExercise({ dayIndex, exerciseIndex });
+    setMinimumWeightDrafts((prev) => {
+      const updated = { ...prev };
+      delete updated[key];
+      return updated;
+    });
     setApplyWeightIncrementToFutureWeeks((prev) => ({
       ...prev,
       [key]: false,
@@ -82,6 +88,14 @@ export default function useCurrentWorkoutModals() {
     [weightIncrementDrafts]
   );
 
+  const getMinimumWeightDraft = useCallback(
+    (dayIndex, exerciseIndex, exercise) => {
+      const key = getProgressionKey(dayIndex, exerciseIndex);
+      return minimumWeightDrafts[key] ?? normalizeProgressionSettings(exercise).minimumWeight;
+    },
+    [minimumWeightDrafts]
+  );
+
   const handleProgressionModeDraftChange = useCallback(
     (dayIndex, exerciseIndex, exercise, value) => {
       const key = getProgressionKey(dayIndex, exerciseIndex);
@@ -108,6 +122,18 @@ export default function useCurrentWorkoutModals() {
     []
   );
 
+  const handleMinimumWeightDraftChange = useCallback(
+    (dayIndex, exerciseIndex, exercise, value) => {
+      const key = getProgressionKey(dayIndex, exerciseIndex);
+      const currentSettings = normalizeProgressionSettings(exercise);
+      setMinimumWeightDrafts((prev) => ({
+        ...prev,
+        [key]: Number.isFinite(Number(value)) ? Number(value) : currentSettings.minimumWeight,
+      }));
+    },
+    []
+  );
+
   const resetProgressionModeDraft = useCallback((dayIndex, exerciseIndex) => {
     const key = getProgressionKey(dayIndex, exerciseIndex);
     setProgressionModeDrafts((prev) => {
@@ -124,6 +150,11 @@ export default function useCurrentWorkoutModals() {
   const resetWeightIncrementDraft = useCallback((dayIndex, exerciseIndex) => {
     const key = getProgressionKey(dayIndex, exerciseIndex);
     setWeightIncrementDrafts((prev) => {
+      const updated = { ...prev };
+      delete updated[key];
+      return updated;
+    });
+    setMinimumWeightDrafts((prev) => {
       const updated = { ...prev };
       delete updated[key];
       return updated;
@@ -164,8 +195,10 @@ export default function useCurrentWorkoutModals() {
     openWeightIncrementModal,
     getProgressionModeDraft,
     getWeightIncrementDraft,
+    getMinimumWeightDraft,
     handleProgressionModeDraftChange,
     handleWeightIncrementDraftChange,
+    handleMinimumWeightDraftChange,
     resetProgressionModeDraft,
     resetWeightIncrementDraft,
   };

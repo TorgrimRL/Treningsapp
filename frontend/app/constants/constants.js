@@ -28,7 +28,39 @@ export const progressionModes = [
   { value: "weight", label: "Add weight per week" },
 ];
 
-export const weightIncrementOptions = [1, 2, 2.5, 5, 10];
+export const WEIGHT_DECIMAL_STEP = 0.25;
+export const MIN_WEIGHT_INCREMENT = 1;
+export const MAX_WEIGHT_INCREMENT = 10;
+export const MAX_SELECTABLE_WEIGHT = 400;
+
+export const weightIncrementOptions = Array.from(
+  {
+    length:
+      (MAX_WEIGHT_INCREMENT - MIN_WEIGHT_INCREMENT) / WEIGHT_DECIMAL_STEP +
+      1,
+  },
+  (_, index) =>
+    Number((MIN_WEIGHT_INCREMENT + index * WEIGHT_DECIMAL_STEP).toFixed(2))
+);
+
+export const minimumWeightOptions = Array.from(
+  { length: MAX_SELECTABLE_WEIGHT / WEIGHT_DECIMAL_STEP + 1 },
+  (_, index) => Number((index * WEIGHT_DECIMAL_STEP).toFixed(2))
+);
+
+export function isQuarterKilogram(value) {
+  const parsedValue = Number(value);
+  const centigrams = Math.round(parsedValue * 100);
+  return Number.isFinite(parsedValue) && centigrams % 25 === 0;
+}
+
+export function getDefaultMinimumWeight(type, weightIncrement) {
+  return type === "bodyweight" ? 0 : weightIncrement;
+}
+
+export function formatWeightSetting(value) {
+  return Number(value).toFixed(2);
+}
 
 export function getDefaultWeightIncrement(type) {
   return type === "dumbbell" ? 2 : 2.5;
@@ -45,9 +77,23 @@ export function normalizeProgressionSettings(exercise = {}) {
     ? parsedIncrement
     : getDefaultWeightIncrement(exercise.type);
 
+  const parsedMinimumWeight = Number(exercise.minimumWeight);
+  const defaultMinimumWeight = getDefaultMinimumWeight(
+    exercise.type,
+    weightIncrement
+  );
+  const minimumWeight =
+    Number.isFinite(parsedMinimumWeight) &&
+    parsedMinimumWeight >= 0 &&
+    parsedMinimumWeight <= MAX_SELECTABLE_WEIGHT &&
+    isQuarterKilogram(parsedMinimumWeight)
+      ? Number(parsedMinimumWeight.toFixed(2))
+      : defaultMinimumWeight;
+
   return {
     progressionMode,
     weightIncrement,
+    minimumWeight,
   };
 }
 

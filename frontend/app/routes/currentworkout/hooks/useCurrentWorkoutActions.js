@@ -410,6 +410,7 @@ export default function useCurrentWorkoutActions({
               startWeight: dropsetStartWeight,
               setCount,
               increment: progressionSettings.weightIncrement,
+              minimumWeight: progressionSettings.minimumWeight,
               dropPercent: DROPSET_DROP_PERCENT,
               targetRepsBySet,
             });
@@ -482,7 +483,12 @@ export default function useCurrentWorkoutActions({
     }
 
     const daysPerWeek = currentMesocycle.daysPerWeek;
-    const normalizedValue = field === "weightIncrement" ? Number(value) : value;
+    const normalizedValue =
+      field === "weightIncrement" || field === "minimumWeight"
+        ? Number(value)
+        : value;
+    const settingUpdates =
+      field === "weightSettings" ? value : { [field]: normalizedValue };
     const updatedMesocycle = {
       ...currentMesocycle,
       plan: currentMesocycle.plan.map((day, dIndex) => {
@@ -500,7 +506,7 @@ export default function useCurrentWorkoutActions({
             eIndex === exerciseIndex
               ? {
                   ...exercise,
-                  [field]: normalizedValue,
+                  ...settingUpdates,
                 }
               : exercise
           ),
@@ -526,7 +532,7 @@ export default function useCurrentWorkoutActions({
 
     if (field === "progressionMode") {
       workoutModals.resetProgressionModeDraft(dayIndex, exerciseIndex);
-    } else if (field === "weightIncrement") {
+    } else if (field === "weightIncrement" || field === "weightSettings") {
       workoutModals.resetWeightIncrementDraft(dayIndex, exerciseIndex);
     }
 
@@ -796,6 +802,19 @@ export default function useCurrentWorkoutActions({
     );
   };
 
+  const handleMinimumWeightChange = (value) => {
+    if (!workoutModals.currentExercise || !selectedExercise) {
+      return;
+    }
+
+    workoutModals.handleMinimumWeightDraftChange(
+      workoutModals.currentExercise.dayIndex,
+      workoutModals.currentExercise.exerciseIndex,
+      selectedExercise,
+      value
+    );
+  };
+
   const handleApplyProgressionModeToFutureWeeksChange = (checked) => {
     if (!workoutModals.currentExercise) {
       return;
@@ -851,12 +870,19 @@ export default function useCurrentWorkoutActions({
     const { dayIndex, exerciseIndex } = workoutModals.currentExercise;
     const key = getProgressionKey(dayIndex, exerciseIndex);
     saveProgressionSetting({
-      field: "weightIncrement",
-      value: workoutModals.getWeightIncrementDraft(
-        dayIndex,
-        exerciseIndex,
-        selectedExercise
-      ),
+      field: "weightSettings",
+      value: {
+        weightIncrement: workoutModals.getWeightIncrementDraft(
+          dayIndex,
+          exerciseIndex,
+          selectedExercise
+        ),
+        minimumWeight: workoutModals.getMinimumWeightDraft(
+          dayIndex,
+          exerciseIndex,
+          selectedExercise
+        ),
+      },
       applyToFutureWeeks: !!workoutModals.applyWeightIncrementToFutureWeeks[key],
       onClose: () => workoutModals.setIsWeightIncrementModalOpen(false),
     });
@@ -868,6 +894,7 @@ export default function useCurrentWorkoutActions({
     handleApplyWeightIncrementToFutureWeeksChange,
     handleDayClick,
     handleNoteChange,
+    handleMinimumWeightChange,
     handleProgressionModeChange,
     handleProgressionModeSave,
     handleRepsChange,

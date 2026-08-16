@@ -5,8 +5,10 @@ import {
   days,
   progressionModes,
   weightIncrementOptions,
+  minimumWeightOptions,
   getDefaultWeightIncrement,
   normalizeProgressionSettings,
+  formatWeightSetting,
 } from "../constants/constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
@@ -195,7 +197,9 @@ const MesocycleForm = ({ onCancel, onSubmit }) => {
               }
 
               const nextValue =
-                field === "weightIncrement" ? Number(value) : value;
+                (field === "weightIncrement" || field === "minimumWeight")
+                  ? Number(value)
+                  : value;
               const nextMuscleGroup =
                 field === "muscleGroup"
                   ? nextValue
@@ -448,6 +452,7 @@ const MesocycleForm = ({ onCancel, onSubmit }) => {
                     const exerciseId = `exercise-${dayIndex}-${exerciseIndex}`;
                     const progressionModeId = `progression-mode-${dayIndex}-${exerciseIndex}`;
                     const weightIncrementId = `weight-increment-${dayIndex}-${exerciseIndex}`;
+                    const minimumWeightId = `minimum-weight-${dayIndex}-${exerciseIndex}`;
 
                     return (
                       <div
@@ -549,7 +554,7 @@ const MesocycleForm = ({ onCancel, onSubmit }) => {
                           </select>
                         </div>
 
-                        <div className="mb-2 grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2">
+                        <div className="mb-2 grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-3">
                           <div className="flex min-w-0 flex-col">
                             <label htmlFor={progressionModeId}>
                               Progression mode:
@@ -596,7 +601,33 @@ const MesocycleForm = ({ onCancel, onSubmit }) => {
                             >
                               {weightIncrementOptions.map((increment) => (
                                 <option key={increment} value={increment}>
-                                  {increment} kg
+                                  {formatWeightSetting(increment)} kg
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div className="flex min-w-0 flex-col">
+                            <label htmlFor={minimumWeightId}>
+                              Lowest available weight:
+                            </label>
+                            <select
+                              data-testid={`minimum-weight-${dayIndex}-${exerciseIndex}`}
+                              id={minimumWeightId}
+                              value={progressionSettings.minimumWeight}
+                              onChange={(event) =>
+                                handleChange(
+                                  dayIndex,
+                                  exerciseIndex,
+                                  "minimumWeight",
+                                  event.target.value
+                                )
+                              }
+                              className="w-full min-w-0 rounded border border-gray-400 bg-darkestGray p-1 text-center"
+                            >
+                              {minimumWeightOptions.map((weight) => (
+                                <option key={weight} value={weight}>
+                                  {formatWeightSetting(weight)} kg
                                 </option>
                               ))}
                             </select>

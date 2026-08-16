@@ -1,8 +1,17 @@
 export const progressionModes = ["percent", "reps", "weight"];
-export const weightIncrements = [1, 2, 2.5, 5, 10];
+export const weightIncrements = Array.from({ length: 37 }, (_, index) => Number((1 + index * 0.25).toFixed(2)));
 
 export function getDefaultWeightIncrement(type) {
   return type === "dumbbell" ? 2 : 2.5;
+}
+
+export function getDefaultMinimumWeight(type, weightIncrement) {
+  return type === "bodyweight" ? 0 : weightIncrement;
+}
+
+function isQuarterKilogram(value) {
+  const parsedValue = Number(value);
+  return Number.isFinite(parsedValue) && Math.round(parsedValue * 100) % 25 === 0;
 }
 
 export function normalizeProgressionSettings(exercise = {}) {
@@ -14,14 +23,28 @@ export function normalizeProgressionSettings(exercise = {}) {
     ? parsedIncrement
     : getDefaultWeightIncrement(exercise.type);
 
+  const parsedMinimumWeight = Number(exercise.minimumWeight);
+  const defaultMinimumWeight = getDefaultMinimumWeight(exercise.type, weightIncrement);
+  const minimumWeight =
+    Number.isFinite(parsedMinimumWeight) &&
+    parsedMinimumWeight >= 0 &&
+    parsedMinimumWeight <= 400 &&
+    isQuarterKilogram(parsedMinimumWeight)
+      ? Number(parsedMinimumWeight.toFixed(2))
+      : defaultMinimumWeight;
+
   return {
     progressionMode,
     weightIncrement,
+    minimumWeight,
   };
 }
 
-function roundToIncrement(value, increment) {
-  return Number((Math.round(value / increment) * increment).toFixed(2));
+export function roundToWeightGrid(value, minimumWeight, increment) {
+  const valueCenti = Math.round(Number(value) * 100);
+  const minimumCenti = Math.round(Number(minimumWeight) * 100);
+  const incrementCenti = Math.round(Number(increment) * 100);
+  return Number(((minimumCenti + Math.round((valueCenti - minimumCenti) / incrementCenti) * incrementCenti) / 100).toFixed(2));
 }
 
 export default function calculateNewTarget(
@@ -34,7 +57,7 @@ export default function calculateNewTarget(
 ) {
   const baseWeightInput = parseFloat(weight);
   const baseRepsInput = parseInt(reps, 10);
-  const { progressionMode, weightIncrement } = normalizeProgressionSettings({
+  const { progressionMode, weightIncrement, minimumWeight } = normalizeProgressionSettings({
     ...progressionSettings,
     type,
   });
@@ -48,13 +71,13 @@ export default function calculateNewTarget(
 
   if (progressionMode === "weight") {
     return {
-      weight: roundToIncrement(baseWeightInput + weightIncrement, weightIncrement),
+      weight: roundToWeightGrid(baseWeightInput + weightIncrement, minimumWeight, weightIncrement),
       reps: baseRepsInput,
     };
   }
 
   const baseWeight = baseWeightInput / previousFactor;
-  const roundedWeight = roundToIncrement(baseWeight * currentFactor, weightIncrement);
+  const roundedWeight = roundToWeightGrid(baseWeight * currentFactor, minimumWeight, weightIncrement);
   const tolerance = 0.001;
   const incrementedReps = baseRepsInput + 1;
 

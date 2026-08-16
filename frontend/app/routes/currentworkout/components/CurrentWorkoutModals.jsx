@@ -19,6 +19,7 @@ export default function CurrentWorkoutModals({
   getProgressionKey,
   getProgressionModeDraft,
   getWeightIncrementDraft,
+  getMinimumWeightDraft,
   isCalendarModalOpen,
   isChooseExerciseModalOpen,
   isDropsetModalOpen,
@@ -42,6 +43,7 @@ export default function CurrentWorkoutModals({
   onPersonalRecordClose,
   personalRecordContext,
   onWeightIncrementChange,
+  onMinimumWeightChange,
   onWeightIncrementClose,
   onWeightIncrementSave,
   selectedExercise,
@@ -105,10 +107,20 @@ export default function CurrentWorkoutModals({
               )
             : null
         }
+        minimumWeight={
+          currentExercise && selectedExercise
+            ? getMinimumWeightDraft(
+                currentExercise.dayIndex,
+                currentExercise.exerciseIndex,
+                selectedExercise
+              )
+            : null
+        }
         applyToFutureWeeks={
           progressionKey ? !!applyWeightIncrementToFutureWeeks[progressionKey] : false
         }
         onWeightIncrementChange={onWeightIncrementChange}
+        onMinimumWeightChange={onMinimumWeightChange}
         onApplyToFutureWeeksChange={onApplyWeightIncrementToFutureWeeksChange}
         onSave={onWeightIncrementSave}
       />

@@ -57,12 +57,31 @@ describe("backend utility regression", () => {
       })
     ).toEqual({
       progressionMode: "percent",
-      weightIncrement: 2.5,
+      weightIncrement: 3,
+      minimumWeight: 3,
     });
     expect(normalizeProgressionSettings({ type: "dumbbell" })).toEqual({
       progressionMode: "percent",
       weightIncrement: 2,
+      minimumWeight: 2,
     });
+  });
+
+  it("uses a quarter-kilo grid anchored at the configured minimum weight", () => {
+    expect(
+      calculateNewTarget(13, 8, "machine", 1, 1, {
+        progressionMode: "weight",
+        weightIncrement: 4.25,
+        minimumWeight: 13,
+      })
+    ).toEqual({ weight: 17.25, reps: 8 });
+    expect(
+      calculateNewTarget(13, 8, "machine", 1, 1.05, {
+        progressionMode: "percent",
+        weightIncrement: 4.25,
+        minimumWeight: 13,
+      })
+    ).toEqual({ weight: 13, reps: 9 });
   });
 
   it("creates deload weeks from the first week and keeps current completion state", () => {

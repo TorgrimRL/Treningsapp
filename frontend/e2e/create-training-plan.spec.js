@@ -19,7 +19,8 @@ test("logged-in user can create a training plan", async ({ page }) => {
     .getByTestId("exercise-0-0")
     .selectOption("Medium Grip Bench Press");
   await page.getByTestId("progression-mode-0-0").selectOption("percent");
-  await page.getByTestId("weight-increment-0-0").selectOption("2.5");
+  await page.getByTestId("weight-increment-0-0").selectOption("4.25");
+  await page.getByTestId("minimum-weight-0-0").selectOption("13");
 
   await Promise.all([
     page.waitForResponse(

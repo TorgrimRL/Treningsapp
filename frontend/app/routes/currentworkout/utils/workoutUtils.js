@@ -116,8 +116,12 @@ export const getDropsetStartWeight = (exerciseSets = [], fallbackStartWeight) =>
   );
 };
 
-export const roundToIncrement = (value, increment) =>
-  Number((Math.round(value / increment) * increment).toFixed(2));
+export const roundToIncrement = (value, increment, minimumWeight = 0) => {
+  const valueCenti = Math.round(Number(value) * 100);
+  const minimumCenti = Math.round(Number(minimumWeight) * 100);
+  const incrementCenti = Math.round(Number(increment) * 100);
+  return Number(((minimumCenti + Math.round((valueCenti - minimumCenti) / incrementCenti) * incrementCenti) / 100).toFixed(2));
+};
 
 export const getSetProgressionReps = (set = {}) => {
   const reps =
@@ -147,7 +151,8 @@ export const calculateProgressedTarget = ({
     return {
       weight: roundToIncrement(
         weight + progressionSettings.weightIncrement,
-        progressionSettings.weightIncrement
+        progressionSettings.weightIncrement,
+        progressionSettings.minimumWeight
       ),
       reps,
     };
@@ -158,7 +163,8 @@ export const calculateProgressedTarget = ({
   const baseWeight = weight / previousFactor;
   const roundedWeight = roundToIncrement(
     baseWeight * currentFactor,
-    progressionSettings.weightIncrement
+    progressionSettings.weightIncrement,
+    progressionSettings.minimumWeight
   );
 
   if (Math.abs(roundedWeight - weight) > 0.001) {
@@ -174,11 +180,13 @@ export const updateDropsetSetsFromStartWeight = ({
   startWeight,
 }) => {
   const setCount = exerciseSets.length || exercise.dropset?.setCount || 1;
-  const increment = normalizeProgressionSettings(exercise).weightIncrement;
+  const { weightIncrement: increment, minimumWeight } =
+    normalizeProgressionSettings(exercise);
   const { weights, error } = generateDropsetWeights({
     startWeight,
     setCount,
     increment,
+    minimumWeight,
     dropPercent: exercise.dropset?.dropPercent ?? DROPSET_DROP_PERCENT,
   });
 
@@ -204,31 +212,24 @@ export const updateDropsetSetsFromStartWeight = ({
 };
 
 export const getWeightOptions = (exercise, selectedWeight) => {
-  const increment = normalizeProgressionSettings(exercise).weightIncrement;
+  const { weightIncrement: increment, minimumWeight } =
+    normalizeProgressionSettings(exercise);
   const maxWeight = exercise.type === "dumbbell" ? 100 : 400;
   const weights = [];
 
-  for (let weight = increment; weight <= maxWeight; weight += increment) {
+  for (let weight = minimumWeight; weight <= maxWeight; weight += increment) {
     weights.push(Number(weight.toFixed(2)));
   }
 
-  if (isBlankValue(selectedWeight)) {
-    return weights;
-  }
-
   const parsedSelectedWeight = Number(selectedWeight);
-  if (Number.isFinite(parsedSelectedWeight) && parsedSelectedWeight >= 0) {
-    const snappedSelectedWeight =
-      parsedSelectedWeight === 0
-        ? 0
-        : Number(
-            (Math.ceil(parsedSelectedWeight / increment) * increment).toFixed(2)
-          );
-
-    if (!weights.includes(snappedSelectedWeight)) {
-      weights.push(snappedSelectedWeight);
-      weights.sort((a, b) => a - b);
-    }
+  if (
+    !isBlankValue(selectedWeight) &&
+    Number.isFinite(parsedSelectedWeight) &&
+    parsedSelectedWeight >= 0 &&
+    !weights.includes(parsedSelectedWeight)
+  ) {
+    weights.push(Number(parsedSelectedWeight.toFixed(2)));
+    weights.sort((first, second) => first - second);
   }
 
   return weights;
