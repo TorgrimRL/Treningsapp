@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import MesocycleForm from "../components/MesocycleForm";
 import { getCookie } from "../utils/cookies";
-import { useNavigate } from "@remix-run/react";
+import { useNavigate } from "react-router";
 import ProtectedRoute from "../components/ProtectedRoute";
 import PageContainer from "../components/PageContainer";
 import { useApiFetch } from "../utils/apiFetch";

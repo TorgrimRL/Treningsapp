@@ -12,7 +12,7 @@ import {
 } from "../constants/constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrash } from "@fortawesome/free-solid-svg-icons";
-import { useLocation } from "@remix-run/react";
+import { useLocation } from "react-router";
 import AddExerciseModal from "./AddExerciseModal";
 import MesocycleDetailsModal from "./MesocycleDetailsModal";
 import { useApiFetch } from "../utils/apiFetch";

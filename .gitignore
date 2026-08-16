@@ -148,3 +148,4 @@ database.sqlite
 backend/database.e2e.sqlite
 frontend/playwright-report/
 frontend/test-results/frontend/dev/
+frontend/.react-router/
