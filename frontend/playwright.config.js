@@ -2,6 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./e2e",
+  testIgnore: ["**/*.test.js", "**/*.test.jsx"],
   fullyParallel: false,
   workers: 1,
   timeout: 45_000,
@@ -37,6 +38,8 @@ export default defineConfig({
   projects: [
     {
       name: "mobile-chrome",
+      testMatch: /responsive-layout\.spec\.js/,
+      grep: /@responsive/,
       use: { ...devices["Pixel 5"] },
     },
     {
@@ -45,6 +48,7 @@ export default defineConfig({
         ...devices["Desktop Chrome"],
         viewport: { width: 1440, height: 900 },
       },
+      grep: /@e2e|@responsive/,
     },
   ],
 });
