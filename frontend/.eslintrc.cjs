@@ -28,11 +28,10 @@ module.exports = {
     // React
     {
       files: ["**/*.{js,jsx,ts,tsx}"],
-      plugins: ["react", "jsx-a11y"],
+      plugins: ["react", "react-hooks", "jsx-a11y"],
       extends: [
         "plugin:react/recommended",
         "plugin:react/jsx-runtime",
-        "plugin:react-hooks/recommended",
         "plugin:jsx-a11y/recommended",
       ],
       settings: {
@@ -47,6 +46,8 @@ module.exports = {
       },
       rules: {
         "react/prop-types": "off",
+        "react-hooks/rules-of-hooks": "error",
+        "react-hooks/exhaustive-deps": "warn",
       },
     },
 
