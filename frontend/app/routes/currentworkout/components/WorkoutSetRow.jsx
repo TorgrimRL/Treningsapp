@@ -50,9 +50,9 @@ export default function WorkoutSetRow({
   return (
     <div
       data-testid={"workout-set-" + exerciseIndex + "-" + setIndex}
-      className="mb-4 grid grid-cols-[2.75rem_minmax(0,1fr)_minmax(0,1fr)_2.75rem_2.75rem_2.75rem] items-end gap-x-2 border-b border-gray-600 pb-2"
+      className="mb-4 grid grid-cols-[2.75rem_minmax(0,1fr)_minmax(0,1fr)_2.75rem_2.75rem_2.75rem] items-start gap-x-2 border-b border-gray-600 pb-2"
     >
-      <div className="relative">
+      <div className="relative mt-7">
         <button
           type="button"
           onClick={() => onToggleSetMenu(setMenuId)}
@@ -82,15 +82,15 @@ export default function WorkoutSetRow({
           />
         )}
       </div>
-      <div className="flex min-w-0 flex-col items-center space-y-1">
-        <div className="text-center h-6 flex items-center justify-center">
+      <div className="grid min-w-0 grid-rows-[1.5rem_2.75rem] items-start gap-y-1 text-center">
+        <div className="flex h-6 items-center justify-center leading-none">
           WEIGHT
         </div>
         <select
           data-testid="set-weight-select"
           value={getSetLogWeight(set)}
           onChange={(event) => onWeightChange(setIndex, event.target.value)}
-          className="min-h-11 min-w-0 w-full rounded border-black bg-inputBGGray p-1 text-center"
+          className="h-11 min-h-11 min-w-0 w-full rounded border-black bg-inputBGGray px-1 py-0 text-center leading-none [font-variant-numeric:tabular-nums]"
         >
           <option value="">Choose weight</option>
           {getWeightOptions(exercise, getSetLogWeight(set)).map((weight) => (
@@ -100,15 +100,15 @@ export default function WorkoutSetRow({
           ))}
         </select>
       </div>
-      <div className="relative flex min-w-0 flex-col items-center space-y-1">
-        <div className="text-center h-6 flex items-center justify-center">
+      <div className="relative grid min-w-0 grid-rows-[1.5rem_2.75rem] items-start gap-y-1 text-center">
+        <div className="flex h-6 items-center justify-center leading-none">
           REPS
         </div>
         <select
           data-testid="set-reps-select"
           value={getSetRepsSelectValue(set)}
           onChange={(event) => onRepsChange(setIndex, event.target.value)}
-          className="min-h-11 min-w-0 w-full rounded border-black bg-inputBGGray p-1 text-center"
+          className="h-11 min-h-11 min-w-0 w-full rounded border-black bg-inputBGGray px-1 py-0 text-center leading-none [font-variant-numeric:tabular-nums]"
         >
           <option value="">Choose reps</option>
           {week <= 2 && (
@@ -133,10 +133,10 @@ export default function WorkoutSetRow({
           ))}
         </select>
       </div>
-      <div className="relative h-11 min-w-11">
+      <div className="relative mt-7 h-11 min-w-11">
         <PerformanceStatusIcon status={status} />
       </div>
-      <div className="relative h-11 min-w-11">
+      <div className="relative mt-7 h-11 min-w-11">
         {personalRecord && (
           <PersonalRecordIcon
             className="absolute left-1/2 top-1/2 z-0 -translate-x-1/2 -translate-y-1/2"
@@ -147,11 +147,11 @@ export default function WorkoutSetRow({
           />
         )}
       </div>
-      <div className="flex min-w-0 flex-col items-center space-y-1">
-        <div className="flex h-6 items-center justify-center text-center">
+      <div className="grid min-w-0 grid-rows-[1.5rem_2.75rem] items-start gap-y-1 text-center">
+        <div className="flex h-6 items-center justify-center leading-none">
           LOG
         </div>
-        <label className="flex min-h-11 min-w-11 -translate-x-1 items-center justify-center">
+        <label className="flex h-11 min-h-11 min-w-11 items-center justify-center">
           <span className="sr-only">Log set</span>
           <input
             id={"set-log-" + exerciseIndex + "-" + setIndex}

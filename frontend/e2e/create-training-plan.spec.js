@@ -65,3 +65,42 @@ test("user can leave the planner while the details panel is open", async ({
   await page.getByTestId("training-block-details-cancel").click();
   await expect(page).toHaveURL(/\/templates$/);
 });
+
+test("redoing a mesocycle shows the chosen previous week values in week one", async ({
+  page,
+}) => {
+  await loginAsDemoUser(page);
+  await page.goto("/mesocycles");
+
+  const completedBlock = page
+    .locator("[data-testid^=history-card-]")
+    .filter({ hasText: "Completed Demo Block" });
+  await completedBlock.locator("button").first().click();
+  await page.getByRole("button", { name: "Redo Exercise Block" }).click();
+
+  const redoDialog = page.getByRole("dialog", {
+    name: "Redo Exerciseblock",
+  });
+  await redoDialog
+    .getByLabel(/Use a previous done week to get target reps and weights/i)
+    .check();
+  await redoDialog.getByLabel(/Select week to use as target/i).selectOption("0");
+  await redoDialog.getByRole("button", { name: "Save" }).click();
+
+  await page.getByTestId("training-block-name").fill("Redo values block");
+  await page.getByTestId("training-block-weeks").selectOption("4");
+  await Promise.all([
+    page.waitForResponse(
+      (response) =>
+        response.url().endsWith("/api/mesocycles") &&
+        response.request().method() === "POST" &&
+        response.status() === 201
+    ),
+    page.waitForURL("**/currentworkout"),
+    page.getByTestId("training-block-details-save").click(),
+  ]);
+
+  const firstSet = page.getByTestId("workout-set-0-0");
+  await expect(firstSet.getByTestId("set-weight-select")).toHaveValue("80");
+  await expect(firstSet.getByTestId("set-reps-select")).toHaveValue("6");
+});

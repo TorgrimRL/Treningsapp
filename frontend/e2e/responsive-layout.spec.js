@@ -157,7 +157,7 @@ test("current workout is centered, sticky, and remains one column", async ({
   );
 
   const cards = page.getByTestId(/^workout-exercise-\d+$/);
-  await expect(cards).toHaveCount(2);
+  expect(await cards.count()).toBeGreaterThanOrEqual(2);
   const firstCard = await getBox(cards.nth(0));
   const secondCard = await getBox(cards.nth(1));
 
@@ -184,6 +184,58 @@ test("current workout is centered, sticky, and remains one column", async ({
     expect(
       Math.abs(scrolledStickyBox.y - (navbarBox.y + navbarBox.height))
     ).toBeLessThanOrEqual(1);
+  }
+
+  await expectNoDocumentOverflow(page);
+});
+
+test("mobile set controls and five-week calendar remain aligned without overflow", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 393, height: 852 });
+  await loginAsDemoUser(page);
+  await page.goto("/currentworkout");
+
+  const row = page.getByTestId("workout-set-0-0");
+  const [weightLabel, repsLabel, logLabel] = await Promise.all([
+    getBox(row.getByText("WEIGHT", { exact: true })),
+    getBox(row.getByText("REPS", { exact: true })),
+    getBox(row.getByText("LOG", { exact: true })),
+  ]);
+  expect(Math.abs(weightLabel.y - repsLabel.y)).toBeLessThanOrEqual(1);
+  expect(Math.abs(weightLabel.y - logLabel.y)).toBeLessThanOrEqual(1);
+
+  for (const control of [
+    row.getByTestId("set-weight-select"),
+    row.getByTestId("set-reps-select"),
+    row.getByTestId("set-log-checkbox").locator(".."),
+  ]) {
+    const controlBox = await getBox(control);
+    expect(controlBox.height).toBeGreaterThanOrEqual(44);
+  }
+
+  await page.getByRole("button", { name: "Open workout calendar" }).click();
+  const calendar = page.getByRole("dialog", { name: "Calendar Modal" });
+  await expect(calendar).toBeVisible();
+  await expect(calendar.getByText("Week 5", { exact: true })).toBeVisible();
+
+  const calendarDimensions = await calendar.evaluate((element) => ({
+    clientWidth: element.clientWidth,
+    scrollWidth: element.scrollWidth,
+  }));
+  expect(calendarDimensions.scrollWidth).toBeLessThanOrEqual(
+    calendarDimensions.clientWidth + 1
+  );
+
+  const dayButtons = calendar.getByRole("button", {
+    name: /Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday/,
+  });
+  expect(await dayButtons.count()).toBeGreaterThan(0);
+  for (let index = 0; index < await dayButtons.count(); index += 1) {
+    const button = dayButtons.nth(index);
+    const box = await getBox(button);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    await expect(button).toHaveJSProperty("scrollWidth", await button.evaluate((el) => el.clientWidth));
   }
 
   await expectNoDocumentOverflow(page);

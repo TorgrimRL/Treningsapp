@@ -153,7 +153,7 @@ test("saved set stays visible from cache while return refetch is pending", async
   const holdReturnGet = new Promise((resolve) => {
     releaseReturnGet = resolve;
   });
-  await page.route("**/api/current-workout", async (route) => {
+  await page.route(/\/api\/current-workout(?:\?.*)?$/, async (route) => {
     if (!isCurrentWorkoutGet(route.request())) {
       await route.continue();
       return;
@@ -281,7 +281,7 @@ test("404 current workout shows the empty state without retrying", async ({
   const coldPage = await page.context().newPage();
   let currentWorkoutGetCount = 0;
 
-  await coldPage.route("**/api/current-workout", async (route) => {
+  await coldPage.route(/\/api\/current-workout(?:\?.*)?$/, async (route) => {
     if (isCurrentWorkoutGet(route.request())) {
       currentWorkoutGetCount += 1;
     }
@@ -297,7 +297,7 @@ test("404 current workout shows the empty state without retrying", async ({
 
   await coldPage.goto("/currentworkout");
   await expect(
-    coldPage.getByText("No current workout found", { exact: true })
+    coldPage.getByRole("heading", { name: "No active training block" })
   ).toBeVisible();
   await coldPage.waitForTimeout(500);
 
@@ -313,7 +313,7 @@ test("401 current workout shows retry UI without automatically retrying", async 
   const coldPage = await page.context().newPage();
   let currentWorkoutGetCount = 0;
 
-  await coldPage.route("**/api/current-workout", async (route) => {
+  await coldPage.route(/\/api\/current-workout(?:\?.*)?$/, async (route) => {
     if (isCurrentWorkoutGet(route.request())) {
       currentWorkoutGetCount += 1;
     }
@@ -347,7 +347,7 @@ test("500 current workout retries once before showing the error UI", async ({
   const coldPage = await page.context().newPage();
   let currentWorkoutGetCount = 0;
 
-  await coldPage.route("**/api/current-workout", async (route) => {
+  await coldPage.route(/\/api\/current-workout(?:\?.*)?$/, async (route) => {
     if (isCurrentWorkoutGet(route.request())) {
       currentWorkoutGetCount += 1;
     }
