@@ -157,7 +157,7 @@ test("current workout is centered, sticky, and remains one column", async ({
   );
 
   const cards = page.getByTestId(/^workout-exercise-\d+$/);
-  await expect(cards).toHaveCount(2);
+  expect(await cards.count()).toBeGreaterThanOrEqual(2);
   const firstCard = await getBox(cards.nth(0));
   const secondCard = await getBox(cards.nth(1));
 

@@ -740,20 +740,9 @@ test("PR badge does not move target or overlap LOG at 393 px", async ({
   const trophyBox = await trophyButton.boundingBox();
   const trophyGlyphBox = await trophyButton.locator("svg").boundingBox();
   const checkboxBox = await checkbox.boundingBox();
-  const logTextBox = await checkbox
-    .locator("xpath=preceding-sibling::div[1]")
-    .evaluate((element) => {
-      const range = document.createRange();
-      range.selectNodeContents(element);
-      const rectangle = range.getBoundingClientRect();
-
-      return {
-        x: rectangle.x,
-        y: rectangle.y,
-        width: rectangle.width,
-        height: rectangle.height,
-      };
-    });
+  const logTextBox = await row
+    .getByText("LOG", { exact: true })
+    .boundingBox();
 
   expect(targetAfter).not.toBeNull();
   expect(trophyBox).not.toBeNull();

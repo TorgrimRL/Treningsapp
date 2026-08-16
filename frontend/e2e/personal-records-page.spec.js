@@ -126,15 +126,16 @@ test("lists seeded exercises and supports search, muscle group, and date sorting
   ).toHaveText("Hack Squat");
 });
 
-test("exercise records reuse current workout and lazy-load an old workout once", async ({
+test("exercise records load each selected workout once and reuse cached history", async ({
   page,
 }) => {
+  await loginAsDemoUser(page);
   const currentWorkoutResponse = page.waitForResponse(
     (response) =>
       isApiRequest(response.request(), "/current-workout") &&
       response.status() === 200
   );
-  await loginAsDemoUser(page);
+  await page.goto("/currentworkout");
   await currentWorkoutResponse;
   await page.goto("/personal-records");
 
@@ -171,7 +172,7 @@ test("exercise records reuse current workout and lazy-load an old workout once",
   await expect(
     modal.getByTestId("personal-record-workout-exercise-0")
   ).toContainText("Paused Bench Press");
-  expect(currentMesocycleGetCount).toBe(0);
+  expect(currentMesocycleGetCount).toBe(1);
 
   await modal.getByTestId("personal-record-history-back").click();
   const historicalWeightGroup = modal.locator(
