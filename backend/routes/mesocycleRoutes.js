@@ -590,7 +590,7 @@ router.get(
     try {
       const userID = req.user.id;
       const { result: rows, hadRetry } = await safeQuery`
-        SELECT * FROM mesocycles WHERE user_id = ${userID} ORDER BY id ASC
+        SELECT * FROM mesocycles WHERE user_id = ${userID} ORDER BY id
       `;
       const row = rows?.find(
         (mesocycle) =>

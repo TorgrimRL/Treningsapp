@@ -18,7 +18,7 @@ async function readSeededRows(dbPath) {
     const exercises = await db.sql("SELECT * FROM exercises");
     // noinspection SqlNoDataSourceInspection
     const mesocycles = await db.sql(
-      "SELECT * FROM Mesocycles ORDER BY id ASC"
+      "SELECT * FROM Mesocycles ORDER BY id"
     );
     return { users, exercises, mesocycles };
   } finally {
