@@ -1,0 +1,52 @@
+layout {
+    default_tab_template {
+        pane size=1 borderless=true {
+            plugin location="zellij:tab-bar"
+        }
+
+        children
+
+        pane size=2 borderless=true {
+            plugin location="zellij:status-bar"
+        }
+    }
+
+    tab name="root" focus=true {
+        pane split_direction="vertical" {
+            pane size="65%" name="root" focus=true
+
+            pane size="35%" name="codex"
+        }
+    }
+
+    tab name="backend" cwd="backend" {
+        pane split_direction="horizontal" {
+            pane size="65%" name="backend-shell"
+
+            pane size="35%" name="seeded-backend" command="zsh" {
+                args "-lc" "npm run db:seed && npm run dev"
+            }
+        }
+    }
+
+    tab name="frontend" cwd="frontend" {
+        pane split_direction="horizontal" {
+            pane size="65%" name="frontend-shell"
+
+            pane size="35%" name="frontend-dev" command="zsh" {
+                args "-lc" "npm run dev"
+            }
+        }
+    }
+
+    tab name="scratch" {
+        pane split_direction="vertical" {
+            pane size="65%" name="scratch"
+
+            pane split_direction="horizontal" size="35%" {
+                pane name="scratch-2"
+                pane name="scratch-3"
+            }
+        }
+    }
+}

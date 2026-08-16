@@ -2,6 +2,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEllipsisV } from "@fortawesome/free-solid-svg-icons";
 import SetMenu from "./SetMenu";
 import PerformanceStatusIcon from "./PerformanceStatusIcon";
+import PersonalRecordIcon from "./PersonalRecordIcon";
 import {
   getPerformanceStatus,
   getSetLogWeight,
@@ -20,6 +21,7 @@ export default function WorkoutSetRow({
   onRemoveSet,
   onRepsChange,
   onSetCompletionChange,
+  onOpenPersonalRecords,
   onToggleSetMenu,
   onWeightChange,
   set,
@@ -29,6 +31,21 @@ export default function WorkoutSetRow({
 }) {
   const setMenuId = exerciseIndex + "-" + setIndex;
   const status = getPerformanceStatus(set, exercise, week);
+  const personalRecord = Object.values(
+    exercise.personalRecordsByWeight || {}
+  )
+    .map((record) => {
+      const recordForSet = record?.recordsBySetIndex?.[setIndex];
+
+      if (recordForSet?.isNewRecord) {
+        return recordForSet;
+      }
+
+      return record?.isNewRecord && record.recordSetIndex === setIndex
+        ? record
+        : null;
+    })
+    .find(Boolean);
 
   return (
     <div
@@ -118,6 +135,15 @@ export default function WorkoutSetRow({
       </div>
       <div className="flex items-center justify-center ml-2 relative">
         <PerformanceStatusIcon status={status} />
+        {personalRecord && (
+          <PersonalRecordIcon
+            className="absolute -top-5 left-0 z-10 sm:left-5 sm:top-[2px]"
+            title={
+              `Open personal record history for ${personalRecord.weight} kg`
+            }
+            onClick={() => onOpenPersonalRecords(personalRecord)}
+          />
+        )}
       </div>
       <div className="flex flex-col items-center space-y-1 flex-grow">
         <div className="text-center h-6 flex items-center justify-center">

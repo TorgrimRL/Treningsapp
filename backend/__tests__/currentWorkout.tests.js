@@ -242,6 +242,70 @@ function dropsetProgressionPlan() {
   return [firstWeek, secondWeek, deloadWeek];
 }
 
+function personalRecordPlan({
+  exercise = "Bench Press",
+  weight = 50,
+  reps = 8,
+  completed = true,
+  startedAt,
+} = {}) {
+  const day = {
+    label: "Push",
+    exercises: [
+      {
+        exercise,
+        type: "barbell",
+        sets: [
+          {
+            weight: String(weight),
+            reps: String(reps),
+            targetWeight: String(weight),
+            targetReps: String(reps),
+            completed,
+          },
+        ],
+      },
+    ],
+  };
+
+  if (startedAt !== undefined) {
+    day.startedAt = startedAt;
+  }
+
+  return [day];
+}
+
+async function insertMesocycleRow(
+  db,
+  {
+    userId,
+    name,
+    plan,
+    weeks = 1,
+    daysPerWeek = 1,
+    completedDate = null,
+    isCurrent = false,
+  }
+) {
+  const storedPlan = typeof plan === "string" ? plan : JSON.stringify(plan);
+
+  // noinspection SqlNoDataSourceInspection,SqlDialectInspection
+  return db.run(
+    `INSERT INTO mesocycles
+      (name, weeks, daysPerWeek, plan, user_id, completedDate, isCurrent)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [
+      name,
+      weeks,
+      daysPerWeek,
+      storedPlan,
+      userId,
+      completedDate,
+      isCurrent ? 1 : 0,
+    ]
+  );
+}
+
 describe("current workout regression", () => {
   let db;
   let app;
@@ -287,6 +351,181 @@ describe("current workout regression", () => {
     const response = await agent.get("/api/current-workout").expect(500);
 
     expect(response.body).toEqual({ error: "Invalid plan data" });
+  });
+
+  it("returns compact personal-record milestones with the active workout", async () => {
+    const { agent, userId } = await createAuthenticatedUser(app, db, {
+      username: "alice",
+    });
+    const historicalStartedAt = "2025-01-05T09:00:00.000Z";
+    const currentStartedAt = "2025-02-02T09:00:00.000Z";
+    const historical = await insertMesocycleRow(db, {
+      userId,
+      name: "Foundation",
+      plan: personalRecordPlan({
+        reps: 8,
+        startedAt: historicalStartedAt,
+      }),
+    });
+    const current = await insertMesocycleRow(db, {
+      userId,
+      name: "Build",
+      plan: personalRecordPlan({
+        reps: 10,
+        startedAt: currentStartedAt,
+      }),
+      isCurrent: true,
+    });
+
+    const response = await agent.get("/api/current-workout").expect(200);
+
+    expect(response.body.personalRecordHistory).toEqual([
+      {
+        exercise: "Bench Press",
+        exerciseKey: "bench press",
+        weight: 50,
+        weightKey: "50",
+        reps: 8,
+        mesocycleId: historical.lastID,
+        mesocycleName: "Foundation",
+        week: 1,
+        day: 1,
+        dayIndex: 0,
+        exerciseIndex: 0,
+        exercisePosition: 1,
+        setIndex: 0,
+        setPosition: 1,
+        workoutDate: historicalStartedAt,
+      },
+      {
+        exercise: "Bench Press",
+        exerciseKey: "bench press",
+        weight: 50,
+        weightKey: "50",
+        reps: 10,
+        mesocycleId: current.lastID,
+        mesocycleName: "Build",
+        week: 1,
+        day: 1,
+        dayIndex: 0,
+        exerciseIndex: 0,
+        exercisePosition: 1,
+        setIndex: 0,
+        setPosition: 1,
+        workoutDate: currentStartedAt,
+      },
+    ]);
+
+    const milestoneKeys = [
+      "day",
+      "dayIndex",
+      "exercise",
+      "exerciseIndex",
+      "exerciseKey",
+      "exercisePosition",
+      "mesocycleId",
+      "mesocycleName",
+      "reps",
+      "setIndex",
+      "setPosition",
+      "week",
+      "weight",
+      "weightKey",
+      "workoutDate",
+    ].sort();
+    for (const milestone of response.body.personalRecordHistory) {
+      expect(Object.keys(milestone).sort()).toEqual(milestoneKeys);
+      expect(milestone).not.toHaveProperty("plan");
+      expect(milestone).not.toHaveProperty("sets");
+    }
+  });
+
+  it("keeps personal-record history isolated to the authenticated user", async () => {
+    const alice = await createAuthenticatedUser(app, db, {
+      username: "alice",
+    });
+    const bob = await createAuthenticatedUser(app, db, {
+      username: "bob",
+    });
+    const aliceMesocycle = await insertMesocycleRow(db, {
+      userId: alice.userId,
+      name: "Alice plan",
+      plan: personalRecordPlan({
+        exercise: "Alice Bench",
+        reps: 8,
+        startedAt: "2025-03-01T09:00:00.000Z",
+      }),
+      isCurrent: true,
+    });
+    const bobMesocycle = await insertMesocycleRow(db, {
+      userId: bob.userId,
+      name: "Bob plan",
+      plan: personalRecordPlan({
+        exercise: "Bob Secret Curl",
+        reps: 99,
+        startedAt: "2025-03-01T10:00:00.000Z",
+      }),
+      isCurrent: true,
+    });
+
+    const response = await alice.agent.get("/api/current-workout").expect(200);
+
+    expect(response.body.personalRecordHistory).toHaveLength(1);
+    expect(response.body.personalRecordHistory[0]).toMatchObject({
+      exercise: "Alice Bench",
+      reps: 8,
+      mesocycleId: aliceMesocycle.lastID,
+      mesocycleName: "Alice plan",
+    });
+    expect(
+      response.body.personalRecordHistory.some(
+        (milestone) => milestone.mesocycleId === bobMesocycle.lastID
+      )
+    ).toBe(false);
+    expect(JSON.stringify(response.body)).not.toContain("Bob Secret Curl");
+  });
+
+  it("skips broken historical plans while retaining valid record history", async () => {
+    const { agent, userId } = await createAuthenticatedUser(app, db, {
+      username: "alice",
+    });
+    const validHistorical = await insertMesocycleRow(db, {
+      userId,
+      name: "Valid history",
+      plan: personalRecordPlan({
+        reps: 8,
+        startedAt: "2025-04-01T09:00:00.000Z",
+      }),
+    });
+    const brokenHistorical = await insertMesocycleRow(db, {
+      userId,
+      name: "Broken history",
+      plan: "not-json",
+    });
+    await insertMesocycleRow(db, {
+      userId,
+      name: "Active plan",
+      plan: personalRecordPlan({
+        reps: 10,
+        completed: false,
+      }),
+      isCurrent: true,
+    });
+
+    const response = await agent.get("/api/current-workout").expect(200);
+
+    expect(response.body.name).toBe("Active plan");
+    expect(response.body.personalRecordHistory).toHaveLength(1);
+    expect(response.body.personalRecordHistory[0]).toMatchObject({
+      reps: 8,
+      mesocycleId: validHistorical.lastID,
+      mesocycleName: "Valid history",
+    });
+    expect(
+      response.body.personalRecordHistory.some(
+        (milestone) => milestone.mesocycleId === brokenHistorical.lastID
+      )
+    ).toBe(false);
   });
 
   it("computes completion state, progression targets, and deload weeks", async () => {

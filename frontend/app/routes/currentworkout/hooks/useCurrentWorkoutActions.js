@@ -1,5 +1,9 @@
+import { useQueryClient } from "@tanstack/react-query";
+import { useRef } from "react";
 import { normalizeProgressionSettings } from "../../../constants/constants";
 import { DROPSET_DROP_PERCENT, buildDropsetSets } from "../../../utils/dropsets";
+import { enrichWorkoutWithPersonalRecords } from "../../../utils/personalRecords";
+import { personalRecordsQueryKey } from "../../../utils/personalRecordsQuery";
 import {
   buildMesocycleWithSets,
   calculateProgressedTarget,
@@ -12,6 +16,44 @@ import {
   getWeekAndDay,
   updateDropsetSetsFromStartWeight,
 } from "../utils/workoutUtils";
+
+function getFirstIncompleteDayIndex(plan) {
+  if (!Array.isArray(plan)) {
+    return -1;
+  }
+
+  return plan.findIndex(
+    (day) =>
+      !Array.isArray(day?.exercises) ||
+      !day.exercises.every(
+        (exercise) =>
+          Array.isArray(exercise?.sets) &&
+          exercise.sets.every((set) => set?.completed === true)
+      )
+  );
+}
+
+function buildMesocycleUpdatePayload(mesocycle) {
+  return {
+    name: mesocycle.name,
+    weeks: mesocycle.weeks,
+    daysPerWeek: mesocycle.daysPerWeek,
+    plan: Array.isArray(mesocycle.plan)
+      ? mesocycle.plan.map((day) => ({
+          ...day,
+          exercises: Array.isArray(day?.exercises)
+            ? day.exercises.map((exercise) => {
+                const persistedExercise = { ...exercise };
+                delete persistedExercise.personalRecordsByWeight;
+                return persistedExercise;
+              })
+            : day?.exercises,
+        }))
+      : mesocycle.plan,
+    isCurrent: mesocycle.isCurrent,
+    completedDate: mesocycle.completedDate,
+  };
+}
 
 export default function useCurrentWorkoutActions({
   apiFetch,
@@ -31,71 +73,122 @@ export default function useCurrentWorkoutActions({
   sets,
   workoutModals,
 }) {
-  const saveMesocycle = async (
+  const queryClient = useQueryClient();
+  const saveQueueRef = useRef(Promise.resolve());
+  const setsRef = useRef(sets);
+  setsRef.current = sets;
+
+  const replaceSetsState = (updatedSets) => {
+    setsRef.current = updatedSets;
+    setSets(updatedSets);
+    return updatedSets;
+  };
+
+  const updateSetsState = (updater) =>
+    replaceSetsState(updater(setsRef.current));
+
+  const saveMesocycle = (
     updatedMesocycle,
     failureMessage,
     revision
   ) => {
-    try {
-      const { ok, data } = await apiFetch(
-        baseUrl + "/mesocycles/" + updatedMesocycle.id,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify(updatedMesocycle),
-        }
-      );
+    const executeSave = async () => {
+      try {
+        const { ok, data } = await apiFetch(
+          baseUrl + "/mesocycles/" + updatedMesocycle.id,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify(
+              buildMesocycleUpdatePayload(updatedMesocycle)
+            ),
+          }
+        );
 
-      if (!ok) {
-        const errorText = data.message || "Unknown error";
-        console.error(failureMessage + ": " + errorText);
+        if (!ok) {
+          const errorText = data?.message || data?.error || "Unknown error";
+          console.error(failureMessage + ": " + errorText);
+          return false;
+        }
+
+        if (!data?.mesocycle) {
+          console.error(failureMessage + ": Missing saved mesocycle");
+          return false;
+        }
+
+        const savedMesocycle = data.mesocycle;
+        void queryClient.invalidateQueries({
+          queryKey: personalRecordsQueryKey,
+          exact: true,
+          refetchType: "none",
+        });
+        const savedWorkout = enrichWorkoutWithPersonalRecords({
+          ...updatedMesocycle,
+          ...savedMesocycle,
+          totalWeeks: savedMesocycle.weeks ?? updatedMesocycle.totalWeeks,
+          firstIncompleteDayIndex: getFirstIncompleteDayIndex(
+            savedMesocycle.plan
+          ),
+          personalRecordHistory: Array.isArray(data.personalRecordHistory)
+            ? data.personalRecordHistory
+            : updatedMesocycle.personalRecordHistory || [],
+        });
+        const committed = commitWorkoutData(savedWorkout, revision);
+        return committed ? savedWorkout : false;
+      } catch (error) {
+        console.error(failureMessage + ":", error);
         return false;
       }
-
-      commitWorkoutData(updatedMesocycle, revision);
-      return true;
-    } catch (error) {
-      console.error(failureMessage + ":", error);
-      return false;
-    }
+    };
+    const queuedSave = saveQueueRef.current.then(
+      executeSave,
+      executeSave
+    );
+    saveQueueRef.current = queuedSave.then(
+      () => undefined,
+      () => undefined
+    );
+    return queuedSave;
   };
 
-  const handleSetCompletionChange = (dayIndex, exerciseIndex, setIndex, value) => {
+  const handleSetCompletionChange = (
+    dayIndex,
+    exerciseIndex,
+    setIndex,
+    value
+  ) => {
     const revision = markWorkoutDirty();
-    setSets((prev) => {
-      const updatedSets = {
-        ...prev,
-        [dayIndex]: {
-          ...prev[dayIndex],
-          [exerciseIndex]: prev[dayIndex][exerciseIndex].map((set, sIndex) => {
-            if (sIndex === setIndex) {
-              return {
-                ...set,
-                completed: value,
-                weight: value ? getSetLogWeight(set) : set.targetWeight,
-                reps: value ? getSetLogReps(set) : set.targetReps,
-              };
-            }
+    const updatedSets = updateSetsState((previousSets) => ({
+      ...previousSets,
+      [dayIndex]: {
+        ...previousSets[dayIndex],
+        [exerciseIndex]: previousSets[dayIndex][exerciseIndex].map(
+          (set, currentSetIndex) =>
+            currentSetIndex === setIndex
+              ? {
+                  ...set,
+                  completed: value,
+                  weight: value
+                    ? getSetLogWeight(set)
+                    : set.targetWeight,
+                  reps: value ? getSetLogReps(set) : set.targetReps,
+                }
+              : set
+        ),
+      },
+    }));
+    const updatedMesocycle = buildMesocycleWithSets(
+      currentMesocycle,
+      updatedSets
+    );
 
-            return set;
-          }),
-        },
-      };
-      const updatedMesocycle = buildMesocycleWithSets(
-        currentMesocycle,
-        updatedSets
-      );
-
-      setCurrentMesocycle(updatedMesocycle);
-      saveMesocycle(
-        updatedMesocycle,
-        "Failed to update mesocycle",
-        revision
-      );
-
-      return updatedSets;
-    });
+    setCurrentMesocycle(updatedMesocycle);
+    void saveMesocycle(
+      updatedMesocycle,
+      "Failed to update mesocycle",
+      revision
+    );
   };
 
   const handleNoteChange = (newNote) => {
@@ -166,15 +259,11 @@ export default function useCurrentWorkoutActions({
       ),
     };
 
-    const saved = await saveMesocycle(
+    await saveMesocycle(
       updatedMesocycle,
       "Failed to update mesocycle",
       revision
     );
-
-    if (saved) {
-      setCurrentMesocycle(updatedMesocycle);
-    }
 
     workoutModals.setIsNoteModalOpen(false);
   };
@@ -356,7 +445,7 @@ export default function useCurrentWorkoutActions({
     }
 
     const revision = markWorkoutDirty();
-    setSets(updatedSets);
+    replaceSetsState(updatedSets);
     setCurrentMesocycle(updatedMesocycle);
 
     const saved = await saveMesocycle(
@@ -430,13 +519,10 @@ export default function useCurrentWorkoutActions({
       return;
     }
 
-    const refreshed = await refreshWorkoutData({
+    await refreshWorkoutData({
       dayIndex: currentDayIndex,
-      force: true,
+      force: false,
     });
-    if (!refreshed.ok) {
-      setCurrentMesocycle(updatedMesocycle);
-    }
 
     if (field === "progressionMode") {
       workoutModals.resetProgressionModeDraft(dayIndex, exerciseIndex);
@@ -450,7 +536,7 @@ export default function useCurrentWorkoutActions({
 
   const handleRepsChange = (dayIndex, exerciseIndex, setIndex, value) => {
     markWorkoutDirty();
-    setSets((prev) => ({
+    updateSetsState((prev) => ({
       ...prev,
       [dayIndex]: {
         ...prev[dayIndex],
@@ -466,7 +552,7 @@ export default function useCurrentWorkoutActions({
     const currentWeight = parseFloat(value);
 
     if (exercise.dropset?.enabled && setIndex === 0) {
-      setSets((prev) => {
+      updateSetsState((prev) => {
         const exerciseSets = prev[dayIndex][exerciseIndex];
         const { sets: dropsetSets, error } = updateDropsetSetsFromStartWeight({
           exerciseSets,
@@ -519,7 +605,7 @@ export default function useCurrentWorkoutActions({
       currentMesocycle.daysPerWeek
     );
 
-    setSets((prev) => ({
+    updateSetsState((prev) => ({
       ...prev,
       [dayIndex]: {
         ...prev[dayIndex],
@@ -559,117 +645,123 @@ export default function useCurrentWorkoutActions({
     }));
   };
 
-  const addSet = (dayIndex, exerciseIndex, shouldApplyToFutureWeeks) => {
+  const addSet = (
+    dayIndex,
+    exerciseIndex,
+    shouldApplyToFutureWeeks
+  ) => {
     const revision = markWorkoutDirty();
     const daysPerWeek = currentMesocycle.daysPerWeek;
-    let updatedSets = {};
-
-    setSets((prev) => {
-      updatedSets = { ...prev };
-
-      if (!updatedSets[dayIndex]) {
-        updatedSets[dayIndex] = {};
-      }
-
-      if (!updatedSets[dayIndex][exerciseIndex]) {
-        updatedSets[dayIndex][exerciseIndex] = [];
-      }
-
+    const updatedSets = updateSetsState((previousSets) => {
+      const nextSets = Object.fromEntries(
+        Object.entries(previousSets).map(
+          ([setsDayIndex, exercisesForDay]) => [
+            setsDayIndex,
+            { ...exercisesForDay },
+          ]
+        )
+      );
       const newSet = {
         completed: false,
         targetWeight: 0,
         targetReps: 0,
       };
 
-      updatedSets[dayIndex][exerciseIndex] = [
-        ...updatedSets[dayIndex][exerciseIndex],
-        newSet,
-      ];
+      nextSets[dayIndex] = {
+        ...(nextSets[dayIndex] || {}),
+        [exerciseIndex]: [
+          ...(nextSets[dayIndex]?.[exerciseIndex] || []),
+          newSet,
+        ],
+      };
 
       if (shouldApplyToFutureWeeks) {
-        const currentWeekDay = dayIndex % daysPerWeek;
         for (
           let index = dayIndex + daysPerWeek;
           index < currentMesocycle.plan.length;
           index += daysPerWeek
         ) {
-          if (index % daysPerWeek === currentWeekDay) {
-            if (!updatedSets[index]) {
-              updatedSets[index] = {};
-            }
-            if (!updatedSets[index][exerciseIndex]) {
-              updatedSets[index][exerciseIndex] = [];
-            }
-            updatedSets[index][exerciseIndex] = [
-              ...updatedSets[index][exerciseIndex],
+          nextSets[index] = {
+            ...(nextSets[index] || {}),
+            [exerciseIndex]: [
+              ...(nextSets[index]?.[exerciseIndex] || []),
               newSet,
-            ];
-          }
+            ],
+          };
         }
       }
 
-      return updatedSets;
+      return nextSets;
     });
+    const updatedMesocycle = buildMesocycleWithSets(
+      currentMesocycle,
+      updatedSets
+    );
 
-    setTimeout(() => {
-      const updatedMesocycle = buildMesocycleWithSets(
-        currentMesocycle,
-        updatedSets
-      );
-      saveMesocycle(
-        updatedMesocycle,
-        "Error response from server",
-        revision
-      );
-    }, 100);
+    setCurrentMesocycle(updatedMesocycle);
+    void saveMesocycle(
+      updatedMesocycle,
+      "Error response from server",
+      revision
+    );
     setApplyToFutureWeeks(false);
   };
 
-  const removeSet = (dayIndex, exerciseIndex, setIndex, shouldApplyToFutureWeeks) => {
+  const removeSet = (
+    dayIndex,
+    exerciseIndex,
+    setIndex,
+    shouldApplyToFutureWeeks
+  ) => {
     const revision = markWorkoutDirty();
     const daysPerWeek = currentMesocycle.daysPerWeek;
-    let updatedSets = {};
+    const updatedSets = updateSetsState((previousSets) => {
+      const nextSets = Object.fromEntries(
+        Object.entries(previousSets).map(
+          ([setsDayIndex, exercisesForDay]) => [
+            setsDayIndex,
+            { ...exercisesForDay },
+          ]
+        )
+      );
+      const removeAtIndex = (exerciseSets = []) =>
+        exerciseSets.filter(
+          (_, currentSetIndex) => currentSetIndex !== setIndex
+        );
 
-    setSets((prev) => {
-      updatedSets = { ...prev };
-
-      if (updatedSets[dayIndex] && updatedSets[dayIndex][exerciseIndex]) {
-        updatedSets[dayIndex][exerciseIndex] = updatedSets[dayIndex][
-          exerciseIndex
-        ].filter((_, index) => index !== setIndex);
+      if (nextSets[dayIndex]?.[exerciseIndex]) {
+        nextSets[dayIndex][exerciseIndex] = removeAtIndex(
+          nextSets[dayIndex][exerciseIndex]
+        );
       }
 
       if (shouldApplyToFutureWeeks) {
-        const currentWeekDay = dayIndex % daysPerWeek;
         for (
           let index = dayIndex + daysPerWeek;
           index < currentMesocycle.plan.length;
           index += daysPerWeek
         ) {
-          if (index % daysPerWeek === currentWeekDay) {
-            if (updatedSets[index] && updatedSets[index][exerciseIndex]) {
-              updatedSets[index][exerciseIndex] = updatedSets[index][
-                exerciseIndex
-              ].filter((_, currentIndex) => currentIndex !== setIndex);
-            }
+          if (nextSets[index]?.[exerciseIndex]) {
+            nextSets[index][exerciseIndex] = removeAtIndex(
+              nextSets[index][exerciseIndex]
+            );
           }
         }
       }
 
-      return updatedSets;
+      return nextSets;
     });
+    const updatedMesocycle = buildMesocycleWithSets(
+      currentMesocycle,
+      updatedSets
+    );
 
-    setTimeout(() => {
-      const updatedMesocycle = buildMesocycleWithSets(
-        currentMesocycle,
-        updatedSets
-      );
-      saveMesocycle(
-        updatedMesocycle,
-        "Error updating mesocycle after removing set",
-        revision
-      );
-    }, 100);
+    setCurrentMesocycle(updatedMesocycle);
+    void saveMesocycle(
+      updatedMesocycle,
+      "Error updating mesocycle after removing set",
+      revision
+    );
     setApplyToFutureWeeks(false);
   };
 
