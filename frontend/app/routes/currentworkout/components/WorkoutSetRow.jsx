@@ -90,7 +90,7 @@ export default function WorkoutSetRow({
           data-testid="set-weight-select"
           value={getSetLogWeight(set)}
           onChange={(event) => onWeightChange(setIndex, event.target.value)}
-          className="h-11 min-h-11 min-w-0 w-full rounded border-black bg-inputBGGray px-1 py-0 text-center leading-none [font-variant-numeric:tabular-nums]"
+          className="h-11 min-h-11 min-w-0 w-full rounded border-black bg-inputBGGray px-1 py-0 text-center leading-none [font-variant-numeric:tabular-nums] [text-align-last:center]"
         >
           <option value="">Choose weight</option>
           {getWeightOptions(exercise, getSetLogWeight(set)).map((weight) => (
@@ -108,7 +108,7 @@ export default function WorkoutSetRow({
           data-testid="set-reps-select"
           value={getSetRepsSelectValue(set)}
           onChange={(event) => onRepsChange(setIndex, event.target.value)}
-          className="h-11 min-h-11 min-w-0 w-full rounded border-black bg-inputBGGray px-1 py-0 text-center leading-none [font-variant-numeric:tabular-nums]"
+          className="h-11 min-h-11 min-w-0 w-full rounded border-black bg-inputBGGray px-1 py-0 text-center leading-none [font-variant-numeric:tabular-nums] [text-align-last:center]"
         >
           <option value="">Choose reps</option>
           {week <= 2 && (

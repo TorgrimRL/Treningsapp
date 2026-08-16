@@ -215,10 +215,13 @@ export const getWeightOptions = (exercise, selectedWeight) => {
   const { weightIncrement: increment, minimumWeight } =
     normalizeProgressionSettings(exercise);
   const maxWeight = exercise.type === "dumbbell" ? 100 : 400;
-  const weights = [];
+  const weights = [0];
 
   for (let weight = minimumWeight; weight <= maxWeight; weight += increment) {
-    weights.push(Number(weight.toFixed(2)));
+    const normalizedWeight = Number(weight.toFixed(2));
+    if (!weights.includes(normalizedWeight)) {
+      weights.push(normalizedWeight);
+    }
   }
 
   const parsedSelectedWeight = Number(selectedWeight);

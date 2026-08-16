@@ -5,7 +5,7 @@ test.beforeEach(async () => {
   await resetE2eDatabase();
 });
 
-test("logged-in user can create a training plan", async ({ page }) => {
+test("@e2e logged-in user can create a training plan", async ({ page }) => {
   await loginAsDemoUser(page);
   await page.goto("/mesocycles-new");
 

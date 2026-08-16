@@ -282,7 +282,7 @@ test("stored current-workout PR opens from compact history without a historical 
   await expect(unsavedReps).toHaveValue("12");
 });
 
-test("PR modal stays inside a 393 px viewport", async ({ page }) => {
+test("@responsive PR modal stays inside a 393 px viewport", async ({ page }) => {
   await page.setViewportSize({ width: 393, height: 852 });
   await loginAsDemoUser(page);
   await preparePersonalRecordFixture(page);
@@ -311,7 +311,7 @@ test("PR modal stays inside a 393 px viewport", async ({ page }) => {
   await expectNoHorizontalOverflow(page, workout, "historical workout");
 });
 
-test("old record lazy-loads once, shows the full workout, and reuses the cache", async ({
+test("@e2e old record lazy-loads once, shows the full workout, and reuses the cache", async ({
   page,
 }) => {
   await loginAsDemoUser(page);
@@ -719,7 +719,7 @@ test("week 3 at the previous week's weight uses the earlier PR", async ({
   await expect(previousRecord).toContainText("27.07.2026");
 });
 
-test("PR badge does not move target or overlap LOG at 393 px", async ({
+test("@responsive PR badge does not move target or overlap LOG at 393 px", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 393, height: 700 });
