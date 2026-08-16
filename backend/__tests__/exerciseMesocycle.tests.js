@@ -112,6 +112,21 @@ describe("exercise and mesocycle regression", () => {
     await db?.close();
   });
 
+  it("persists an opted-in deload when a plan is reused or updated", async () => {
+    const { agent } = await createAuthenticatedUser(app, db, {
+      username: "alice",
+    });
+    const { id } = await createMesocycle(agent, { includeDeload: true });
+
+    const initialWorkout = await agent.get("/api/current-workout").expect(200);
+    expect(initialWorkout.body.includeDeload).toBe(true);
+
+    await updateMesocycle(agent, id, makePlan(false));
+
+    const updatedWorkout = await agent.get("/api/current-workout").expect(200);
+    expect(updatedWorkout.body.includeDeload).toBe(true);
+  });
+
   it("creates and lists exercises only for the authenticated user", async () => {
     const userA = await createAuthenticatedUser(app, db, { username: "alice" });
     const userB = await createAuthenticatedUser(app, db, { username: "bob" });

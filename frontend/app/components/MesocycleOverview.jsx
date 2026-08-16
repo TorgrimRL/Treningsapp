@@ -135,14 +135,14 @@ const MesocycleOverview = () => {
                   <div className="relative menu-container">
                     <button
                       onClick={() => toggleMenu(mesocycle.id)}
-                      className="text-white focus:outline-none py-2"
+                      className="inline-flex min-h-11 min-w-11 items-center justify-center text-white focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
                     >
                       <FontAwesomeIcon icon={faEllipsisV} />
                     </button>
                     {openMenus[mesocycle.id] && (
                       <div className="absolute right-0 z-10 mt-2 w-48 rounded-lg bg-darkGray p-2 shadow-lg">
                         <button
-                          className="block w-full text-left px-4 py-2 hover:bg-gray-700 text-sm text-white"
+                          className="block min-h-11 w-full px-4 py-2 text-left text-sm text-white transition-colors hover:bg-gray-700 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
                           onClick={() => handleRedoExerciseBlock(mesocycle)}
                         >
                           Redo Exercise Block

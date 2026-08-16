@@ -21,6 +21,7 @@ const createMesocyclesTableSql = `CREATE TABLE IF NOT EXISTS Mesocycles (
       daysPerWeek INTEGER,
       completedDate TEXT,
       isCurrent INTEGER,
+      include_deload INTEGER DEFAULT 0,
       user_id INTEGER,
       FOREIGN KEY(user_id) REFERENCES users(id)
     )`;
@@ -81,6 +82,12 @@ export const schemaMigrationStatements = [
     table: "users",
     column: "picture",
     sql: "ALTER TABLE users ADD COLUMN picture TEXT",
+  },
+  {
+    name: "mesocycles.include_deload",
+    table: "Mesocycles",
+    column: "include_deload",
+    sql: "ALTER TABLE Mesocycles ADD COLUMN include_deload INTEGER DEFAULT 0",
   },
   {
     name: "users.auth0_sub_unique",

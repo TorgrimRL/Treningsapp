@@ -10,6 +10,8 @@ const MesocycleDetailsModal = ({
   setMesocycleName,
   numberOfWeeks,
   setNumberOfWeeks,
+  includeDeload,
+  setIncludeDeload,
   variant = "modal",
 }) => {
   const [existingNames, setExistingNames] = useState([]);
@@ -100,6 +102,18 @@ const MesocycleDetailsModal = ({
           <option value={6}>6</option>
         </select>
       </div>
+      {setIncludeDeload && (
+        <label className="mb-4 flex min-h-11 items-center gap-3">
+          <input
+            data-testid="training-block-include-deload"
+            type="checkbox"
+            checked={includeDeload}
+            onChange={(event) => setIncludeDeload(event.target.checked)}
+            className="h-5 w-5"
+          />
+          <span>Use the final week as a deload week</span>
+        </label>
+      )}
       <div className="flex items-center justify-between gap-3">
         <button
           data-testid="training-block-details-cancel"
@@ -112,7 +126,7 @@ const MesocycleDetailsModal = ({
         <button
           data-testid="training-block-details-save"
           type="button"
-          onClick={() => onSave(mesocycleName, numberOfWeeks)}
+          onClick={() => onSave(mesocycleName, numberOfWeeks, includeDeload)}
           className={
             "flex items-center justify-center px-4 py-2 text-lg text-white " +
             (canSave

@@ -30,6 +30,7 @@ function normalizeMesocycleRow(row, plan = parsePlan(row.plan)) {
     ...row,
     plan,
     isCurrent: !!row.isCurrent,
+    includeDeload: !!row.include_deload,
     completedDate: row.completedDate
       ? new Date(row.completedDate).toISOString()
       : null,
@@ -48,7 +49,8 @@ function getMesocycleCompletion(plan) {
 router.post("/mesocycles", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { name, weeks, daysPerWeek, plan, completedDate } = req.body;
+    const { name, weeks, daysPerWeek, plan, completedDate, includeDeload } =
+      req.body;
 
     const { hadRetry: updateHadRetry } = await safeQuery`
       UPDATE mesocycles 
@@ -58,9 +60,10 @@ router.post("/mesocycles", authenticateToken, async (req, res) => {
 
     const planJson = JSON.stringify(applyWorkoutDayTimestamps(plan, []));
 
+    // noinspection SqlResolve -- include_deload is added idempotently in db/schema.js.
     const { result: insertResult, hadRetry: insertHadRetry } = await safeQuery`
-      INSERT INTO mesocycles (name, weeks, daysPerWeek, plan, user_id, completedDate, isCurrent)
-      VALUES (${name}, ${weeks}, ${daysPerWeek}, ${planJson}, ${userId}, ${completedDate}, 1)
+      INSERT INTO mesocycles (name, weeks, daysPerWeek, plan, user_id, completedDate, isCurrent, include_deload)
+      VALUES (${name}, ${weeks}, ${daysPerWeek}, ${planJson}, ${userId}, ${completedDate}, 1, ${includeDeload ? 1 : 0})
     `;
 
     const hadRetry = updateHadRetry || insertHadRetry;
@@ -90,6 +93,7 @@ router.get(
         ...row,
         plan: JSON.parse(row.plan),
         isCurrent: !!row.isCurrent,
+        includeDeload: !!row.include_deload,
         completedDate: row.completedDate
           ? new Date(row.completedDate).toISOString()
           : null,
@@ -108,8 +112,15 @@ router.get(
 router.put("/mesocycles/:id", authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, weeks, plan, daysPerWeek, isCurrent, completedDate } =
-      req.body;
+    const {
+      name,
+      weeks,
+      plan,
+      daysPerWeek,
+      isCurrent,
+      completedDate,
+      includeDeload,
+    } = req.body;
     const userID = req.user.id;
     const { result: existingRows, hadRetry: selectHadRetry } = await safeQuery`
       SELECT * FROM mesocycles WHERE id = ${id} AND user_id = ${userID}
@@ -132,6 +143,10 @@ router.put("/mesocycles/:id", authenticateToken, async (req, res) => {
     }
 
     const existingRow = existingRows[0];
+    const requestedIncludeDeload =
+      typeof includeDeload === "boolean"
+        ? includeDeload
+        : !!existingRow.include_deload;
     const existingPlan = parsePlan(existingRow.plan);
     const normalizedPlan = applyWorkoutDayTimestamps(plan, existingPlan);
     const allDaysCompleted = getMesocycleCompletion(normalizedPlan);
@@ -139,11 +154,13 @@ router.put("/mesocycles/:id", authenticateToken, async (req, res) => {
       allDaysCompleted && !completedDate
         ? new Date().toISOString()
         : completedDate;
+    // noinspection SqlResolve -- include_deload is added idempotently in db/schema.js.
     const { result, hadRetry: updateHadRetry } = await safeQuery`
       UPDATE mesocycles
       SET name = ${name}, weeks = ${weeks}, plan = ${JSON.stringify(normalizedPlan)},
           daysPerWeek = ${daysPerWeek}, isCurrent = ${isCurrent ? 1 : 0},
-          completedDate = ${newCompletedDate}
+          completedDate = ${newCompletedDate},
+          include_deload = ${requestedIncludeDeload ? 1 : 0}
       WHERE id = ${id} AND user_id = ${userID}
     `;
     const { result: userRows, hadRetry: historyHadRetry } = await safeQuery`
@@ -530,7 +547,16 @@ function getUpdatedSets(exercise, previousWeekExercise, currentWeek, progression
   });
 }
 
-function getExercises(day, dayIndex, daysPerWeek, plan, currentWeek, totalWeeks, firstWeekExercises) {
+function getExercises(
+  day,
+  dayIndex,
+  daysPerWeek,
+  plan,
+  currentWeek,
+  totalWeeks,
+  firstWeekExercises,
+  includeDeload
+) {
   return day.exercises.map((exercise, exerciseIndex) => {
     const progressionSettings = normalizeProgressionSettings(exercise);
     const exerciseWithProgression = {
@@ -546,7 +572,7 @@ function getExercises(day, dayIndex, daysPerWeek, plan, currentWeek, totalWeeks,
           plan[previousWeekIndex].exercises[exerciseIndex];
       if (!previousWeekExercise) return exerciseWithProgression;
       if (!Array.isArray(exercise.sets)) return exerciseWithProgression;
-      const isDeloadWeek = currentWeek === totalWeeks;
+      const isDeloadWeek = includeDeload && currentWeek === totalWeeks;
       if (isDeloadWeek) {
         const deloadExercise = createDeloadWeek(
             firstWeekExercises,
@@ -564,13 +590,28 @@ function getExercises(day, dayIndex, daysPerWeek, plan, currentWeek, totalWeeks,
   });
 }
 
-function getFinalPlan(updatedPlan, daysPerWeek, plan, totalWeeks) {
+function getFinalPlan(
+  updatedPlan,
+  daysPerWeek,
+  plan,
+  totalWeeks,
+  includeDeload
+) {
   return updatedPlan.map((day, dayIndex) => {
     const currentWeek = Math.floor(dayIndex / daysPerWeek) + 1;
     const firstWeekExercises = plan[dayIndex % daysPerWeek].exercises;
     return {
       ...day,
-      exercises: getExercises(day, dayIndex, daysPerWeek, plan, currentWeek, totalWeeks, firstWeekExercises),
+      exercises: getExercises(
+        day,
+        dayIndex,
+        daysPerWeek,
+        plan,
+        currentWeek,
+        totalWeeks,
+        firstWeekExercises,
+        includeDeload
+      ),
     };
   });
 }
@@ -661,13 +702,20 @@ router.get(
       const { updatedPlan, firstIncompleteDayIndex } = processPlan(plan);
       const daysPerWeek = row.daysPerWeek;
       const totalWeeks = row.weeks;
-      const finalPlan = getFinalPlan(updatedPlan, daysPerWeek, plan, totalWeeks);
+      const finalPlan = getFinalPlan(
+        updatedPlan,
+        daysPerWeek,
+        plan,
+        totalWeeks,
+        !!row.include_deload
+      );
       recordTiming("plan", planStartedAt);
 
       const finalResponse = {
         ...row,
         plan: finalPlan,
         isCurrent: !!row.isCurrent,
+        includeDeload: !!row.include_deload,
         completedDate: row.completedDate
           ? new Date(row.completedDate).toISOString()
           : null,

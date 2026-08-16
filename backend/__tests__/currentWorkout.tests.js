@@ -561,6 +561,7 @@ describe("current workout regression", () => {
         plan: progressionPlan(),
         completedDate: null,
         isCurrent: true,
+        includeDeload: true,
       })
       .expect(201);
 

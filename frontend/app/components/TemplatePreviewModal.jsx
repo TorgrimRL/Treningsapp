@@ -39,7 +39,7 @@ export default function TemplateOverviewModal({
                 <li
                   key={dayIndex}
                   className={
-                    "cursor-pointer text-xs uppercase min-w-[50px] min-h-[40px] max-w-sm flex justify-center items-center " +
+                    "cursor-pointer text-xs uppercase min-w-[50px] min-h-11 max-w-sm flex justify-center items-center " +
                     (selectedDay === dayIndex ? "bg-darkestGray" : "bg-inputBGGray") +
                     (dayIndex < template.dayLabels.length - 1
                       ? " border-r-1 border-darkestGray"
@@ -49,7 +49,7 @@ export default function TemplateOverviewModal({
                   <button
                     type="button"
                     onClick={() => handleDayClick(dayIndex)}
-                    className="w-full h-full flex justify-center items-center"
+                    className="flex h-full min-h-11 w-full items-center justify-center focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
                   >
                     <h3 className="font-semibold mb-2 text-xs text-center uppercase">
                       {dayLabel.slice(0, 3)}

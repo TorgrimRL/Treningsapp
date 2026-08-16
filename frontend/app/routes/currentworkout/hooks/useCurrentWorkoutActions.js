@@ -52,6 +52,7 @@ function buildMesocycleUpdatePayload(mesocycle) {
       : mesocycle.plan,
     isCurrent: mesocycle.isCurrent,
     completedDate: mesocycle.completedDate,
+    includeDeload: mesocycle.includeDeload,
   };
 }
 

@@ -11,7 +11,7 @@ export default function CurrentWorkoutDayBar({
     <div className="flex min-w-0 items-center justify-between gap-3 bg-darkGray px-4 py-1 text-white">
       <div className="min-w-0 flex-1">
         <span className="block truncate font-semibold uppercase">
-          {week === currentMesocycle.weeks
+          {currentMesocycle.includeDeload && week === currentMesocycle.weeks
             ? "DELOAD WEEK"
             : "Week " + week + " Day " + dayNumber + " " + dayLabel}
         </span>
