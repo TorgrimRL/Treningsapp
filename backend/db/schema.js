@@ -89,6 +89,12 @@ export const schemaMigrationStatements = [
       ON users(${auth0SubColumn})
       WHERE ${auth0SubColumn} IS NOT NULL AND ${auth0SubColumn} != ''`,
   },
+  {
+    name: "mesocycles.user_id_isCurrent",
+    // noinspection SqlNoDataSourceInspection,SqlDialectInspection,SqlResolve
+    sql: `CREATE INDEX IF NOT EXISTS idx_mesocycles_user_id_is_current
+      ON Mesocycles(user_id, isCurrent)`,
+  },
 ];
 
 function getColumnName(row) {

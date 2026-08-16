@@ -353,6 +353,27 @@ describe("current workout regression", () => {
     expect(response.body).toEqual({ error: "Invalid plan data" });
   });
 
+  it("omits personal-record history for records-light current-workout requests", async () => {
+    const { agent, userId } = await createAuthenticatedUser(app, db, {
+      username: "alice",
+    });
+    await insertMesocycleRow(db, {
+      userId,
+      name: "Build",
+      plan: personalRecordPlan(),
+      isCurrent: true,
+    });
+
+    const response = await agent
+      .get("/api/current-workout?includePersonalRecords=false")
+      .expect(200);
+
+    expect(response.body).not.toHaveProperty("personalRecordHistory");
+    expect(response.headers["server-timing"]).toMatch(
+      /db;dur=.*plan;dur=.*pr;dur=.*total;dur=/
+    );
+  });
+
   it("returns compact personal-record milestones with the active workout", async () => {
     const { agent, userId } = await createAuthenticatedUser(app, db, {
       username: "alice",

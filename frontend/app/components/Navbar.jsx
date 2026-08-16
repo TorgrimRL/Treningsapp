@@ -1,12 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@remix-run/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBars } from "@fortawesome/free-solid-svg-icons";
 import { useAuth } from "../utils/AuthContext";
+import { useApiFetch } from "../utils/apiFetch";
+import { currentWorkoutQueryOptions } from "../utils/currentWorkoutQuery";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const { authCheckInProgress, isLoggedIn } = useAuth();
+  const queryClient = useQueryClient();
+  const { apiFetch } = useApiFetch();
   const menuRef = useRef(null);
   const baseUrl = import.meta.env.VITE_API_URL;
   const showLoggedInNav = isLoggedIn === true;
@@ -16,6 +21,12 @@ export default function Navbar() {
     localStorage.removeItem("token");
     sessionStorage.removeItem("token");
     window.location.assign(`${baseUrl}/auth0/logout`);
+  };
+
+  const prefetchCurrentWorkout = () => {
+    if (isLoggedIn === true) {
+      void queryClient.prefetchQuery(currentWorkoutQueryOptions(apiFetch, baseUrl));
+    }
   };
 
   const closeMenu = () => {
@@ -99,6 +110,9 @@ export default function Navbar() {
               <Link
                 to="/currentworkout"
                 prefetch="intent"
+                onPointerEnter={prefetchCurrentWorkout}
+                onFocus={prefetchCurrentWorkout}
+                onClick={prefetchCurrentWorkout}
                 className="text-white h-full flex items-center "
               >
                 Current workout
@@ -177,7 +191,10 @@ export default function Navbar() {
                     <Link
                       to="/currentworkout"
                       prefetch="intent"
-                      onClick={closeMenu}
+                      onClick={() => {
+                        prefetchCurrentWorkout();
+                        closeMenu();
+                      }}
                       className="block w-full cursor-pointer text-left focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
                     >
                       Current workout

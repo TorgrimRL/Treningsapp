@@ -6,7 +6,8 @@ export function useApiFetch() {
 
   const apiFetch = useCallback(
     async (url, options = {}) => {
-      const response = await fetch(url, options);
+      const { suppressWaitModal = false, ...fetchOptions } = options;
+      const response = await fetch(url, fetchOptions);
       const responseText = await response.text();
       let data = null;
 
@@ -18,7 +19,7 @@ export function useApiFetch() {
         }
       }
 
-      if (data?.message === "Database went to sleep!") {
+      if (!suppressWaitModal && data?.message === "Database went to sleep!") {
         showWaitModal(60);
       }
 

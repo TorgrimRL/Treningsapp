@@ -36,10 +36,11 @@ function shouldRetryCurrentWorkout(failureCount, error) {
 }
 
 export async function fetchCurrentWorkout(apiFetch, baseUrl, signal) {
-  const response = await apiFetch(`${baseUrl}/current-workout`, {
+  const response = await apiFetch(`${baseUrl}/current-workout?includePersonalRecords=false`, {
     method: "GET",
     credentials: "include",
     signal,
+    suppressWaitModal: true,
   });
 
   if (response.status === 404) {
@@ -51,7 +52,9 @@ export async function fetchCurrentWorkout(apiFetch, baseUrl, signal) {
   }
 
   const workout = response.data?.data ?? response.data;
-  return enrichWorkoutWithPersonalRecords(workout);
+  return Array.isArray(workout?.personalRecordHistory)
+    ? enrichWorkoutWithPersonalRecords(workout)
+    : workout;
 }
 
 export function currentWorkoutQueryOptions(

@@ -614,22 +614,47 @@ router.get(
   authenticateToken,
   csrfProtection,
   async (req, res) => {
+    const startedAt = performance.now();
+    const timings = {};
+    const recordTiming = (name, start) => {
+      timings[name] = performance.now() - start;
+    };
+    const sendTiming = () => {
+      res.set(
+        "Server-Timing",
+        [
+          `db;dur=${(timings.db || 0).toFixed(1)}`,
+          `plan;dur=${(timings.plan || 0).toFixed(1)}`,
+          `pr;dur=${(timings.pr || 0).toFixed(1)}`,
+          `total;dur=${(performance.now() - startedAt).toFixed(1)}`,
+        ].join(", ")
+      );
+    };
+
     try {
       const userID = req.user.id;
-      const { result: rows, hadRetry } = await safeQuery`
-        SELECT * FROM mesocycles WHERE user_id = ${userID} ORDER BY id
+      const includePersonalRecords = req.query.includePersonalRecords !== "false";
+      const dbStartedAt = performance.now();
+      const currentWorkoutQuery = await safeQuery`
+        SELECT * FROM mesocycles
+        WHERE user_id = ${userID} AND (isCurrent = 1 OR isCurrent = true)
+        ORDER BY id
       `;
-      const row = rows?.find(
-        (mesocycle) =>
-          mesocycle.isCurrent === true || Number(mesocycle.isCurrent) === 1
-      );
+      let hadRetry = currentWorkoutQuery.hadRetry;
+      const currentRows = currentWorkoutQuery.result;
+      recordTiming("db", dbStartedAt);
+      const row = currentRows?.[0];
       if (!row) {
+        sendTiming();
         return res.status(404).json({ error: "Current workout not found" });
       }
+
+      const planStartedAt = performance.now();
       let plan;
       try {
         plan = parsePlan(row.plan);
       } catch (error) {
+        sendTiming();
         return res.status(500).json({ error: "Invalid plan data" });
       }
 
@@ -637,6 +662,7 @@ router.get(
       const daysPerWeek = row.daysPerWeek;
       const totalWeeks = row.weeks;
       const finalPlan = getFinalPlan(updatedPlan, daysPerWeek, plan, totalWeeks);
+      recordTiming("plan", planStartedAt);
 
       const finalResponse = {
         ...row,
@@ -648,15 +674,28 @@ router.get(
         totalWeeks: row.weeks,
         daysPerWeek: row.daysPerWeek,
         firstIncompleteDayIndex,
-        personalRecordHistory: buildPersonalRecordHistory(rows),
       };
+
+      if (includePersonalRecords) {
+        const personalRecordsStartedAt = performance.now();
+        const personalRecordsQuery = await safeQuery`
+          SELECT * FROM mesocycles WHERE user_id = ${userID} ORDER BY id
+        `;
+        hadRetry ||= personalRecordsQuery.hadRetry;
+        finalResponse.personalRecordHistory = buildPersonalRecordHistory(
+          personalRecordsQuery.result
+        );
+        recordTiming("pr", personalRecordsStartedAt);
+      }
 
       const responsePayload = hadRetry
         ? buildResponsePayload(hadRetry, { data: finalResponse })
         : finalResponse;
 
+      sendTiming();
       res.json(responsePayload);
     } catch (err) {
+      sendTiming();
       res.status(500).json({ error: err.message });
     }
   }

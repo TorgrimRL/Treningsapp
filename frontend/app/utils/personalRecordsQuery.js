@@ -49,11 +49,17 @@ function parsePersonalRecords(data) {
   };
 }
 
-export async function fetchPersonalRecords(apiFetch, baseUrl, signal) {
+export async function fetchPersonalRecords(
+  apiFetch,
+  baseUrl,
+  signal,
+  requestOptions = {}
+) {
   const response = await apiFetch(`${baseUrl}/personal-records`, {
     method: "GET",
     credentials: "include",
     signal,
+    ...requestOptions,
   });
 
   if (!response.ok) {

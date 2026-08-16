@@ -42,8 +42,7 @@ export function CurrentWorkoutQueryLifecycle() {
       return;
     }
 
-    const shouldPrefetch =
-      isLoggedIn === true || (isLoggedIn === null && isCurrentWorkoutRoute);
+    const shouldPrefetch = isCurrentWorkoutRoute && isLoggedIn !== false;
 
     const hasCurrentWorkoutQuery = Boolean(
       queryClient.getQueryState(currentWorkoutQueryKey)
