@@ -17,7 +17,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@sqlitecloud/drivers": "^1.0.422",
+    "@sqlitecloud/drivers": "^1.0.880",
     "body-parser": "^1.20.6",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
