@@ -117,7 +117,7 @@ router.put("/mesocycles/:id", authenticateToken, async (req, res) => {
 
     if (!existingRows || existingRows.length === 0) {
       const { result: userRows, hadRetry: historyHadRetry } = await safeQuery`
-        SELECT * FROM mesocycles WHERE user_id = ${userID} ORDER BY id ASC
+        SELECT * FROM mesocycles WHERE user_id = ${userID} ORDER BY id
       `;
       const responsePayload = buildResponsePayload(
         selectHadRetry || historyHadRetry,
@@ -147,7 +147,7 @@ router.put("/mesocycles/:id", authenticateToken, async (req, res) => {
       WHERE id = ${id} AND user_id = ${userID}
     `;
     const { result: userRows, hadRetry: historyHadRetry } = await safeQuery`
-      SELECT * FROM mesocycles WHERE user_id = ${userID} ORDER BY id ASC
+      SELECT * FROM mesocycles WHERE user_id = ${userID} ORDER BY id
     `;
     const storedRow = userRows.find(
       (row) => String(row.id) === String(id)
@@ -558,7 +558,7 @@ router.get(
     try {
       const userID = req.user.id;
       const { result: rows, hadRetry } = await safeQuery`
-        SELECT * FROM mesocycles WHERE user_id = ${userID} ORDER BY id ASC
+        SELECT * FROM mesocycles WHERE user_id = ${userID} ORDER BY id
       `;
       const currentRow = rows?.find(
         (mesocycle) =>
