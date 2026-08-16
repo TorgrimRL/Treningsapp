@@ -30,6 +30,7 @@ function normalizeMesocycleRow(row, plan = parsePlan(row.plan)) {
     ...row,
     plan,
     isCurrent: !!row.isCurrent,
+    includeDeload: !!row.include_deload,
     completedDate: row.completedDate
       ? new Date(row.completedDate).toISOString()
       : null,
@@ -48,7 +49,8 @@ function getMesocycleCompletion(plan) {
 router.post("/mesocycles", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { name, weeks, daysPerWeek, plan, completedDate } = req.body;
+    const { name, weeks, daysPerWeek, plan, completedDate, includeDeload } =
+      req.body;
 
     const { hadRetry: updateHadRetry } = await safeQuery`
       UPDATE mesocycles 
@@ -58,9 +60,10 @@ router.post("/mesocycles", authenticateToken, async (req, res) => {
 
     const planJson = JSON.stringify(applyWorkoutDayTimestamps(plan, []));
 
+    // noinspection SqlResolve -- include_deload is added idempotently in db/schema.js.
     const { result: insertResult, hadRetry: insertHadRetry } = await safeQuery`
-      INSERT INTO mesocycles (name, weeks, daysPerWeek, plan, user_id, completedDate, isCurrent)
-      VALUES (${name}, ${weeks}, ${daysPerWeek}, ${planJson}, ${userId}, ${completedDate}, 1)
+      INSERT INTO mesocycles (name, weeks, daysPerWeek, plan, user_id, completedDate, isCurrent, include_deload)
+      VALUES (${name}, ${weeks}, ${daysPerWeek}, ${planJson}, ${userId}, ${completedDate}, 1, ${includeDeload ? 1 : 0})
     `;
 
     const hadRetry = updateHadRetry || insertHadRetry;
@@ -90,6 +93,7 @@ router.get(
         ...row,
         plan: JSON.parse(row.plan),
         isCurrent: !!row.isCurrent,
+        includeDeload: !!row.include_deload,
         completedDate: row.completedDate
           ? new Date(row.completedDate).toISOString()
           : null,
@@ -108,8 +112,15 @@ router.get(
 router.put("/mesocycles/:id", authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, weeks, plan, daysPerWeek, isCurrent, completedDate } =
-      req.body;
+    const {
+      name,
+      weeks,
+      plan,
+      daysPerWeek,
+      isCurrent,
+      completedDate,
+      includeDeload,
+    } = req.body;
     const userID = req.user.id;
     const { result: existingRows, hadRetry: selectHadRetry } = await safeQuery`
       SELECT * FROM mesocycles WHERE id = ${id} AND user_id = ${userID}
@@ -132,6 +143,10 @@ router.put("/mesocycles/:id", authenticateToken, async (req, res) => {
     }
 
     const existingRow = existingRows[0];
+    const requestedIncludeDeload =
+      typeof includeDeload === "boolean"
+        ? includeDeload
+        : !!existingRow.include_deload;
     const existingPlan = parsePlan(existingRow.plan);
     const normalizedPlan = applyWorkoutDayTimestamps(plan, existingPlan);
     const allDaysCompleted = getMesocycleCompletion(normalizedPlan);
@@ -139,11 +154,13 @@ router.put("/mesocycles/:id", authenticateToken, async (req, res) => {
       allDaysCompleted && !completedDate
         ? new Date().toISOString()
         : completedDate;
+    // noinspection SqlResolve -- include_deload is added idempotently in db/schema.js.
     const { result, hadRetry: updateHadRetry } = await safeQuery`
       UPDATE mesocycles
       SET name = ${name}, weeks = ${weeks}, plan = ${JSON.stringify(normalizedPlan)},
           daysPerWeek = ${daysPerWeek}, isCurrent = ${isCurrent ? 1 : 0},
-          completedDate = ${newCompletedDate}
+          completedDate = ${newCompletedDate},
+          include_deload = ${requestedIncludeDeload ? 1 : 0}
       WHERE id = ${id} AND user_id = ${userID}
     `;
     const { result: userRows, hadRetry: historyHadRetry } = await safeQuery`
@@ -530,7 +547,16 @@ function getUpdatedSets(exercise, previousWeekExercise, currentWeek, progression
   });
 }
 
-function getExercises(day, dayIndex, daysPerWeek, plan, currentWeek, totalWeeks, firstWeekExercises) {
+function getExercises(
+  day,
+  dayIndex,
+  daysPerWeek,
+  plan,
+  currentWeek,
+  totalWeeks,
+  firstWeekExercises,
+  includeDeload
+) {
   return day.exercises.map((exercise, exerciseIndex) => {
     const progressionSettings = normalizeProgressionSettings(exercise);
     const exerciseWithProgression = {
@@ -546,7 +572,7 @@ function getExercises(day, dayIndex, daysPerWeek, plan, currentWeek, totalWeeks,
           plan[previousWeekIndex].exercises[exerciseIndex];
       if (!previousWeekExercise) return exerciseWithProgression;
       if (!Array.isArray(exercise.sets)) return exerciseWithProgression;
-      const isDeloadWeek = currentWeek === totalWeeks;
+      const isDeloadWeek = includeDeload && currentWeek === totalWeeks;
       if (isDeloadWeek) {
         const deloadExercise = createDeloadWeek(
             firstWeekExercises,
@@ -564,13 +590,28 @@ function getExercises(day, dayIndex, daysPerWeek, plan, currentWeek, totalWeeks,
   });
 }
 
-function getFinalPlan(updatedPlan, daysPerWeek, plan, totalWeeks) {
+function getFinalPlan(
+  updatedPlan,
+  daysPerWeek,
+  plan,
+  totalWeeks,
+  includeDeload
+) {
   return updatedPlan.map((day, dayIndex) => {
     const currentWeek = Math.floor(dayIndex / daysPerWeek) + 1;
     const firstWeekExercises = plan[dayIndex % daysPerWeek].exercises;
     return {
       ...day,
-      exercises: getExercises(day, dayIndex, daysPerWeek, plan, currentWeek, totalWeeks, firstWeekExercises),
+      exercises: getExercises(
+        day,
+        dayIndex,
+        daysPerWeek,
+        plan,
+        currentWeek,
+        totalWeeks,
+        firstWeekExercises,
+        includeDeload
+      ),
     };
   });
 }
@@ -614,49 +655,95 @@ router.get(
   authenticateToken,
   csrfProtection,
   async (req, res) => {
+    const startedAt = performance.now();
+    const timings = {};
+    const recordTiming = (name, start) => {
+      timings[name] = performance.now() - start;
+    };
+    const sendTiming = () => {
+      res.set(
+        "Server-Timing",
+        [
+          `db;dur=${(timings.db || 0).toFixed(1)}`,
+          `plan;dur=${(timings.plan || 0).toFixed(1)}`,
+          `pr;dur=${(timings.pr || 0).toFixed(1)}`,
+          `total;dur=${(performance.now() - startedAt).toFixed(1)}`,
+        ].join(", ")
+      );
+    };
+
     try {
       const userID = req.user.id;
-      const { result: rows, hadRetry } = await safeQuery`
-        SELECT * FROM mesocycles WHERE user_id = ${userID} ORDER BY id
+      const includePersonalRecords = req.query.includePersonalRecords !== "false";
+      const dbStartedAt = performance.now();
+      const currentWorkoutQuery = await safeQuery`
+        SELECT * FROM mesocycles
+        WHERE user_id = ${userID} AND (isCurrent = 1 OR isCurrent = true)
+        ORDER BY id
       `;
-      const row = rows?.find(
-        (mesocycle) =>
-          mesocycle.isCurrent === true || Number(mesocycle.isCurrent) === 1
-      );
+      let hadRetry = currentWorkoutQuery.hadRetry;
+      const currentRows = currentWorkoutQuery.result;
+      recordTiming("db", dbStartedAt);
+      const row = currentRows?.[0];
       if (!row) {
+        sendTiming();
         return res.status(404).json({ error: "Current workout not found" });
       }
+
+      const planStartedAt = performance.now();
       let plan;
       try {
         plan = parsePlan(row.plan);
       } catch (error) {
+        sendTiming();
         return res.status(500).json({ error: "Invalid plan data" });
       }
 
       const { updatedPlan, firstIncompleteDayIndex } = processPlan(plan);
       const daysPerWeek = row.daysPerWeek;
       const totalWeeks = row.weeks;
-      const finalPlan = getFinalPlan(updatedPlan, daysPerWeek, plan, totalWeeks);
+      const finalPlan = getFinalPlan(
+        updatedPlan,
+        daysPerWeek,
+        plan,
+        totalWeeks,
+        !!row.include_deload
+      );
+      recordTiming("plan", planStartedAt);
 
       const finalResponse = {
         ...row,
         plan: finalPlan,
         isCurrent: !!row.isCurrent,
+        includeDeload: !!row.include_deload,
         completedDate: row.completedDate
           ? new Date(row.completedDate).toISOString()
           : null,
         totalWeeks: row.weeks,
         daysPerWeek: row.daysPerWeek,
         firstIncompleteDayIndex,
-        personalRecordHistory: buildPersonalRecordHistory(rows),
       };
+
+      if (includePersonalRecords) {
+        const personalRecordsStartedAt = performance.now();
+        const personalRecordsQuery = await safeQuery`
+          SELECT * FROM mesocycles WHERE user_id = ${userID} ORDER BY id
+        `;
+        hadRetry ||= personalRecordsQuery.hadRetry;
+        finalResponse.personalRecordHistory = buildPersonalRecordHistory(
+          personalRecordsQuery.result
+        );
+        recordTiming("pr", personalRecordsStartedAt);
+      }
 
       const responsePayload = hadRetry
         ? buildResponsePayload(hadRetry, { data: finalResponse })
         : finalResponse;
 
+      sendTiming();
       res.json(responsePayload);
     } catch (err) {
+      sendTiming();
       res.status(500).json({ error: err.message });
     }
   }

@@ -1,8 +1,14 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   useCurrentWorkoutCache,
   useCurrentWorkoutQuery,
 } from "../../../utils/currentWorkoutQuery";
+import {
+  fetchPersonalRecords,
+  personalRecordsQueryOptions,
+} from "../../../utils/personalRecordsQuery";
+import { enrichWorkoutWithPersonalRecords } from "../../../utils/personalRecords";
 import { buildWorkoutState } from "../utils/workoutUtils";
 
 const mergeConfirmedWorkoutMetadata = (localWorkout, savedWorkout) => {
@@ -87,6 +93,7 @@ const getDayIndex = (workout, preferredDayIndex, currentDayIndex) => {
 };
 
 export default function useCurrentWorkoutData(apiFetch, baseUrl) {
+  const queryClient = useQueryClient();
   const workoutQuery = useCurrentWorkoutQuery(apiFetch, baseUrl);
   const {
     fetchCurrentWorkout,
@@ -176,6 +183,52 @@ export default function useCurrentWorkoutData(apiFetch, baseUrl) {
     },
     [fetchCurrentWorkout, setWorkoutData]
   );
+
+  useEffect(() => {
+    if (
+      !cachedWorkout ||
+      Array.isArray(cachedWorkout.personalRecordHistory)
+    ) {
+      return undefined;
+    }
+
+    let cancelled = false;
+    void queryClient
+      .fetchQuery(
+        personalRecordsQueryOptions(apiFetch, baseUrl, {
+          queryFn: () =>
+            fetchPersonalRecords(apiFetch, baseUrl, undefined, {
+              suppressWaitModal: true,
+            }),
+        })
+      )
+      .then(({ personalRecordHistory }) => {
+        if (cancelled) {
+          return;
+        }
+
+        const workoutWithRecords = enrichWorkoutWithPersonalRecords({
+          ...cachedWorkout,
+          personalRecordHistory,
+        });
+        setCurrentWorkout(workoutWithRecords);
+        setCurrentMesocycle((localWorkout) =>
+          localWorkout
+            ? enrichWorkoutWithPersonalRecords({
+                ...localWorkout,
+                personalRecordHistory,
+              })
+            : localWorkout
+        );
+      })
+      .catch(() => {
+        // PR feedback is supplemental; keep workout logging available.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [apiFetch, baseUrl, cachedWorkout, queryClient, setCurrentWorkout]);
 
   useEffect(() => {
     if (

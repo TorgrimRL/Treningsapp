@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useAuth } from "../utils/AuthContext";
 import { useNavigate } from "@remix-run/react";
 
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children, loadingFallback = <div>Loading...</div> }) => {
   const { isLoggedIn, authCheckInProgress } = useAuth();
   const navigate = useNavigate();
 
@@ -13,7 +13,7 @@ const ProtectedRoute = ({ children }) => {
   }, [isLoggedIn, authCheckInProgress, navigate]);
 
   if (authCheckInProgress) {
-    return <div>Loading...</div>; // Eller en spinner, mens auth sjekkes
+    return loadingFallback
   }
 
   return isLoggedIn ? children : null;

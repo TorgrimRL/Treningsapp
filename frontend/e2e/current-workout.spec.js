@@ -453,7 +453,7 @@ test("can configure dropsets and update targets from the first set", async ({ pa
   await page.goto("/currentworkout");
 
   await openDropsetModal(page);
-  await page.getByTestId("dropset-start-weight").fill("100");
+  await page.getByTestId("dropset-start-weight").selectOption("100");
   await expect(page.getByTestId("dropset-preview")).toContainText(
     "100 / 80 / 65"
   );
@@ -501,7 +501,7 @@ test("dropsets can apply to the rest of the mesocycle", async ({ page }) => {
   await page.goto("/currentworkout");
 
   await openDropsetModal(page);
-  await page.getByTestId("dropset-start-weight").fill("100");
+  await page.getByTestId("dropset-start-weight").selectOption("100");
   await page.getByTestId("dropset-apply-future").check();
 
   await Promise.all([
@@ -618,7 +618,7 @@ test("future dropsets progress reps from each matching set", async ({ page }) =>
   ).toHaveValue("11");
 
   await openDropsetModal(page);
-  await page.getByTestId("dropset-start-weight").fill("100");
+  await page.getByTestId("dropset-start-weight").selectOption("100");
   await page.getByTestId("dropset-apply-future").check();
 
   await Promise.all([

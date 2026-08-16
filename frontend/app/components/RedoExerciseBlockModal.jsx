@@ -13,12 +13,19 @@ const RedoExerciseBlockModal = ({ isOpen, onRequestClose, exerciseBlock }) => {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [mesocycleName, setMesocycleName] = useState("");
   const [numberOfWeeks, setNumberOfWeeks] = useState("");
+  const [includeDeload, setIncludeDeload] = useState(false);
   const [csrfToken, setCSRFToken] = useState("");
   const [newExerciseBlock, setNewExerciseBlock] = useState(null);
 
   const baseUrl = import.meta.env.VITE_API_URL;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (isOpen) {
+      setIncludeDeload(!!exerciseBlock?.includeDeload);
+    }
+  }, [exerciseBlock, isOpen]);
 
   useEffect(() => {
     const fetchCsrfToken = async () => {
@@ -148,6 +155,7 @@ const RedoExerciseBlockModal = ({ isOpen, onRequestClose, exerciseBlock }) => {
         plan: newExerciseBlock.plan,
         completedDate: null,
         isCurrent: true,
+        includeDeload,
       };
 
       try {
@@ -249,6 +257,8 @@ const RedoExerciseBlockModal = ({ isOpen, onRequestClose, exerciseBlock }) => {
         setMesocycleName={setMesocycleName}
         numberOfWeeks={numberOfWeeks}
         setNumberOfWeeks={setNumberOfWeeks}
+        includeDeload={includeDeload}
+        setIncludeDeload={setIncludeDeload}
       />
     </>
   );

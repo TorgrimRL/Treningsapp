@@ -46,13 +46,13 @@ const TemplateSelector = ({ onSelectTemplate }) => {
             >
               <button
                 onClick={() => handleSelect(template)}
-                className="flex h-full w-full min-w-0 flex-col items-start justify-center bg-darkGray px-4 py-3 text-left text-white hover:bg-gray-700 md:border md:border-gray-700"
+                className="flex min-h-11 h-full w-full min-w-0 flex-col items-start justify-center bg-darkGray px-4 py-3 text-left text-white transition-colors hover:bg-gray-700 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400 md:border md:border-gray-700"
               >
                 <span className="w-full break-words font-semibold">
                   {template.name}
                 </span>
                 <span className="text-sm text-gray-300">
-                  {template.days} days/week
+                  {`${template.days} days/week`}
                 </span>
               </button>
             </li>

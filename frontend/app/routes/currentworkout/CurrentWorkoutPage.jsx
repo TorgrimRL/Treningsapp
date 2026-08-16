@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import PageContainer from "../../components/PageContainer";
 import { useApiFetch } from "../../utils/apiFetch";
+import CompletedWorkoutState from "./components/CompletedWorkoutState";
 import CurrentWorkoutDayBar from "./components/CurrentWorkoutDayBar";
 import CurrentWorkoutHeader from "./components/CurrentWorkoutHeader";
 import CurrentWorkoutModals from "./components/CurrentWorkoutModals";
@@ -102,6 +103,28 @@ export default function CurrentWorkoutPage() {
             Retry
           </button>
         </div>
+      </PageContainer>
+    );
+  }
+
+  const isWorkoutComplete =
+    Boolean(currentMesocycle?.completedDate) ||
+    (Array.isArray(currentMesocycle?.plan) &&
+      currentMesocycle.plan.length > 0 &&
+      currentMesocycle.plan.every((workoutDay) =>
+        workoutDay.exercises?.every((exercise) =>
+          exercise.sets?.every((set) => set.completed === true)
+        )
+      ));
+
+  if (currentMesocycle === null || isWorkoutComplete) {
+    return (
+      <PageContainer size="narrow" className="min-w-0 md:px-6">
+        <CompletedWorkoutState
+          apiFetch={apiFetch}
+          baseUrl={baseUrl}
+          completedMesocycle={isWorkoutComplete ? currentMesocycle : null}
+        />
       </PageContainer>
     );
   }

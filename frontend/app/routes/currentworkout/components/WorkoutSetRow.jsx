@@ -50,13 +50,13 @@ export default function WorkoutSetRow({
   return (
     <div
       data-testid={"workout-set-" + exerciseIndex + "-" + setIndex}
-      className="flex flex-row items-center space-y-0 mb-4 border-b border-gray-600 pb-2"
+      className="mb-4 grid grid-cols-[2.75rem_minmax(0,1fr)_minmax(0,1fr)_2.75rem_2.75rem_2.75rem] items-end gap-x-2 border-b border-gray-600 pb-2"
     >
       <div className="relative">
         <button
           type="button"
           onClick={() => onToggleSetMenu(setMenuId)}
-          className="text-white focus:outline-none mt-8"
+          className="inline-flex min-h-11 min-w-11 items-center justify-center text-white focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
         >
           <FontAwesomeIcon icon={faEllipsisV} />
         </button>
@@ -82,7 +82,7 @@ export default function WorkoutSetRow({
           />
         )}
       </div>
-      <div className="flex flex-col items-center space-y-1 flex-grow">
+      <div className="flex min-w-0 flex-col items-center space-y-1">
         <div className="text-center h-6 flex items-center justify-center">
           WEIGHT
         </div>
@@ -90,7 +90,7 @@ export default function WorkoutSetRow({
           data-testid="set-weight-select"
           value={getSetLogWeight(set)}
           onChange={(event) => onWeightChange(setIndex, event.target.value)}
-          className="bg-inputBGGray text-center border-black w-20 rounded p-1"
+          className="min-h-11 min-w-0 w-full rounded border-black bg-inputBGGray p-1 text-center"
         >
           <option value="">Choose weight</option>
           {getWeightOptions(exercise, getSetLogWeight(set)).map((weight) => (
@@ -100,7 +100,7 @@ export default function WorkoutSetRow({
           ))}
         </select>
       </div>
-      <div className="flex flex-col items-center space-y-1 flex-grow relative">
+      <div className="relative flex min-w-0 flex-col items-center space-y-1">
         <div className="text-center h-6 flex items-center justify-center">
           REPS
         </div>
@@ -108,7 +108,7 @@ export default function WorkoutSetRow({
           data-testid="set-reps-select"
           value={getSetRepsSelectValue(set)}
           onChange={(event) => onRepsChange(setIndex, event.target.value)}
-          className="bg-inputBGGray text-center border-black w-full rounded p-1"
+          className="min-h-11 min-w-0 w-full rounded border-black bg-inputBGGray p-1 text-center"
         >
           <option value="">Choose reps</option>
           {week <= 2 && (
@@ -133,11 +133,13 @@ export default function WorkoutSetRow({
           ))}
         </select>
       </div>
-      <div className="flex items-center justify-center ml-2 relative">
+      <div className="relative h-11 min-w-11">
         <PerformanceStatusIcon status={status} />
+      </div>
+      <div className="relative h-11 min-w-11">
         {personalRecord && (
           <PersonalRecordIcon
-            className="absolute -top-5 left-0 z-10 sm:left-5 sm:top-[2px]"
+            className="absolute left-1/2 top-1/2 z-0 -translate-x-1/2 -translate-y-1/2"
             title={
               `Open personal record history for ${personalRecord.weight} kg`
             }
@@ -145,22 +147,21 @@ export default function WorkoutSetRow({
           />
         )}
       </div>
-      <div className="flex flex-col items-center space-y-1 flex-grow">
-        <div className="text-center h-6 flex items-center justify-center">
+      <div className="flex min-w-0 flex-col items-center space-y-1">
+        <div className="flex h-6 items-center justify-center text-center">
           LOG
         </div>
-        <input
-          data-testid="set-log-checkbox"
-          type="checkbox"
-          checked={set.completed || false}
-          onChange={(event) => onSetCompletionChange(setIndex, event.target.checked)}
-          className="scale-125"
-          style={{
-            width: "20px",
-            height: "20px",
-            marginTop: "10px",
-          }}
-        />
+        <label className="flex min-h-11 min-w-11 -translate-x-1 items-center justify-center">
+          <span className="sr-only">Log set</span>
+          <input
+            id={"set-log-" + exerciseIndex + "-" + setIndex}
+            data-testid="set-log-checkbox"
+            type="checkbox"
+            checked={set.completed || false}
+            onChange={(event) => onSetCompletionChange(setIndex, event.target.checked)}
+            className="h-5 w-5"
+          />
+        </label>
       </div>
     </div>
   );

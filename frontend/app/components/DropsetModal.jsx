@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { normalizeProgressionSettings } from "../constants/constants";
+import {
+  formatWeightSetting,
+  minimumWeightOptions,
+  normalizeProgressionSettings,
+} from "../constants/constants";
 import {
   DEFAULT_DROPSET_SET_COUNT,
   DROPSET_DROP_PERCENT,
@@ -84,15 +88,23 @@ export default function DropsetModal({
       </div>
       <label className="flex flex-col gap-2">
         <span>Start weight</span>
-        <input
+        <select
           data-testid="dropset-start-weight"
-          type="number"
-          min={minimumWeight}
-          step="0.25"
           value={startWeight}
-          onChange={(event) => setStartWeight(event.target.value)}
-          className="bg-inputBGGray text-center w-full p-2"
-        />
+          onChange={(event) => setStartWeight(Number(event.target.value))}
+          className="w-full bg-inputBGGray p-2 text-center tabular-nums"
+        >
+          <option value="" disabled>
+            Choose start weight
+          </option>
+          {minimumWeightOptions
+            .filter((weight) => weight >= Math.max(minimumWeight, 0.25))
+            .map((weight) => (
+              <option key={weight} value={weight}>
+                {formatWeightSetting(weight)} kg
+              </option>
+            ))}
+        </select>
       </label>
       <label className="mt-4 flex flex-col gap-2">
         <span>Total sets</span>

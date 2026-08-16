@@ -21,6 +21,7 @@ const createMesocyclesTableSql = `CREATE TABLE IF NOT EXISTS Mesocycles (
       daysPerWeek INTEGER,
       completedDate TEXT,
       isCurrent INTEGER,
+      include_deload INTEGER DEFAULT 0,
       user_id INTEGER,
       FOREIGN KEY(user_id) REFERENCES users(id)
     )`;
@@ -83,11 +84,23 @@ export const schemaMigrationStatements = [
     sql: "ALTER TABLE users ADD COLUMN picture TEXT",
   },
   {
+    name: "mesocycles.include_deload",
+    table: "Mesocycles",
+    column: "include_deload",
+    sql: "ALTER TABLE Mesocycles ADD COLUMN include_deload INTEGER DEFAULT 0",
+  },
+  {
     name: "users.auth0_sub_unique",
     // noinspection SqlNoDataSourceInspection,SqlDialectInspection,SqlResolve
     sql: `CREATE UNIQUE INDEX IF NOT EXISTS idx_users_auth0_sub
       ON users(${auth0SubColumn})
       WHERE ${auth0SubColumn} IS NOT NULL AND ${auth0SubColumn} != ''`,
+  },
+  {
+    name: "mesocycles.user_id_isCurrent",
+    // noinspection SqlNoDataSourceInspection,SqlDialectInspection,SqlResolve
+    sql: `CREATE INDEX IF NOT EXISTS idx_mesocycles_user_id_is_current
+      ON Mesocycles(user_id, isCurrent)`,
   },
 ];
 

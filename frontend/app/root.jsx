@@ -8,8 +8,6 @@ import {
 import Navbar from "./components/Navbar";
 import "./tailwind.css";
 import { AuthProvider } from "./utils/AuthContext";
-import { WaitModalProvider } from "./components/WaitModalContext";
-import GlobalWaitModal from "./components/GlobalWaitModal";
 import {
   CurrentWorkoutQueryLifecycle,
   QueryProvider,
@@ -30,8 +28,7 @@ export default function Root() {
         <Links />
       </head>
       <body className="min-h-screen bg-darkestGray text-white">
-        <WaitModalProvider>
-          <QueryProvider>
+        <QueryProvider>
             <AuthProvider>
               <CurrentWorkoutQueryLifecycle />
               <div id="root" className="flex min-h-screen flex-col pt-12">
@@ -62,10 +59,8 @@ export default function Root() {
                   </div>
                 </footer>
               </div>
-              <GlobalWaitModal />
             </AuthProvider>
           </QueryProvider>
-        </WaitModalProvider>
         <ScrollRestoration />
         <Scripts />
       </body>

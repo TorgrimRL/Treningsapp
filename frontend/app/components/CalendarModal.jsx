@@ -22,7 +22,7 @@ export default function CalendarModal({
     >
       <div className="p-0 bg-darkGray">
         <div
-          className="grid gap-0 text-center transform scale-75 origin-top"
+          className="grid min-w-full w-max gap-0 text-center"
           style={{
             gridTemplateColumns: "repeat(" + numCols + ", 1fr)",
             gridTemplateRows: "repeat(" + numRows + ", auto)",
@@ -45,6 +45,11 @@ export default function CalendarModal({
                     : currentDayIndex === weekIndex * numRows + dayIndex
                     ? "bg-red-500"
                     : "bg-darkestGray";
+                  const dayHoverClass = day.isCompleted
+                    ? "hover:bg-green-600"
+                    : currentDayIndex === weekIndex * numRows + dayIndex
+                    ? "hover:bg-red-400"
+                    : "hover:bg-gray-800";
 
                   return (
                     <li
@@ -56,7 +61,11 @@ export default function CalendarModal({
                     >
                       <button
                         type="button"
-                        className="w-full min-h-[50px] cursor-pointer uppercase flex items-center justify-center bg-transparent text-white"
+                        className={
+                          "flex min-h-[50px] w-full self-stretch items-center justify-center bg-transparent text-white transition-colors " +
+                          dayHoverClass +
+                          " focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
+                        }
                         onClick={() => onDayClick(weekIndex * numRows + dayIndex)}
                       >
                         {day.label ? day.label : "Day " + (dayIndex + 1)}

@@ -1,12 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@remix-run/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBars } from "@fortawesome/free-solid-svg-icons";
 import { useAuth } from "../utils/AuthContext";
+import { useApiFetch } from "../utils/apiFetch";
+import { currentWorkoutQueryOptions } from "../utils/currentWorkoutQuery";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const { authCheckInProgress, isLoggedIn } = useAuth();
+  const queryClient = useQueryClient();
+  const { apiFetch } = useApiFetch();
   const menuRef = useRef(null);
   const baseUrl = import.meta.env.VITE_API_URL;
   const showLoggedInNav = isLoggedIn === true;
@@ -16,6 +21,12 @@ export default function Navbar() {
     localStorage.removeItem("token");
     sessionStorage.removeItem("token");
     window.location.assign(`${baseUrl}/auth0/logout`);
+  };
+
+  const prefetchCurrentWorkout = () => {
+    if (isLoggedIn === true) {
+      void queryClient.prefetchQuery(currentWorkoutQueryOptions(apiFetch, baseUrl));
+    }
   };
 
   const closeMenu = () => {
@@ -66,7 +77,7 @@ export default function Navbar() {
             aria-label="Open navigation menu"
             aria-expanded={isOpen}
             data-testid="navbar-menu-button"
-            className="flex h-10 w-10 items-center justify-center text-xl text-white focus:outline-none"
+            className="flex min-h-11 min-w-11 items-center justify-center text-xl text-white focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
           >
             <FontAwesomeIcon icon={faBars} size="1x" />
           </button>
@@ -99,6 +110,9 @@ export default function Navbar() {
               <Link
                 to="/currentworkout"
                 prefetch="intent"
+                onPointerEnter={prefetchCurrentWorkout}
+                onFocus={prefetchCurrentWorkout}
+                onClick={prefetchCurrentWorkout}
                 className="text-white h-full flex items-center "
               >
                 Current workout
@@ -146,7 +160,7 @@ export default function Navbar() {
                 <Link
                   to="/"
                   onClick={closeMenu}
-                  className="focus:outline-none block w-full text-left cursor-pointer"
+                  className="block w-full cursor-pointer text-left focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
                 >
                   Home
                 </Link>
@@ -155,7 +169,7 @@ export default function Navbar() {
                 <li className="block px-4 py-2 hover:bg-darkGray ">
                   <a
                     href={`${baseUrl}/auth0/login`}
-                    className="focus:outline-none block w-full text-left cursor-pointer"
+                    className="block w-full cursor-pointer text-left focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
                   >
                     Login
                   </a>
@@ -165,7 +179,7 @@ export default function Navbar() {
                 <li className="block px-4 py-2 hover:bg-darkGray ">
                   <a
                     href={`${baseUrl}/auth0/register`}
-                    className="focus:outline-none block w-full text-left cursor-pointer"
+                    className="block w-full cursor-pointer text-left focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
                   >
                     Register
                   </a>
@@ -177,8 +191,11 @@ export default function Navbar() {
                     <Link
                       to="/currentworkout"
                       prefetch="intent"
-                      onClick={closeMenu}
-                      className="focus:outline-none block w-full text-left cursor-pointer"
+                      onClick={() => {
+                        prefetchCurrentWorkout();
+                        closeMenu();
+                      }}
+                      className="block w-full cursor-pointer text-left focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
                     >
                       Current workout
                     </Link>
@@ -189,7 +206,7 @@ export default function Navbar() {
                       prefetch="intent"
                       data-testid="personal-records-mobile-nav-link"
                       onClick={closeMenu}
-                      className="focus:outline-none block w-full text-left cursor-pointer"
+                      className="block w-full cursor-pointer text-left focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
                     >
                       Personal records
                     </Link>
@@ -198,7 +215,7 @@ export default function Navbar() {
                     <Link
                       to="/mesocycles-new"
                       onClick={closeMenu}
-                      className="focus:outline-none block w-full text-left cursor-pointer"
+                      className="block w-full cursor-pointer text-left focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
                     >
                       New training block
                     </Link>
@@ -207,7 +224,7 @@ export default function Navbar() {
                     <Link
                       to="/templates"
                       onClick={closeMenu}
-                      className="focus:outline-none block w-full text-left cursor-pointer"
+                      className="block w-full cursor-pointer text-left focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
                     >
                       Templates
                     </Link>
@@ -216,7 +233,7 @@ export default function Navbar() {
                     <Link
                       to="/mesocycles"
                       onClick={closeMenu}
-                      className="focus:outline-none block w-full text-left cursor-pointer"
+                      className="block w-full cursor-pointer text-left focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
                     >
                       History
                     </Link>
@@ -225,7 +242,7 @@ export default function Navbar() {
                     <button
                       type="button"
                       onClick={handleLogout}
-                      className="text-white h-full flex items-center hover:bg-gray-700"
+                      className="flex h-full items-center text-white hover:bg-gray-700 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
                     >
                       Logout
                     </button>

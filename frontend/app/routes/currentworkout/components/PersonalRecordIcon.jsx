@@ -17,7 +17,7 @@ export function PersonalRecordIcon({
         onClick?.(event);
       }}
       className={
-        "inline-flex min-h-6 min-w-6 items-center justify-center " +
+        "inline-flex min-h-11 min-w-11 items-center justify-center " +
         "text-amber-400 transition-colors hover:text-amber-300 " +
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 " +
         className

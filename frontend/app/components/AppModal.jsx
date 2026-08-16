@@ -41,7 +41,7 @@ export default function AppModal({
           type="button"
           aria-label="Close modal"
           onClick={onRequestClose}
-          className="absolute top-0 right-2 z-10 m-0 text-3xl text-white hover:text-gray-300"
+          className="absolute right-2 top-0 z-10 inline-flex min-h-11 min-w-11 items-center justify-center text-3xl text-white transition-colors hover:text-gray-300 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
         >
           &times;
         </button>

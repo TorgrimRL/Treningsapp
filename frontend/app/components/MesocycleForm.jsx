@@ -52,6 +52,7 @@ const MesocycleForm = ({ onCancel, onSubmit }) => {
   const [isModalOpen, setIsModalOpen] = useState(true);
   const [mesocycleName, setMesocycleName] = useState("");
   const [numberOfWeeks, setNumberOfWeeks] = useState("");
+  const [includeDeload, setIncludeDeload] = useState(false);
   const location = useLocation();
   const { template, weeks, daysPerWeek, muscleGroups, dayLabels } =
     location.state || {};
@@ -126,9 +127,10 @@ const MesocycleForm = ({ onCancel, onSubmit }) => {
     );
   };
 
-  const handleSaveMesocycleDetails = (name, weeksValue) => {
+  const handleSaveMesocycleDetails = (name, weeksValue, includeDeloadValue) => {
     setMesocycleName(name);
     setNumberOfWeeks(weeksValue);
+    setIncludeDeload(includeDeloadValue);
     setIsModalOpen(false);
   };
 
@@ -330,6 +332,7 @@ const MesocycleForm = ({ onCancel, onSubmit }) => {
       plan: filledPlan,
       completedDate: null,
       isCurrent: true,
+      includeDeload,
     };
 
     onSubmit(mesocycleData);
@@ -382,6 +385,8 @@ const MesocycleForm = ({ onCancel, onSubmit }) => {
         setMesocycleName={setMesocycleName}
         numberOfWeeks={numberOfWeeks}
         setNumberOfWeeks={setNumberOfWeeks}
+        includeDeload={includeDeload}
+        setIncludeDeload={setIncludeDeload}
         variant="inline"
       />
     );
