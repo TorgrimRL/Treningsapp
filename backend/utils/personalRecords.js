@@ -1,3 +1,5 @@
+import { parseAndValidatePlan } from "./planValidation.js";
+
 function normalizeDisplayName(value) {
   if (typeof value !== "string") {
     return "";
@@ -52,17 +54,8 @@ function normalizeReps(value) {
 }
 
 function parsePlan(plan) {
-  if (Array.isArray(plan)) {
-    return plan;
-  }
-
-  if (typeof plan !== "string") {
-    return null;
-  }
-
   try {
-    const parsed = JSON.parse(plan);
-    return Array.isArray(parsed) ? parsed : null;
+    return parseAndValidatePlan(plan);
   } catch {
     return null;
   }
@@ -137,46 +130,149 @@ function compareMesocycles(left, right) {
   return idComparison || left.originalIndex - right.originalIndex;
 }
 
-function mergeWorkoutQueues(workoutQueues) {
+class MinHeap {
+  constructor(compare) {
+    this.compare = compare;
+    this.items = [];
+  }
+
+  push(value) {
+    this.items.push(value);
+    let index = this.items.length - 1;
+
+    while (index > 0) {
+      const parentIndex = Math.floor((index - 1) / 2);
+      if (this.compare(this.items[parentIndex], value) <= 0) {
+        break;
+      }
+
+      this.items[index] = this.items[parentIndex];
+      index = parentIndex;
+    }
+
+    this.items[index] = value;
+  }
+
+  pop() {
+    if (this.items.length === 0) {
+      return null;
+    }
+
+    const first = this.items[0];
+    const last = this.items.pop();
+    if (this.items.length === 0) {
+      return first;
+    }
+
+    let index = 0;
+    while (true) {
+      const leftIndex = index * 2 + 1;
+      const rightIndex = leftIndex + 1;
+      if (leftIndex >= this.items.length) {
+        break;
+      }
+
+      const childIndex =
+        rightIndex < this.items.length &&
+        this.compare(this.items[rightIndex], this.items[leftIndex]) < 0
+          ? rightIndex
+          : leftIndex;
+
+      if (this.compare(last, this.items[childIndex]) <= 0) {
+        break;
+      }
+
+      this.items[index] = this.items[childIndex];
+      index = childIndex;
+    }
+
+    this.items[index] = last;
+    return first;
+  }
+}
+
+function popCurrentEntry(heap, isCurrentEntry) {
+  let entry = heap.pop();
+  while (entry && !isCurrentEntry(entry)) {
+    entry = heap.pop();
+  }
+  return entry;
+}
+
+function mergeWorkoutQueueGroup(workoutQueues, isCurrentGroup) {
   const nextDayByBlock = workoutQueues.map(() => 0);
+  const versions = workoutQueues.map(() => 0);
+  const blockHeap = new MinHeap(
+    (left, right) => left.blockIndex - right.blockIndex
+  );
+  const dateHeap = new MinHeap(
+    (left, right) =>
+      left.workout.workoutTimestamp - right.workout.workoutTimestamp ||
+      left.blockIndex - right.blockIndex
+  );
   const orderedWorkouts = [];
+  let undatedHeadCount = 0;
+
+  const getCurrentWorkout = (blockIndex) =>
+    workoutQueues[blockIndex]?.[nextDayByBlock[blockIndex]];
+
+  const isCurrentEntry = (entry) =>
+    versions[entry.blockIndex] === entry.version &&
+    getCurrentWorkout(entry.blockIndex) === entry.workout;
+
+  const addCurrentWorkout = (blockIndex) => {
+    const workout = getCurrentWorkout(blockIndex);
+    if (!workout) {
+      return;
+    }
+
+    const entry = {
+      blockIndex,
+      version: versions[blockIndex],
+      workout,
+    };
+    blockHeap.push(entry);
+
+    if (workout.workoutTimestamp === null) {
+      undatedHeadCount += 1;
+    } else {
+      dateHeap.push(entry);
+    }
+  };
+
+  workoutQueues.forEach((workouts, blockIndex) => {
+    const firstWorkout = workouts[0];
+    if (firstWorkout?.isCurrent === isCurrentGroup) {
+      addCurrentWorkout(blockIndex);
+    }
+  });
 
   while (true) {
-    const candidates = workoutQueues
-      .map((workouts, blockIndex) => workouts[nextDayByBlock[blockIndex]])
-      .filter(Boolean);
-
-    if (candidates.length === 0) {
+    const entry = popCurrentEntry(
+      undatedHeadCount > 0 ? blockHeap : dateHeap,
+      isCurrentEntry
+    );
+    if (!entry) {
       return orderedWorkouts;
     }
 
-    const historicalCandidates = candidates.filter(
-      (workout) => !workout.isCurrent
-    );
-    const eligibleCandidates =
-      historicalCandidates.length > 0 ? historicalCandidates : candidates;
-    const allCandidatesHaveDates = eligibleCandidates.every(
-      (workout) => workout.workoutTimestamp !== null
-    );
-    const nextWorkout = eligibleCandidates.reduce((earliest, workout) => {
-      if (!earliest) {
-        return workout;
-      }
+    const { blockIndex, workout } = entry;
+    orderedWorkouts.push(workout);
+    if (workout.workoutTimestamp === null) {
+      undatedHeadCount -= 1;
+    }
 
-      if (allCandidatesHaveDates) {
-        return workout.workoutTimestamp < earliest.workoutTimestamp ||
-          (workout.workoutTimestamp === earliest.workoutTimestamp &&
-            workout.blockIndex < earliest.blockIndex)
-          ? workout
-          : earliest;
-      }
-
-      return workout.blockIndex < earliest.blockIndex ? workout : earliest;
-    }, null);
-
-    orderedWorkouts.push(nextWorkout);
-    nextDayByBlock[nextWorkout.blockIndex] += 1;
+    nextDayByBlock[blockIndex] += 1;
+    versions[blockIndex] += 1;
+    addCurrentWorkout(blockIndex);
   }
+}
+
+function mergeWorkoutQueues(workoutQueues) {
+  return [
+    ...mergeWorkoutQueueGroup(workoutQueues, false),
+    ...mergeWorkoutQueueGroup(workoutQueues, true),
+  ];
 }
 
 function prepareWorkouts(mesocycles) {

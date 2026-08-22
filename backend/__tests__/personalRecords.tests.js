@@ -483,4 +483,26 @@ describe("personal record history", () => {
     expect(history[0]).not.toHaveProperty("sets");
     expect(history[0]).not.toHaveProperty("plan");
   });
+
+  it("merges a large multi-block history without rescanning every block", () => {
+    const mesocycles = Array.from({ length: 5_000 }, (_, index) =>
+      makeMesocycle({
+        id: index + 1,
+        name: `Block ${index + 1}`,
+        plan: [
+          makeDay([
+            makeExercise("Bench Press", [makeSet(50, index + 1)]),
+          ]),
+        ],
+      })
+    );
+
+    const history = buildPersonalRecordHistory(mesocycles);
+
+    expect(history).toHaveLength(5_000);
+    expect(history.at(-1)).toMatchObject({
+      mesocycleId: 5_000,
+      reps: 5_000,
+    });
+  });
 });

@@ -61,14 +61,20 @@ describe("local SQLite database adapter", () => {
   });
 
   it("supports raw SQL strings for schema and maintenance commands", async () => {
-    // noinspection SqlNoDataSourceInspection,SqlDialectInspection
+    // noinspection SqlNoDataSourceInspection,SqlDialectInspection,SqlResolve
     await db.sql("CREATE TABLE example (id INTEGER PRIMARY KEY, name TEXT)");
-    // noinspection SqlNoDataSourceInspection,SqlDialectInspection
+    // noinspection SqlNoDataSourceInspection,SqlDialectInspection,SqlResolve
     await db.sql("INSERT INTO example (name) VALUES (?)", "raw");
 
-    // noinspection SqlNoDataSourceInspection,SqlDialectInspection
+    // noinspection SqlNoDataSourceInspection,SqlDialectInspection,SqlResolve
     const rows = await db.sql("SELECT * FROM example");
 
     expect(rows).toEqual([{ id: 1, name: "raw" }]);
+  });
+
+  it("enforces foreign keys on every local connection", async () => {
+    const rows = await db.sql("PRAGMA foreign_keys");
+
+    expect(rows).toEqual([{ foreign_keys: 1 }]);
   });
 });

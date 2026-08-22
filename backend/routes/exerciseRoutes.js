@@ -21,7 +21,10 @@ router.post("/exercises", authenticateToken, csrfProtection, async (req, res) =>
     });
     res.status(201).json(responsePayload);
   } catch (error) {
-    console.error("Error creating new exercise:", error.message);
+    console.error("Error creating new exercise", {
+      code: error?.code,
+      name: error?.name,
+    });
     res.status(500).json({ error: "Failed to create a new exercise" });
   }
 });
@@ -37,6 +40,10 @@ router.get("/exercises", authenticateToken, async (req, res) => {
       : rows;
     res.json(responsePayload);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Error fetching exercises", {
+      code: err?.code,
+      name: err?.name,
+    });
+    res.status(500).json({ error: "Failed to fetch exercises" });
   }
 });

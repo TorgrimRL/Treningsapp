@@ -2,7 +2,10 @@ import { jest } from "@jest/globals";
 import request from "supertest";
 import { createTestDb } from "../testHelpers/testDb.js";
 import { loadAppWithQuery } from "../testHelpers/loadApp.js";
-import { createAuthenticatedUser } from "../testHelpers/api.js";
+import {
+  createAuthenticatedUser,
+  csrfRequest,
+} from "../testHelpers/api.js";
 import { upsertAuth0User } from "../utils/auth0Users.js";
 
 function expectClearedTokenCookie(response) {
@@ -87,14 +90,42 @@ describe("auth regression", () => {
     expectClearedTokenCookie(response);
   });
 
-  it("clears the local app token from the Auth0 logout route when Auth0 is disabled", async () => {
+  it("rejects deleted-user tokens on every protected route", async () => {
+    const { agent, userId } = await createAuthenticatedUser(app, db, {
+      username: "deleted-protected@example.com",
+    });
+    await db.run("DELETE FROM users WHERE id = ?", [userId]);
+
+    const response = await agent.get("/api/exercises").expect(401);
+
+    expect(response.text).toBe("Access Denied");
+    expectClearedTokenCookie(response);
+  });
+
+  it("requires a CSRF-protected POST to clear the local app token", async () => {
     const { agent } = await createAuthenticatedUser(app, db, {
       username: "newuser@example.com",
     });
 
-    const response = await agent.get("/api/auth0/logout").expect(302);
+    const getResponse = await agent.get("/api/auth0/logout").expect(405);
+    expect(getResponse.headers.allow).toBe("POST");
+    await agent.get("/api/me").expect(200);
 
-    expect(response.headers.location).toBe("http://localhost:5173");
+    const response = await csrfRequest(
+      agent,
+      "post",
+      "/api/auth0/logout"
+    ).expect(302);
+
+    const logoutLocation = new URL(response.headers.location);
+    if (logoutLocation.origin === "http://localhost:5173") {
+      expect(logoutLocation.href).toBe("http://localhost:5173/");
+    } else {
+      expect(logoutLocation.pathname).toBe("/v2/logout");
+      expect(logoutLocation.searchParams.get("returnTo")).toBe(
+        "http://localhost:5173"
+      );
+    }
     expectClearedTokenCookie(response);
     await agent.get("/api/me").expect(401);
   });
