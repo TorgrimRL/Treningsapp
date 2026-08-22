@@ -92,9 +92,9 @@ export default function WorkoutSetRow({
           onChange={(event) => onWeightChange(setIndex, event.target.value)}
           className="h-11 min-h-11 min-w-0 w-full rounded border-black bg-inputBGGray px-1 py-0 text-center leading-none [font-variant-numeric:tabular-nums] [text-align-last:center]"
         >
-          <option value="">Choose weight</option>
+          <option className="text-center" value="">Choose weight</option>
           {getWeightOptions(exercise, getSetLogWeight(set)).map((weight) => (
-            <option key={weight} value={weight}>
+            <option className="text-center" key={weight} value={weight}>
               {weight}
             </option>
           ))}
@@ -110,24 +110,24 @@ export default function WorkoutSetRow({
           onChange={(event) => onRepsChange(setIndex, event.target.value)}
           className="h-11 min-h-11 min-w-0 w-full rounded border-black bg-inputBGGray px-1 py-0 text-center leading-none [font-variant-numeric:tabular-nums] [text-align-last:center]"
         >
-          <option value="">Choose reps</option>
+          <option className="text-center" value="">Choose reps</option>
           {week <= 2 && (
-            <option value="3 RIR" disabled>
+            <option className="text-center" value="3 RIR" disabled>
               3 RIR
             </option>
           )}
           {week === 3 && (
-            <option value="2 RIR" disabled>
+            <option className="text-center" value="2 RIR" disabled>
               2 RIR
             </option>
           )}
           {week >= 4 && (
-            <option value="0/1 RIR" disabled>
+            <option className="text-center" value="0/1 RIR" disabled>
               0/1 RIR
             </option>
           )}
           {REP_RANGE.map((reps) => (
-            <option key={reps} value={reps}>
+            <option className="text-center" key={reps} value={reps}>
               {reps}
             </option>
           ))}

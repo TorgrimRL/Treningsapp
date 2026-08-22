@@ -1,0 +1,5 @@
+day,exercise,sets,weight,reps,muscle_group,type,progression_mode,weight_increment,minimum_weight
+Monday,Bench Press,3,60,8,Chest,barbell,percent,2.5,2.5
+Monday,Cable Fly,3,25,12,Chest,cable,reps,2.5,2.5
+Wednesday,Barbell Row,3,50,10,Back,barbell,weight,2.5,2.5
+Friday,Leg Press,4,120,10,Quads,machine,percent,5,5

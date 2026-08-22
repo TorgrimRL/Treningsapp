@@ -12,6 +12,7 @@ import {
   requestMesocycleRename,
 } from "../utils/mesocycleName";
 import { personalRecordsQueryKey } from "../utils/personalRecordsQuery";
+import { downloadMesocycleCsv } from "../features/import-plan/exportPlanCsv";
 
 const MesocycleOverview = () => {
   const [mesocycles, setMesocycles] = useState([]);
@@ -133,12 +134,10 @@ const MesocycleOverview = () => {
       <div className="text-white">
         <header className="flex items-center justify-between gap-4 px-4 py-6 md:px-0">
           <h1 className="m-0 text-2xl">Mesocycles</h1>
-          <Link
-            to="/mesocycles-new"
-            className="cursor-pointer bg-red-600 px-4 py-2 text-lg text-white"
-          >
-            + NEW
-          </Link>
+          <div className="flex gap-2">
+            <Link to="/import-plan" className="inline-flex min-h-11 items-center border border-red-500 px-3 text-sm text-red-200 hover:bg-red-950">Import a plan</Link>
+            <Link to="/mesocycles-new" className="cursor-pointer bg-red-600 px-4 py-2 text-lg text-white">+ NEW</Link>
+          </div>
         </header>
         <ul
           data-testid="history-grid"
@@ -197,6 +196,18 @@ const MesocycleOverview = () => {
                     </button>
                     {openMenus[mesocycle.id] && (
                       <div className="absolute right-0 z-10 mt-2 w-48 rounded-lg bg-darkGray p-2 shadow-lg">
+                        <button
+                          aria-label={`Export ${mesocycle.name} as CSV`}
+                          className="block min-h-11 w-full px-4 py-2 text-left text-sm text-white transition-colors hover:bg-gray-700 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
+                          data-testid={`export-mesocycle-${mesocycle.id}`}
+                          onClick={() => {
+                            downloadMesocycleCsv(mesocycle);
+                            setOpenMenus({});
+                          }}
+                          type="button"
+                        >
+                          Export CSV
+                        </button>
                         <button
                           aria-label={`Rename ${mesocycle.name}`}
                           className="block min-h-11 w-full px-4 py-2 text-left text-sm text-white transition-colors hover:bg-gray-700 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"

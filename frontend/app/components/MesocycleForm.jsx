@@ -16,46 +16,25 @@ import { useLocation } from "react-router";
 import AddExerciseModal from "./AddExerciseModal";
 import MesocycleDetailsModal from "./MesocycleDetailsModal";
 import { useApiFetch } from "../utils/apiFetch";
-
-const emptySet = () => ({
-  completed: false,
-  targetWeight: 0,
-  targetReps: 0,
-});
-
-const createEmptyExercise = (overrides = {}) => {
-  const exercise = {
-    muscleGroup: "",
-    exercise: "",
-    type: "",
-    videoLink: "",
-    sets: [emptySet(), emptySet()],
-    ...overrides,
-  };
-
-  return {
-    ...exercise,
-    ...normalizeProgressionSettings(exercise),
-  };
-};
+import { buildMesocyclePayload, createEmptyExercise } from "../utils/mesocyclePlan";
 
 const sortExercisesByName = (exerciseList = []) =>
   [...exerciseList].sort((a, b) => a.name.localeCompare(b.name));
 
 const MesocycleForm = ({ onCancel, onSubmit }) => {
+  const location = useLocation();
+  const { template, weeks, daysPerWeek, muscleGroups, dayLabels, importedPlan } =
+    location.state || {};
   const [plan, setPlan] = useState([
-    {
+    ...(importedPlan?.plan?.slice(0, importedPlan.daysPerWeek) || [{
       label: "",
       exercises: [createEmptyExercise()],
-    },
+    }]),
   ]);
-  const [isModalOpen, setIsModalOpen] = useState(true);
-  const [mesocycleName, setMesocycleName] = useState("");
-  const [numberOfWeeks, setNumberOfWeeks] = useState("");
-  const [includeDeload, setIncludeDeload] = useState(false);
-  const location = useLocation();
-  const { template, weeks, daysPerWeek, muscleGroups, dayLabels } =
-    location.state || {};
+  const [isModalOpen, setIsModalOpen] = useState(!importedPlan);
+  const [mesocycleName, setMesocycleName] = useState(importedPlan?.name || "");
+  const [numberOfWeeks, setNumberOfWeeks] = useState(importedPlan?.weeks || "");
+  const [includeDeload, setIncludeDeload] = useState(importedPlan?.includeDeload || false);
   const [isExerciseModalOpen, setIsExerciseModalOpen] = useState(false);
   const [customExercises, setCustomExercises] = useState({});
   const baseUrl = import.meta.env.VITE_API_URL;
@@ -303,37 +282,12 @@ const MesocycleForm = ({ onCancel, onSubmit }) => {
   };
 
   const handleModalSave = () => {
-    const weekCount = Number(numberOfWeeks);
-    const firstWeekPlan = plan.map((day) => ({
-      ...day,
-      exercises: day.exercises.map((exercise) => ({
-        ...exercise,
-        ...normalizeProgressionSettings(exercise),
-      })),
-    }));
-    const filledPlan = [];
-
-    for (let i = 0; i < weekCount; i += 1) {
-      filledPlan.push(
-        ...firstWeekPlan.map((day) => ({
-          ...day,
-          exercises: day.exercises.map((exercise) => ({
-            ...exercise,
-            sets: exercise.sets.map((set) => ({ ...set })),
-          })),
-        }))
-      );
-    }
-
-    const mesocycleData = {
+    const mesocycleData = buildMesocyclePayload({
       name: mesocycleName,
-      weeks: weekCount,
-      daysPerWeek: firstWeekPlan.length,
-      plan: filledPlan,
-      completedDate: null,
-      isCurrent: true,
+      weeks: numberOfWeeks,
       includeDeload,
-    };
+      plan,
+    });
 
     onSubmit(mesocycleData);
     setIsModalOpen(false);

@@ -92,14 +92,14 @@ const MesocycleDetailsModal = ({
           value={numberOfWeeks}
           onChange={(event) => setNumberOfWeeks(event.target.value)}
           required
-          className="w-full border-black bg-inputBGGray p-2 text-center"
+          className="w-full border-black bg-inputBGGray p-2 text-center [font-variant-numeric:tabular-nums] [text-align-last:center]"
         >
           <option value="" disabled>
             Select Weeks
           </option>
-          <option value={4}>4</option>
-          <option value={5}>5</option>
-          <option value={6}>6</option>
+          <option className="text-center" value={4}>4</option>
+          <option className="text-center" value={5}>5</option>
+          <option className="text-center" value={6}>6</option>
         </select>
       </div>
       {setIncludeDeload && (
@@ -109,7 +109,7 @@ const MesocycleDetailsModal = ({
             type="checkbox"
             checked={includeDeload}
             onChange={(event) => setIncludeDeload(event.target.checked)}
-            className="h-5 w-5"
+            className="h-6 w-6 shrink-0 accent-red-600"
           />
           <span>Use the final week as a deload week</span>
         </label>

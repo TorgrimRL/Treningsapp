@@ -178,6 +178,23 @@ describe("exercise and mesocycle regression", () => {
     });
   });
 
+  it("validates custom exercises and treats normalized duplicates as idempotent", async () => {
+    const { agent } = await createAuthenticatedUser(app, db, { username: "alice" });
+    const invalid = await csrfRequest(agent, "post", "/api/exercises")
+      .send({ name: "", type: "invalid", muscleGroup: "Unknown" })
+      .expect(400);
+    expect(invalid.body.error).toContain("invalid");
+
+    await csrfRequest(agent, "post", "/api/exercises")
+      .send({ name: "  Cable   Fly  ", type: "cable", muscleGroup: "Chest" })
+      .expect(201);
+    const duplicate = await csrfRequest(agent, "post", "/api/exercises")
+      .send({ name: "cable fly", type: "cable", muscleGroup: "Chest" })
+      .expect(200);
+    expect(duplicate.body.message).toBe("Exercise already exists");
+    expect((await agent.get("/api/exercises").expect(200)).body).toHaveLength(1);
+  });
+
   it("creates mesocycles, marks the newest one current, and parses list responses", async () => {
     const { agent } = await createAuthenticatedUser(app, db, { username: "alice" });
 
