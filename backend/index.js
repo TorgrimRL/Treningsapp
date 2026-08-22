@@ -9,6 +9,7 @@ import mesocycleRoutes from "./routes/mesocycleRoutes.js";
 import exerciseRoutes from "./routes/exerciseRoutes.js";
 import {
   authenticateToken,
+  clearCsrfCookie,
   csrfProtection,
   csrfTokenRoute,
 } from "./middleware.js";
@@ -17,6 +18,7 @@ import { safeQuery } from "./utils/safeQuery.js";
 import { buildResponsePayload } from "./utils/buildResponsePayload.js";
 import { clearAuthTokenCookie } from "./utils/authCookies.js";
 import { serializeUser } from "./utils/auth0Users.js";
+import { createCorsOptions } from "./utils/corsOptions.js";
 dotenv.config();
 
 const app = express();
@@ -55,26 +57,7 @@ const apiRateLimiter = rateLimit({
   },
 });
 
-const corsOptions = {
-  origin: function (origin, callback) {
-    const allowedOrigins = [
-      "http://localhost:5173",
-      "http://localhost:5174",
-      "http://127.0.0.1:5174",
-      "https://setoptimizer.com",
-      "https://www.setoptimizer.com",
-      process.env.FRONTEND_URL,
-    ].filter(Boolean);
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  credentials: true,
-};
-
-app.use(cors(corsOptions));
+app.use(cors(createCorsOptions()));
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -101,8 +84,11 @@ app.get("/api/ping", async (req, res) => {
     await safeQuery`SELECT 1`;
     return res.status(200).send("OK");
   } catch (err) {
-    console.error(`${new Date().toISOString()} – ping FEILET:`, err);
-    return res.status(500).json({ message: err.message });
+    console.error("Database health check failed", {
+      code: err?.code,
+      name: err?.name,
+    });
+    return res.status(503).json({ message: "Service unavailable" });
   }
 });
 
@@ -119,8 +105,9 @@ app.get("/api/me", async (req, res) => {
   let decodedToken;
   try {
     decodedToken = jwt.verify(token, secretKey);
-  } catch (error) {
+  } catch {
     clearAuthTokenCookie(res);
+    clearCsrfCookie(res);
     return sendLoggedOut(res);
   }
 
@@ -136,38 +123,68 @@ app.get("/api/me", async (req, res) => {
 
     if (!user) {
       clearAuthTokenCookie(res);
+      clearCsrfCookie(res);
       return sendLoggedOut(res);
     }
 
     res.json({ isLoggedIn: true, user: serializeUser(user) });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("Current-user lookup failed", {
+      code: err?.code,
+      name: err?.name,
+    });
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 app.delete(
-  "/api/users/:username",
+  "/api/users/me",
   authenticateToken,
   csrfProtection,
   async (req, res) => {
     try {
-      const { username } = req.params;
-      const { hadRetry } =
-        await safeQuery`DELETE FROM users WHERE username = ${username}`;
+      const { result, hadRetry } =
+        await safeQuery`DELETE FROM users WHERE id = ${req.user.id}`;
+
+      if (!result || result.changes !== 1) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      clearAuthTokenCookie(res);
+      clearCsrfCookie(res);
       const responsePayload = buildResponsePayload(hadRetry);
-      res.status(200).json(responsePayload);
+      return res.status(200).json(responsePayload);
     } catch (error) {
-      console.error("Database Error", error);
-      res.status(500).json({ message: error.message });
+      console.error("Account deletion failed", {
+        code: error?.code,
+        name: error?.name,
+      });
+      return res.status(500).json({ message: "Failed to delete user" });
     }
   }
 );
 
-app.use((error, req, res, next) => {
+app.use((error, _req, res, _next) => {
   if (error.code === "EBADCSRFTOKEN") {
     return res.status(403).json({ error: "Invalid CSRF token" });
   }
 
-  return next(error);
+  if (error.code === "ECORS") {
+    return res.status(403).json({ error: "Origin is not allowed" });
+  }
+
+  if (error.type === "entity.too.large") {
+    return res.status(413).json({ error: "Request body is too large" });
+  }
+
+  if (error.type === "entity.parse.failed") {
+    return res.status(400).json({ error: "Invalid JSON body" });
+  }
+
+  console.error("Unhandled request error", {
+    code: error?.code,
+    name: error?.name,
+  });
+  return res.status(500).json({ error: "Internal server error" });
 });
 
 app.get("/", (req, res) => {

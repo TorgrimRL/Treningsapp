@@ -14,6 +14,17 @@ import {
   applyWorkoutDayTimestamps,
   isWorkoutDayComplete,
 } from "../utils/planPersistence.js";
+import {
+  MesocycleQuotaError,
+  assertMesocycleQuota,
+} from "../utils/mesocycleLimits.js";
+import {
+  MAX_DROPSET_SET_COUNT,
+  PlanValidationError,
+  getPlanByteLength,
+  parseAndValidatePlan,
+  validateMesocycleInput,
+} from "../utils/planValidation.js";
 const router = express.Router();
 
 const renameRequestRateLimiter = rateLimit({
@@ -38,13 +49,16 @@ const renameUserRateLimiter = rateLimit({
 });
 
 function parsePlan(plan) {
-  const parsedPlan = typeof plan === "string" ? JSON.parse(plan) : plan;
+  return parseAndValidatePlan(plan);
+}
 
-  if (!Array.isArray(parsedPlan)) {
-    throw new TypeError("Plan must be an array");
+function normalizeCompletedDate(value) {
+  if (typeof value !== "string" || value.trim() === "") {
+    return null;
   }
 
-  return parsedPlan;
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : null;
 }
 
 function normalizeMesocycleRow(row, plan = parsePlan(row.plan)) {
@@ -53,9 +67,38 @@ function normalizeMesocycleRow(row, plan = parsePlan(row.plan)) {
     plan,
     isCurrent: !!row.isCurrent,
     includeDeload: !!row.include_deload,
-    completedDate: row.completedDate
-      ? new Date(row.completedDate).toISOString()
-      : null,
+    completedDate: normalizeCompletedDate(row.completedDate),
+  };
+}
+
+function sendMesocycleWriteError(res, error, fallbackMessage) {
+  if (error instanceof PlanValidationError) {
+    return res.status(400).json({ error: "Invalid plan data" });
+  }
+
+  if (error instanceof MesocycleQuotaError) {
+    return res.status(422).json({ error: "Mesocycle limit reached" });
+  }
+
+  console.error(fallbackMessage, {
+    code: error?.code,
+    name: error?.name,
+  });
+  return res.status(500).json({ error: fallbackMessage });
+}
+
+async function getMesocycleUsage(userId) {
+  const { result, hadRetry } = await safeQuery`
+    SELECT COUNT(*) AS mesocycleCount,
+           COALESCE(SUM(LENGTH(CAST(plan AS BLOB))), 0) AS planBytes
+    FROM mesocycles
+    WHERE user_id = ${userId}
+  `;
+
+  return {
+    mesocycleCount: Number(result?.[0]?.mesocycleCount) || 0,
+    planBytes: Number(result?.[0]?.planBytes) || 0,
+    hadRetry,
   };
 }
 
@@ -71,8 +114,27 @@ function getMesocycleCompletion(plan) {
 router.post("/mesocycles", authenticateToken, csrfProtection, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { name, weeks, daysPerWeek, plan, completedDate, includeDeload } =
-      req.body;
+    const { name, weeks, daysPerWeek, plan, includeDeload } = req.body;
+    const normalizedWeeks = Number(weeks);
+    const normalizedDaysPerWeek = Number(daysPerWeek);
+    const validatedPlan = validateMesocycleInput({
+      weeks: normalizedWeeks,
+      daysPerWeek: normalizedDaysPerWeek,
+      plan,
+    });
+    const normalizedPlan = applyWorkoutDayTimestamps(validatedPlan, []);
+    const planJson = JSON.stringify(normalizedPlan);
+    const completedDate = getMesocycleCompletion(normalizedPlan)
+      ? new Date().toISOString()
+      : null;
+    const usage = await getMesocycleUsage(userId);
+
+    assertMesocycleQuota({
+      mesocycleCount: usage.mesocycleCount,
+      currentPlanBytes: usage.planBytes,
+      newPlanBytes: getPlanByteLength(planJson),
+      isCreate: true,
+    });
 
     const { hadRetry: updateHadRetry } = await safeQuery`
       UPDATE mesocycles 
@@ -80,24 +142,25 @@ router.post("/mesocycles", authenticateToken, csrfProtection, async (req, res) =
       WHERE user_id = ${userId}
     `;
 
-    const planJson = JSON.stringify(applyWorkoutDayTimestamps(plan, []));
-
     // noinspection SqlResolve -- include_deload is added idempotently in db/schema.js.
     const { result: insertResult, hadRetry: insertHadRetry } = await safeQuery`
       INSERT INTO mesocycles (name, weeks, daysPerWeek, plan, user_id, completedDate, isCurrent, include_deload)
-      VALUES (${name}, ${weeks}, ${daysPerWeek}, ${planJson}, ${userId}, ${completedDate}, 1, ${includeDeload ? 1 : 0})
+      VALUES (${name}, ${normalizedWeeks}, ${normalizedDaysPerWeek}, ${planJson}, ${userId}, ${completedDate}, 1, ${includeDeload ? 1 : 0})
     `;
 
-    const hadRetry = updateHadRetry || insertHadRetry;
+    const hadRetry = usage.hadRetry || updateHadRetry || insertHadRetry;
     const basePayload = {
       message: "Mesocycle created successfully",
       mesocycleId: insertResult.lastID,
     };
     const responsePayload = buildResponsePayload(hadRetry, basePayload);
-    res.status(201).json(responsePayload);
+    return res.status(201).json(responsePayload);
   } catch (err) {
-    console.error("Error creating new mesocycle:", err.message);
-    res.status(500).json({ error: "Failed to create new mesocycle" });
+    return sendMesocycleWriteError(
+      res,
+      err,
+      "Failed to create new mesocycle"
+    );
   }
 });
 
@@ -110,21 +173,17 @@ router.get(
       const userID = req.user.id;
       const { result: rows, hadRetry } =
         await safeQuery`SELECT * FROM mesocycles WHERE user_id = ${userID}`;
-      const mesocycles = rows.map((row) => ({
-        ...row,
-        plan: JSON.parse(row.plan),
-        isCurrent: !!row.isCurrent,
-        includeDeload: !!row.include_deload,
-        completedDate: row.completedDate
-          ? new Date(row.completedDate).toISOString()
-          : null,
-      }));
+      const mesocycles = rows.map((row) => normalizeMesocycleRow(row));
       const responsePayload = hadRetry
         ? buildResponsePayload(hadRetry, { data: mesocycles })
         : mesocycles;
       res.json(responsePayload);
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      console.error("Error fetching mesocycles", {
+        code: err?.code,
+        name: err?.name,
+      });
+      res.status(500).json({ error: "Failed to fetch mesocycles" });
     }
   }
 );
@@ -189,7 +248,10 @@ router.patch(
 
       return res.status(200).json(responsePayload);
     } catch (error) {
-      console.error("Error renaming mesocycle:", error.message);
+      console.error("Error renaming mesocycle", {
+        code: error?.code,
+        name: error?.name,
+      });
       return res.status(500).json({ error: "Failed to rename mesocycle" });
     }
   }
@@ -205,9 +267,15 @@ router.put("/mesocycles/:id", authenticateToken, csrfProtection, async (req, res
       plan,
       daysPerWeek,
       isCurrent,
-      completedDate,
       includeDeload,
     } = req.body;
+    const normalizedWeeks = Number(weeks);
+    const normalizedDaysPerWeek = Number(daysPerWeek);
+    const validatedPlan = validateMesocycleInput({
+      weeks: normalizedWeeks,
+      daysPerWeek: normalizedDaysPerWeek,
+      plan,
+    });
     const userID = req.user.id;
     const { result: existingRows, hadRetry: selectHadRetry } = await safeQuery`
       SELECT * FROM mesocycles WHERE id = ${id} AND user_id = ${userID}
@@ -235,17 +303,32 @@ router.put("/mesocycles/:id", authenticateToken, csrfProtection, async (req, res
         ? includeDeload
         : !!existingRow.include_deload;
     const existingPlan = parsePlan(existingRow.plan);
-    const normalizedPlan = applyWorkoutDayTimestamps(plan, existingPlan);
+    const normalizedPlan = applyWorkoutDayTimestamps(
+      validatedPlan,
+      existingPlan
+    );
     const allDaysCompleted = getMesocycleCompletion(normalizedPlan);
-    const newCompletedDate =
-      allDaysCompleted && !completedDate
-        ? new Date().toISOString()
-        : completedDate;
+    const existingCompletedDate = normalizeCompletedDate(
+      existingRow.completedDate
+    );
+    const newCompletedDate = allDaysCompleted
+      ? existingCompletedDate || new Date().toISOString()
+      : null;
+    const planJson = JSON.stringify(normalizedPlan);
+    const usage = await getMesocycleUsage(userID);
+
+    assertMesocycleQuota({
+      mesocycleCount: usage.mesocycleCount,
+      currentPlanBytes: usage.planBytes,
+      replacedPlanBytes: getPlanByteLength(existingRow.plan),
+      newPlanBytes: getPlanByteLength(planJson),
+      isCreate: false,
+    });
     // noinspection SqlResolve -- include_deload is added idempotently in db/schema.js.
     const { result, hadRetry: updateHadRetry } = await safeQuery`
       UPDATE mesocycles
-      SET name = ${name}, weeks = ${weeks}, plan = ${JSON.stringify(normalizedPlan)},
-          daysPerWeek = ${daysPerWeek}, isCurrent = ${isCurrent ? 1 : 0},
+      SET name = ${name}, weeks = ${normalizedWeeks}, plan = ${planJson},
+          daysPerWeek = ${normalizedDaysPerWeek}, isCurrent = ${isCurrent ? 1 : 0},
           completedDate = ${newCompletedDate},
           include_deload = ${requestedIncludeDeload ? 1 : 0}
       WHERE id = ${id} AND user_id = ${userID}
@@ -263,12 +346,12 @@ router.put("/mesocycles/:id", authenticateToken, csrfProtection, async (req, res
       personalRecordHistory: buildPersonalRecordHistory(userRows),
     };
     const responsePayload = buildResponsePayload(
-      selectHadRetry || updateHadRetry || historyHadRetry,
+      selectHadRetry || usage.hadRetry || updateHadRetry || historyHadRetry,
       basePayload
     );
-    res.status(200).json(responsePayload);
+    return res.status(200).json(responsePayload);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    return sendMesocycleWriteError(res, err, "Failed to update mesocycle");
   }
 });
 
@@ -277,7 +360,7 @@ router.get("/mesocycles/:id", authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { result: rows, hadRetry } = await safeQuery`
-      SELECT * FROM mesocycles WHERE id = ${id} AND (user_id = ${req.user.id} OR user_id IS NULL)
+      SELECT * FROM mesocycles WHERE id = ${id} AND user_id = ${req.user.id}
     `;
     if (!rows || rows.length === 0) {
       return res.status(404).json({ error: "Mesocycle not found" });
@@ -288,8 +371,11 @@ router.get("/mesocycles/:id", authenticateToken, async (req, res) => {
       : row;
     res.json(responsePayload);
   } catch (err) {
-    console.error("Error fetching mesocycle:", err.message);
-    res.status(500).json({ error: err.message });
+    console.error("Error fetching mesocycle", {
+      code: err?.code,
+      name: err?.name,
+    });
+    res.status(500).json({ error: "Failed to fetch mesocycle" });
   }
 });
 
@@ -363,6 +449,7 @@ function generateDropsetWeights({
     parsedStartWeight <= 0 ||
     !Number.isInteger(parsedSetCount) ||
     parsedSetCount <= 0 ||
+    parsedSetCount > MAX_DROPSET_SET_COUNT ||
     !Number.isFinite(parsedIncrement) ||
     parsedIncrement <= 0 ||
     !Number.isFinite(parsedMinimumWeight) ||
@@ -443,11 +530,17 @@ function getSetProgressionValues(set) {
 function getDropsetSetCount(exercise) {
   const configuredSetCount = Number(exercise.dropset?.setCount);
 
-  if (Number.isInteger(configuredSetCount) && configuredSetCount > 0) {
+  if (
+    Number.isInteger(configuredSetCount) &&
+    configuredSetCount > 0 &&
+    configuredSetCount <= MAX_DROPSET_SET_COUNT
+  ) {
     return configuredSetCount;
   }
 
-  return Array.isArray(exercise.sets) ? exercise.sets.length : 1;
+  return Array.isArray(exercise.sets)
+    ? Math.min(exercise.sets.length, MAX_DROPSET_SET_COUNT)
+    : 1;
 }
 
 function getDropsetTargetRepsBySet(
@@ -745,7 +838,11 @@ router.get(
       const overview = buildPersonalRecordOverview(rows);
       res.json(buildResponsePayload(hadRetry, overview));
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      console.error("Error fetching personal records", {
+        code: err?.code,
+        name: err?.name,
+      });
+      res.status(500).json({ error: "Failed to fetch personal records" });
     }
   }
 );
@@ -794,6 +891,11 @@ router.get(
       let plan;
       try {
         plan = parsePlan(row.plan);
+        validateMesocycleInput({
+          weeks: row.weeks,
+          daysPerWeek: row.daysPerWeek,
+          plan,
+        });
       } catch (error) {
         sendTiming();
         return res.status(500).json({ error: "Invalid plan data" });
@@ -816,9 +918,7 @@ router.get(
         plan: finalPlan,
         isCurrent: !!row.isCurrent,
         includeDeload: !!row.include_deload,
-        completedDate: row.completedDate
-          ? new Date(row.completedDate).toISOString()
-          : null,
+        completedDate: normalizeCompletedDate(row.completedDate),
         totalWeeks: row.weeks,
         daysPerWeek: row.daysPerWeek,
         firstIncompleteDayIndex,
@@ -844,7 +944,11 @@ router.get(
       res.json(responsePayload);
     } catch (err) {
       sendTiming();
-      res.status(500).json({ error: err.message });
+      console.error("Error fetching current workout", {
+        code: err?.code,
+        name: err?.name,
+      });
+      res.status(500).json({ error: "Failed to fetch current workout" });
     }
   }
 );

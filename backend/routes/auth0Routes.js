@@ -3,6 +3,11 @@ import jwt from "jsonwebtoken";
 import auth0Sdk from "express-openid-connect";
 import { clearAuthTokenCookie, setAuthTokenCookie } from "../utils/authCookies.js";
 import { serializeUser, upsertAuth0User } from "../utils/auth0Users.js";
+import {
+  authenticateToken,
+  clearCsrfCookie,
+  csrfProtection,
+} from "../middleware.js";
 
 const { auth } = auth0Sdk;
 
@@ -80,6 +85,16 @@ function unavailable(settings) {
   };
 }
 
+function rejectGetLogout(_req, res) {
+  res.set("Allow", "POST");
+  return res.status(405).json({ error: "Logout requires POST" });
+}
+
+function clearLocalSession(res) {
+  clearAuthTokenCookie(res);
+  clearCsrfCookie(res);
+}
+
 function createDisabledAuth0Router(settings) {
   const router = express.Router();
 
@@ -95,10 +110,17 @@ function createDisabledAuth0Router(settings) {
     res.status(503).json(unavailable(settings));
   });
 
-  router.get("/logout", (req, res) => {
-    clearAuthTokenCookie(res);
-    res.redirect(settings.frontendUrl);
-  });
+  router.get("/logout", rejectGetLogout);
+
+  router.post(
+    "/logout",
+    authenticateToken,
+    csrfProtection,
+    (_req, res) => {
+      clearLocalSession(res);
+      res.redirect(settings.frontendUrl);
+    }
+  );
 
   router.get("/me", (req, res) => {
     res.status(503).json(unavailable(settings));
@@ -172,16 +194,17 @@ export function createAuth0Router() {
     });
   });
 
-  router.get("/logout", (req, res) => {
-    clearAuthTokenCookie(res);
+  router.get("/logout", rejectGetLogout);
 
-    if (!req.oidc.isAuthenticated()) {
-      res.redirect(settings.frontendUrl);
-      return;
+  router.post(
+    "/logout",
+    authenticateToken,
+    csrfProtection,
+    (_req, res) => {
+      clearLocalSession(res);
+      return res.oidc.logout({ returnTo: settings.frontendUrl });
     }
-
-    res.oidc.logout({ returnTo: settings.frontendUrl });
-  });
+  );
 
   router.get("/me", (req, res) => {
     if (!req.oidc.isAuthenticated()) {
@@ -198,4 +221,3 @@ export function createAuth0Router() {
 
   return router;
 }
-

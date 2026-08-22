@@ -102,6 +102,17 @@ export const schemaMigrationStatements = [
     sql: `CREATE INDEX IF NOT EXISTS idx_mesocycles_user_id_is_current
       ON Mesocycles(user_id, isCurrent)`,
   },
+  {
+    name: "users.delete_owned_data",
+    // noinspection SqlNoDataSourceInspection,SqlDialectInspection,SqlResolve
+    sql: `CREATE TRIGGER IF NOT EXISTS delete_user_owned_data
+      BEFORE DELETE ON users
+      FOR EACH ROW
+      BEGIN
+        DELETE FROM Mesocycles WHERE user_id = OLD.id;
+        DELETE FROM exercises WHERE user_id = OLD.id;
+      END`,
+  },
 ];
 
 function getColumnName(row) {

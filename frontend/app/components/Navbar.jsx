@@ -4,8 +4,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBars } from "@fortawesome/free-solid-svg-icons";
 import { useAuth } from "../utils/AuthContext";
-import { useApiFetch } from "../utils/apiFetch";
+import { getCsrfToken, useApiFetch } from "../utils/apiFetch";
 import { currentWorkoutQueryOptions } from "../utils/currentWorkoutQuery";
+import { submitCsrfLogout } from "../utils/logout";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -17,10 +18,16 @@ export default function Navbar() {
   const showLoggedInNav = isLoggedIn === true;
   const showLoggedOutNav = !authCheckInProgress && isLoggedIn === false;
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    sessionStorage.removeItem("token");
-    window.location.assign(`${baseUrl}/auth0/logout`);
+  const handleLogout = async () => {
+    try {
+      const csrfToken = await getCsrfToken();
+
+      localStorage.removeItem("token");
+      sessionStorage.removeItem("token");
+      submitCsrfLogout({ baseUrl, csrfToken });
+    } catch (error) {
+      console.error("Unable to log out safely", error);
+    }
   };
 
   const prefetchCurrentWorkout = () => {

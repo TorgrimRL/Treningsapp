@@ -3,7 +3,7 @@ import { useCallback } from "react";
 const csrfProtectedMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 let csrfTokenPromise;
 
-async function getCsrfToken() {
+export async function getCsrfToken() {
   if (!csrfTokenPromise) {
     const baseUrl = import.meta.env.VITE_API_URL.replace(/\/$/, "");
     csrfTokenPromise = fetch(`${baseUrl}/csrf-token`, {

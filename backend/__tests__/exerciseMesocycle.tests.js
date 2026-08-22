@@ -30,6 +30,16 @@ function makePlan(completed = false) {
   ];
 }
 
+function makeDropsetPlan(setCount) {
+  const plan = makePlan(false);
+  plan[0].exercises[0].dropset = {
+    enabled: true,
+    startWeight: 50,
+    setCount,
+  };
+  return plan;
+}
+
 function makeWorkoutDay({
   completedSets = [false, false],
   reps = ["8", "10"],
@@ -314,6 +324,119 @@ describe("exercise and mesocycle regression", () => {
       .expect(200);
 
     expect(crossUserUpdate.body.changes).toBe(0);
+  });
+
+  it("does not treat legacy NULL-owned mesocycles as shared data", async () => {
+    const userA = await createAuthenticatedUser(app, db, { username: "alice" });
+    const userB = await createAuthenticatedUser(app, db, { username: "bob" });
+    const result = await db.run(
+      `INSERT INTO mesocycles
+        (name, weeks, daysPerWeek, plan, user_id, completedDate, isCurrent)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      ["Unowned legacy plan", 1, 1, JSON.stringify(makePlan(false)), null, null, 0]
+    );
+
+    await userA.agent.get(`/api/mesocycles/${result.lastID}`).expect(404);
+    await userB.agent.get(`/api/mesocycles/${result.lastID}`).expect(404);
+  });
+
+  it("rejects oversized dropsets before persistence or workout processing", async () => {
+    const { agent, userId } = await createAuthenticatedUser(app, db, {
+      username: "alice",
+    });
+    const maliciousPlan = makeDropsetPlan(100_000_000);
+
+    await csrfRequest(agent, "post", "/api/mesocycles")
+      .send({
+        name: "Oversized dropset",
+        weeks: 1,
+        daysPerWeek: 1,
+        plan: maliciousPlan,
+        isCurrent: true,
+      })
+      .expect(400, { error: "Invalid plan data" });
+
+    expect(
+      await db.all("SELECT id FROM mesocycles WHERE user_id = ?", [userId])
+    ).toEqual([]);
+
+    await db.run(
+      `INSERT INTO mesocycles
+        (name, weeks, daysPerWeek, plan, user_id, completedDate, isCurrent)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      ["Legacy oversized dropset", 1, 1, JSON.stringify(maliciousPlan), userId, null, 1]
+    );
+
+    await agent
+      .get("/api/current-workout?includePersonalRecords=false")
+      .expect(500, { error: "Invalid plan data" });
+  });
+
+  it("derives completedDate from persisted completion state", async () => {
+    const { agent } = await createAuthenticatedUser(app, db, {
+      username: "alice",
+    });
+    const forgedCreateDate = "2000-01-01T00:00:00.000Z";
+    const { id } = await createMesocycle(agent, {
+      name: "Already complete",
+      plan: makePlan(true),
+      completedDate: forgedCreateDate,
+    });
+    const createdRow = await db.get(
+      "SELECT completedDate FROM mesocycles WHERE id = ?",
+      [id]
+    );
+
+    expect(createdRow.completedDate).not.toBe(forgedCreateDate);
+    expect(Number.isNaN(Date.parse(createdRow.completedDate))).toBe(false);
+
+    await updateMesocycle(agent, id, makePlan(false), {
+      completedDate: "2099-01-01T00:00:00.000Z",
+    });
+    const reopenedRow = await db.get(
+      "SELECT completedDate FROM mesocycles WHERE id = ?",
+      [id]
+    );
+    expect(reopenedRow.completedDate).toBeNull();
+
+    const recompleted = await updateMesocycle(agent, id, makePlan(true), {
+      completedDate: "1999-01-01T00:00:00.000Z",
+    });
+    expect(recompleted.body.mesocycle.completedDate).not.toBe(
+      "1999-01-01T00:00:00.000Z"
+    );
+    expect(Number.isNaN(Date.parse(recompleted.body.mesocycle.completedDate)))
+      .toBe(false);
+  });
+
+  it("enforces the configured per-user mesocycle count limit", async () => {
+    const limitedApp = await loadAppWithQuery(db.query, "test-secret", {
+      MAX_MESOCYCLES_PER_USER: "2",
+    });
+    const { agent, userId } = await createAuthenticatedUser(limitedApp, db, {
+      username: "limited@example.com",
+    });
+
+    await createMesocycle(agent, { name: "First plan" });
+    await createMesocycle(agent, { name: "Second plan" });
+    await csrfRequest(agent, "post", "/api/mesocycles")
+      .send({
+        name: "Third plan",
+        weeks: 1,
+        daysPerWeek: 1,
+        plan: makePlan(false),
+        isCurrent: true,
+      })
+      .expect(422, { error: "Mesocycle limit reached" });
+
+    const rows = await db.all(
+      "SELECT name, isCurrent FROM mesocycles WHERE user_id = ? ORDER BY id",
+      [userId]
+    );
+    expect(rows).toEqual([
+      { name: "First plan", isCurrent: 0 },
+      { name: "Second plan", isCurrent: 1 },
+    ]);
   });
 
   it("sets completedDate when all sets are completed during update", async () => {

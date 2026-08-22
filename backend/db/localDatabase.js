@@ -77,11 +77,14 @@ export function createLocalDatabase({ dbPath } = {}) {
   }
 
   const connection = new sqlite3.Database(resolvedPath);
+  const ready = run(connection, "PRAGMA foreign_keys = ON", []);
 
   return {
     path: resolvedPath,
     raw: connection,
+    ready,
     sql: async (sqlInput, ...values) => {
+      await ready;
       const { query, parameters } = normalizeSqlCommand(sqlInput, values);
       const command = getCommand(query);
 

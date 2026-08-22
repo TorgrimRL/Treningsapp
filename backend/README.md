@@ -99,6 +99,10 @@ Overnevnte filstruktur viser prosjektets kjernefiler. `node_modules` er utelatt 
   Auth0 callback setter en lokal httpOnly JWT-cookie. Tokenet verifiseres med `authenticateToken`-middleware.
 - **CSRF-beskyttelse**
   Gjennom `csurf` for å sikre skriveoperasjoner mot uautorisert tilgang.
+- **Ressursgrenser:**
+  En bruker kan som standard lagre opptil 250 treningsblokker og 10 MiB
+  samlet plan-JSON. Grensene kan strammes inn med
+  `MAX_MESOCYCLES_PER_USER` og `MAX_MESOCYCLE_PLAN_BYTES_PER_USER`.
 
 ## API-ruter
 Eksempler på nøkkelruter (flere finnes i filene `exerciseRoutes.js` og `mesocycleRoutes.js`):
@@ -107,8 +111,9 @@ Eksempler på nøkkelruter (flere finnes i filene `exerciseRoutes.js` og `mesocy
 |---------|--------------------|-----------------------------------------------------------------------------------------|
 | `GET`   | `/api/auth0/login` | Starter Auth0-login                                                                    |
 | `GET`   | `/api/auth0/register` | Starter Auth0-signup                                                                |
-| `GET`   | `/api/auth0/logout` | Logger ut av Auth0 og clearer lokal app-cookie                                        |
+| `POST`  | `/api/auth0/logout` | Logger ut av Auth0 med CSRF-beskyttelse og clearer lokal app-cookie                    |
 | `GET`   | `/api/me`          | Henter current user fra lokal app-cookie                                               |
+| `DELETE` | `/api/users/me`    | Sletter innlogget brukers konto og eide data med CSRF-beskyttelse                      |
 | `GET`   | `/api/exercises`   | Henter alle øvelser for pålogget bruker                                               |
 | `POST`  | `/api/exercises`   | Oppretter ny øvelse for pålogget bruker                                               |
 | `POST`  | `/api/mesocycles`  | Oppretter ny treningsplan                                                              |
