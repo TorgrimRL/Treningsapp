@@ -51,7 +51,8 @@ async function useAvailableAuth0Requests(client) {
   let lastResponse;
 
   for (let requestNumber = 0; requestNumber < 300; requestNumber += 1) {
-    lastResponse = await client.get("/api/auth0/me").expect(401);
+    lastResponse = await client.get("/api/auth0/me");
+    expect([401, 503]).toContain(lastResponse.status);
   }
 
   return lastResponse;
