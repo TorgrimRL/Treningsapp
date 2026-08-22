@@ -1,5 +1,5 @@
 import express from "express";
-import { authenticateToken } from "../middleware.js";
+import { authenticateToken, csrfProtection } from "../middleware.js";
 import { safeQuery } from "../utils/safeQuery.js";
 import { buildResponsePayload } from "../utils/buildResponsePayload.js";
 const router = express.Router();
@@ -7,7 +7,7 @@ const router = express.Router();
 export default router;
 
 // Endpoint to add a a new exercise
-router.post("/exercises", authenticateToken, async (req, res) => {
+router.post("/exercises", authenticateToken, csrfProtection, async (req, res) => {
   try {
     const userID = req.user.id;
     const { name, type, muscleGroup, videolink } = req.body;

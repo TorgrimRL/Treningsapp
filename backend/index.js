@@ -54,9 +54,9 @@ if (!secretKey && process.env.NODE_ENV === "production") {
 app.get("/favicon.ico", (req, res) => res.status(204));
 
 app.use("/api/auth0", auth0Routes);
+csrfTokenRoute(app);
 app.use("/api", exerciseRoutes);
 app.use("/api", mesocycleRoutes);
-csrfTokenRoute(app);
 
 app.get("/api/", (req, res) => {
   res.send("Welcome to the API");
@@ -127,6 +127,14 @@ app.delete(
     }
   }
 );
+
+app.use((error, req, res, next) => {
+  if (error.code === "EBADCSRFTOKEN") {
+    return res.status(403).json({ error: "Invalid CSRF token" });
+  }
+
+  return next(error);
+});
 
 app.get("/", (req, res) => {
   res.send("Welcome to the Workout App API!");

@@ -1,7 +1,10 @@
 import { jest } from "@jest/globals";
 import { createTestDb } from "../testHelpers/testDb.js";
 import { loadAppWithQuery } from "../testHelpers/loadApp.js";
-import { createAuthenticatedUser } from "../testHelpers/api.js";
+import {
+  createAuthenticatedUser,
+  csrfRequest,
+} from "../testHelpers/api.js";
 
 function progressionPlan() {
   return [
@@ -552,8 +555,7 @@ describe("current workout regression", () => {
   it("computes completion state, progression targets, and deload weeks", async () => {
     const { agent } = await createAuthenticatedUser(app, db, { username: "alice" });
 
-    await agent
-      .post("/api/mesocycles")
+    await csrfRequest(agent, "post", "/api/mesocycles")
       .send({
         name: "Progression plan",
         weeks: 3,
@@ -607,8 +609,7 @@ describe("current workout regression", () => {
   it("computes per-exercise progression modes", async () => {
     const { agent } = await createAuthenticatedUser(app, db, { username: "alice" });
 
-    await agent
-      .post("/api/mesocycles")
+    await csrfRequest(agent, "post", "/api/mesocycles")
       .send({
         name: "Mixed progression plan",
         weeks: 3,
@@ -658,8 +659,7 @@ describe("current workout regression", () => {
   it("progresses dropset sets with each exercise progression mode", async () => {
     const { agent } = await createAuthenticatedUser(app, db, { username: "alice" });
 
-    await agent
-      .post("/api/mesocycles")
+    await csrfRequest(agent, "post", "/api/mesocycles")
       .send({
         name: "Dropset progression plan",
         weeks: 3,
@@ -703,8 +703,7 @@ describe("current workout regression", () => {
       ],
     };
 
-    await agent
-      .post("/api/mesocycles")
+    await csrfRequest(agent, "post", "/api/mesocycles")
       .send({
         name: "Dropset without invented targets",
         weeks: 2,
@@ -743,8 +742,7 @@ describe("current workout regression", () => {
       ],
     };
 
-    await agent
-      .post("/api/mesocycles")
+    await csrfRequest(agent, "post", "/api/mesocycles")
       .send({
         name: "Configured dropset rep progression",
         weeks: 3,
@@ -793,8 +791,7 @@ describe("current workout regression", () => {
   it("preserves configured dropsets when fetching the active workout", async () => {
     const { agent } = await createAuthenticatedUser(app, db, { username: "alice" });
 
-    await agent
-      .post("/api/mesocycles")
+    await csrfRequest(agent, "post", "/api/mesocycles")
       .send({
         name: "Configured dropset plan",
         weeks: 4,

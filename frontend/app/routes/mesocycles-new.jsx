@@ -1,7 +1,5 @@
-import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import MesocycleForm from "../components/MesocycleForm";
-import { getCookie } from "../utils/cookies";
 import { useNavigate } from "react-router";
 import ProtectedRoute from "../components/ProtectedRoute";
 import PageContainer from "../components/PageContainer";
@@ -9,35 +7,18 @@ import { useApiFetch } from "../utils/apiFetch";
 import { clearCurrentWorkoutQuery } from "../utils/currentWorkoutQuery";
 
 export default function NewMesocycle() {
-  const [csrfToken, setCSRFToken] = useState("");
   const baseUrl = import.meta.env.VITE_API_URL;
   const { apiFetch } = useApiFetch();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  useEffect(() => {
-    const fetchCsrfToken = async () => {
-      const response = await fetch(`${baseUrl}/csrf-token`, {
-        method: "GET",
-        credentials: "include",
-      });
-      const data = await response.json();
-      setCSRFToken(data.csrfToken);
-    };
-    fetchCsrfToken();
-  }, [baseUrl]);
-
   const handleFormSubmit = async (mesocycle) => {
     try {
-      const token = getCookie("token");
-
       const { ok: postOk, data: postData } = await apiFetch(
         `${baseUrl}/mesocycles`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "X-CSRF-Token": csrfToken,
-            Authorization: `Bearer ${token}`,
           },
           credentials: "include",
           body: JSON.stringify(mesocycle),
@@ -63,7 +44,6 @@ export default function NewMesocycle() {
         {
           method: "GET",
           headers: {
-            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
           credentials: "include",

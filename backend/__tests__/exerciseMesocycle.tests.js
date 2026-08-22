@@ -1,7 +1,10 @@
 import { jest } from "@jest/globals";
 import { createTestDb } from "../testHelpers/testDb.js";
 import { loadAppWithQuery } from "../testHelpers/loadApp.js";
-import { createAuthenticatedUser } from "../testHelpers/api.js";
+import {
+  createAuthenticatedUser,
+  csrfRequest,
+} from "../testHelpers/api.js";
 
 function makePlan(completed = false) {
   return [
@@ -74,13 +77,14 @@ async function createMesocycle(agent, overrides = {}) {
     ...overrides,
   };
 
-  const response = await agent.post("/api/mesocycles").send(body).expect(201);
+  const response = await csrfRequest(agent, "post", "/api/mesocycles")
+    .send(body)
+    .expect(201);
   return { id: response.body.mesocycleId, body, response };
 }
 
 async function updateMesocycle(agent, id, plan, overrides = {}) {
-  return agent
-    .put(`/api/mesocycles/${id}`)
+  return csrfRequest(agent, "put", `/api/mesocycles/${id}`)
     .send({
       name: "Updated plan",
       weeks: 1,
@@ -131,8 +135,7 @@ describe("exercise and mesocycle regression", () => {
     const userA = await createAuthenticatedUser(app, db, { username: "alice" });
     const userB = await createAuthenticatedUser(app, db, { username: "bob" });
 
-    await userA.agent
-      .post("/api/exercises")
+    await csrfRequest(userA.agent, "post", "/api/exercises")
       .send({
         name: "Alice Bench",
         type: "barbell",
@@ -141,8 +144,7 @@ describe("exercise and mesocycle regression", () => {
       })
       .expect(201);
 
-    await userB.agent
-      .post("/api/exercises")
+    await csrfRequest(userB.agent, "post", "/api/exercises")
       .send({
         name: "Bob Row",
         type: "dumbbell",
@@ -197,8 +199,11 @@ describe("exercise and mesocycle regression", () => {
     await createMesocycle(userB.agent, { name: "Renamed plan" });
     const before = await db.get("SELECT * FROM mesocycles WHERE id = ?", [id]);
 
-    const response = await userA.agent
-      .patch(`/api/mesocycles/${id}/name`)
+    const response = await csrfRequest(
+      userA.agent,
+      "patch",
+      `/api/mesocycles/${id}/name`
+    )
       .send({ name: "  Renamed plan  " })
       .expect(200);
 
@@ -210,8 +215,11 @@ describe("exercise and mesocycle regression", () => {
     expect({ ...after, name: before.name }).toEqual(before);
     expect(after.name).toBe("Renamed plan");
 
-    await userB.agent
-      .patch(`/api/mesocycles/${id}/name`)
+    await csrfRequest(
+      userB.agent,
+      "patch",
+      `/api/mesocycles/${id}/name`
+    )
       .send({ name: "Stolen plan" })
       .expect(404, { error: "Mesocycle not found" });
   });
@@ -223,12 +231,10 @@ describe("exercise and mesocycle regression", () => {
     const { id } = await createMesocycle(agent, { name: "First plan" });
     await createMesocycle(agent, { name: "Second plan" });
 
-    await agent
-      .patch(`/api/mesocycles/${id}/name`)
+    await csrfRequest(agent, "patch", `/api/mesocycles/${id}/name`)
       .send({ name: "   " })
       .expect(400, { error: "Mesocycle name is required" });
-    await agent
-      .patch(`/api/mesocycles/${id}/name`)
+    await csrfRequest(agent, "patch", `/api/mesocycles/${id}/name`)
       .send({ name: "  SECOND PLAN " })
       .expect(409, { error: "Mesocycle name is already in use" });
 
@@ -247,21 +253,30 @@ describe("exercise and mesocycle regression", () => {
     });
 
     for (let attempt = 1; attempt <= 10; attempt += 1) {
-      await userA.agent
-        .patch(`/api/mesocycles/${userAPlan.id}/name`)
+      await csrfRequest(
+        userA.agent,
+        "patch",
+        `/api/mesocycles/${userAPlan.id}/name`
+      )
         .send({ name: `Alice plan ${attempt}` })
         .expect(200);
     }
 
-    await userA.agent
-      .patch(`/api/mesocycles/${userAPlan.id}/name`)
+    await csrfRequest(
+      userA.agent,
+      "patch",
+      `/api/mesocycles/${userAPlan.id}/name`
+    )
       .send({ name: "Alice blocked plan" })
       .expect(429, {
         error: "Too many rename attempts. Please try again in a minute.",
       });
 
-    await userB.agent
-      .patch(`/api/mesocycles/${userBPlan.id}/name`)
+    await csrfRequest(
+      userB.agent,
+      "patch",
+      `/api/mesocycles/${userBPlan.id}/name`
+    )
       .send({ name: "Bob renamed plan" })
       .expect(200);
   });
@@ -283,8 +298,11 @@ describe("exercise and mesocycle regression", () => {
 
     await userB.agent.get(`/api/mesocycles/${id}`).expect(404);
 
-    const crossUserUpdate = await userB.agent
-      .put(`/api/mesocycles/${id}`)
+    const crossUserUpdate = await csrfRequest(
+      userB.agent,
+      "put",
+      `/api/mesocycles/${id}`
+    )
       .send({
         name: "Stolen plan",
         weeks: 1,
@@ -302,8 +320,11 @@ describe("exercise and mesocycle regression", () => {
     const { agent } = await createAuthenticatedUser(app, db, { username: "alice" });
     const { id } = await createMesocycle(agent, { name: "Plan to finish" });
 
-    const response = await agent
-      .put(`/api/mesocycles/${id}`)
+    const response = await csrfRequest(
+      agent,
+      "put",
+      `/api/mesocycles/${id}`
+    )
       .send({
         name: "Finished plan",
         weeks: 1,
@@ -531,8 +552,7 @@ describe("exercise and mesocycle regression", () => {
       ],
     });
 
-    await agent
-      .put(`/api/mesocycles/${id}`)
+    await csrfRequest(agent, "put", `/api/mesocycles/${id}`)
       .send({
         name: "Settings plan",
         weeks: 1,
@@ -572,8 +592,7 @@ describe("exercise and mesocycle regression", () => {
       weightIncrement: 5,
     });
 
-    await agent
-      .put(`/api/mesocycles/${id}`)
+    await csrfRequest(agent, "put", `/api/mesocycles/${id}`)
       .send({
         name: "Settings plan",
         weeks: 1,

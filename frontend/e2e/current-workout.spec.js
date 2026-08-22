@@ -1,5 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { loginAsDemoUser, resetE2eDatabase } from "./helpers";
+import {
+  getCsrfToken,
+  loginAsDemoUser,
+  resetE2eDatabase,
+} from "./helpers";
 
 test.beforeEach(async () => {
   await resetE2eDatabase();
@@ -376,8 +380,9 @@ test("500 current workout retries once before showing the error UI", async ({
 
 test("logging a bodyweight set keeps target reps when target weight is zero", async ({ page }) => {
   await loginAsDemoUser(page);
+  const csrfToken = await getCsrfToken(page);
 
-  await page.evaluate(async () => {
+  await page.evaluate(async (token) => {
     const apiBase = "http://127.0.0.1:3001/api";
     const response = await fetch(apiBase + "/current-workout", {
       credentials: "include",
@@ -407,14 +412,17 @@ test("logging a bodyweight set keeps target reps when target weight is zero", as
 
     const updateResponse = await fetch(apiBase + "/mesocycles/" + workout.id, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": token,
+      },
       credentials: "include",
       body: JSON.stringify(workout),
     });
     if (!updateResponse.ok) {
       throw new Error(await updateResponse.text());
     }
-  });
+  }, csrfToken);
 
   await page.goto("/currentworkout");
 
@@ -558,8 +566,9 @@ test("dropsets can apply to the rest of the mesocycle", async ({ page }) => {
 
 test("@e2e new dropsets start without invented follow-up targets and progress each logged set", async ({ page }) => {
   await loginAsDemoUser(page);
+  const csrfToken = await getCsrfToken(page);
 
-  await page.evaluate(async () => {
+  await page.evaluate(async (token) => {
     const apiBase = "http://127.0.0.1:3001/api";
     const workoutResponse = await fetch(apiBase + "/current-workout", {
       credentials: "include",
@@ -591,7 +600,10 @@ test("@e2e new dropsets start without invented follow-up targets and progress ea
       apiBase + "/mesocycles/" + workout.id,
       {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": token,
+        },
         credentials: "include",
         body: JSON.stringify({ ...storedMesocycle, plan }),
       }
@@ -599,7 +611,7 @@ test("@e2e new dropsets start without invented follow-up targets and progress ea
     if (!updateResponse.ok) {
       throw new Error(await updateResponse.text());
     }
-  });
+  }, csrfToken);
 
   await page.goto("/currentworkout");
   await page.getByTestId("exercise-menu-0").click();

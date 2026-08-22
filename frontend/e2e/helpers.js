@@ -11,6 +11,7 @@ const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, "../..");
 const backendDir = path.join(repoRoot, "backend");
 const e2eJwtSecret = "e2e-secret";
+const e2eApiBase = "http://127.0.0.1:3001/api";
 
 export const demoUser = {
   id: 1,
@@ -62,4 +63,18 @@ export async function loginAsDemoUser(page) {
 
   await page.goto("/templates");
   await expect(page.getByRole("heading", { name: "Templates" })).toBeVisible();
+}
+
+export async function getCsrfToken(page) {
+  return page.evaluate(async (apiBase) => {
+    const response = await fetch(`${apiBase}/csrf-token`, {
+      credentials: "include",
+    });
+    if (!response.ok) {
+      throw new Error(`Unable to get CSRF token: ${await response.text()}`);
+    }
+
+    const data = await response.json();
+    return data.csrfToken;
+  }, e2eApiBase);
 }

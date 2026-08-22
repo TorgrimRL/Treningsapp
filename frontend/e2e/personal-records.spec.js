@@ -1,5 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { loginAsDemoUser, resetE2eDatabase } from "./helpers";
+import {
+  getCsrfToken,
+  loginAsDemoUser,
+  resetE2eDatabase,
+} from "./helpers";
 
 const apiBase = "http://127.0.0.1:3001/api";
 
@@ -18,12 +22,25 @@ async function preparePersonalRecordFixture(
   page,
   { completeCurrentSet = true } = {}
 ) {
+  const csrfToken = await getCsrfToken(page);
+
   return page.evaluate(
-    async ({ apiBase: baseUrl, completeCurrentSet: shouldCompleteCurrentSet }) => {
+    async ({
+      apiBase: baseUrl,
+      completeCurrentSet: shouldCompleteCurrentSet,
+      csrfToken: token,
+    }) => {
       async function apiRequest(path, options = {}) {
+        const method = (options.method || "GET").toUpperCase();
+        const headers = { ...options.headers };
+        if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
+          headers["X-CSRF-Token"] = token;
+        }
+
         const response = await fetch(baseUrl + path, {
           credentials: "include",
           ...options,
+          headers,
         });
 
         if (!response.ok) {
@@ -113,7 +130,7 @@ async function preparePersonalRecordFixture(
         historicalId: historical.id,
       };
     },
-    { apiBase, completeCurrentSet }
+    { apiBase, completeCurrentSet, csrfToken }
   );
 }
 
