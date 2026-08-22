@@ -1,4 +1,5 @@
 import express from "express";
+import rateLimit from "express-rate-limit";
 import { authenticateToken, csrfProtection } from "../middleware.js";
 import calculateNewTarget, { normalizeProgressionSettings } from "../utils/calculateNewTarget.js";
 import createDeloadWeek from "../utils/createDeloadWeek.js";
@@ -14,6 +15,27 @@ import {
   isWorkoutDayComplete,
 } from "../utils/planPersistence.js";
 const router = express.Router();
+
+const renameRequestRateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 30,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: {
+    error: "Too many rename attempts. Please try again in a minute.",
+  },
+});
+
+const renameUserRateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 10,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  keyGenerator: (req) => String(req.user.id),
+  message: {
+    error: "Too many rename attempts. Please try again in a minute.",
+  },
+});
 
 function parsePlan(plan) {
   const parsedPlan = typeof plan === "string" ? JSON.parse(plan) : plan;
@@ -46,7 +68,7 @@ function getMesocycleCompletion(plan) {
 }
 
 // Endpoint to add a new mesocycle
-router.post("/mesocycles", authenticateToken, async (req, res) => {
+router.post("/mesocycles", authenticateToken, csrfProtection, async (req, res) => {
   try {
     const userId = req.user.id;
     const { name, weeks, daysPerWeek, plan, completedDate, includeDeload } =
@@ -83,7 +105,6 @@ router.post("/mesocycles", authenticateToken, async (req, res) => {
 router.get(
   "/mesocycles",
   authenticateToken,
-  csrfProtection,
   async (req, res) => {
     try {
       const userID = req.user.id;
@@ -108,8 +129,74 @@ router.get(
   }
 );
 
+router.patch(
+  "/mesocycles/:id/name",
+  renameRequestRateLimiter,
+  authenticateToken,
+  csrfProtection,
+  renameUserRateLimiter,
+  async (req, res) => {
+    const normalizedName =
+      typeof req.body?.name === "string" ? req.body.name.trim() : "";
+
+    if (!normalizedName) {
+      return res.status(400).json({ error: "Mesocycle name is required" });
+    }
+
+    try {
+      const { id } = req.params;
+      const userID = req.user.id;
+      const { result: ownedRows, hadRetry: ownerHadRetry } = await safeQuery`
+        SELECT id FROM mesocycles
+        WHERE id = ${id} AND user_id = ${userID}
+        LIMIT 1
+      `;
+
+      if (!ownedRows || ownedRows.length === 0) {
+        return res.status(404).json({ error: "Mesocycle not found" });
+      }
+
+      const { result: duplicateRows, hadRetry: duplicateHadRetry } =
+        await safeQuery`
+          SELECT id FROM mesocycles
+          WHERE user_id = ${userID}
+            AND id != ${id}
+            AND LOWER(TRIM(name)) = LOWER(${normalizedName})
+          LIMIT 1
+        `;
+
+      if (duplicateRows?.length) {
+        return res
+          .status(409)
+          .json({ error: "Mesocycle name is already in use" });
+      }
+
+      const { hadRetry: updateHadRetry } = await safeQuery`
+        UPDATE mesocycles
+        SET name = ${normalizedName}
+        WHERE id = ${id} AND user_id = ${userID}
+      `;
+      const responsePayload = buildResponsePayload(
+        ownerHadRetry || duplicateHadRetry || updateHadRetry,
+        {
+          message: "Mesocycle renamed successfully",
+          mesocycle: {
+            id: ownedRows[0].id,
+            name: normalizedName,
+          },
+        }
+      );
+
+      return res.status(200).json(responsePayload);
+    } catch (error) {
+      console.error("Error renaming mesocycle:", error.message);
+      return res.status(500).json({ error: "Failed to rename mesocycle" });
+    }
+  }
+);
+
 // Update a specific mesocycle
-router.put("/mesocycles/:id", authenticateToken, async (req, res) => {
+router.put("/mesocycles/:id", authenticateToken, csrfProtection, async (req, res) => {
   try {
     const { id } = req.params;
     const {
@@ -368,17 +455,27 @@ function getDropsetTargetRepsBySet(
   currentWeek,
   progressionSettings
 ) {
-  if (
-    progressionSettings.progressionMode !== "reps" ||
-    !Array.isArray(previousWeekExercise.sets)
-  ) {
+  if (!Array.isArray(previousWeekExercise.sets)) {
     return null;
   }
 
   const { previousFactor, currentFactor } = getProgressionFactors(currentWeek);
 
   return previousWeekExercise.sets.map((previousSet) => {
+    if (!previousSet?.completed) {
+      return undefined;
+    }
+
     const { weight, reps } = getSetProgressionValues(previousSet);
+    if (
+      !Number.isFinite(weight) ||
+      weight <= 0 ||
+      !Number.isFinite(reps) ||
+      reps <= 0
+    ) {
+      return undefined;
+    }
+
     return calculateNewTarget(
       weight,
       reps,
@@ -422,14 +519,19 @@ function buildDropsetSetsFromTargets({
 
   return weights.map((weight, setIndex) => {
     const set = exercise.sets[setIndex] || {};
-    const hasSetSpecificTargetReps =
-      targetRepsBySet?.[setIndex] !== undefined;
-    const progressedTargetReps = hasSetSpecificTargetReps
-      ? targetRepsBySet[setIndex]
+    const usesPerSetTargets = Array.isArray(targetRepsBySet);
+    const setSpecificTargetReps = targetRepsBySet?.[setIndex];
+    const hasSetSpecificTargetReps = !isUnsetRepValue(
+      setSpecificTargetReps
+    );
+    const progressedTargetReps = usesPerSetTargets
+      ? hasSetSpecificTargetReps
+        ? setSpecificTargetReps
+        : 0
       : targetReps;
-    const hasProgressedTargetReps = Array.isArray(targetRepsBySet);
-    const nextTargetReps =
-      hasProgressedTargetReps || isUnsetRepValue(set.targetReps)
+    const nextTargetReps = usesPerSetTargets
+      ? progressedTargetReps
+      : isUnsetRepValue(set.targetReps)
         ? progressedTargetReps
         : set.targetReps;
 
@@ -621,7 +723,6 @@ function getFinalPlan(
 router.get(
   "/personal-records",
   authenticateToken,
-  csrfProtection,
   async (req, res) => {
     try {
       const userID = req.user.id;
@@ -653,7 +754,6 @@ router.get(
 router.get(
   "/current-workout",
   authenticateToken,
-  csrfProtection,
   async (req, res) => {
     const startedAt = performance.now();
     const timings = {};

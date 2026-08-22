@@ -49,6 +49,11 @@ AUTH0_BASE_URL=http://localhost:3000
 FRONTEND_URL=http://localhost:5173
 ```
 
+Legg til `TRUST_PROXY=1` i produksjonsmiljøet når backenden kjører bak
+Vercel-proxyen. La variabelen være udefinert for lokal utvikling. På andre
+plattformer må den settes til det nøyaktige antallet proxy-hopp; ugyldige
+verdier stopper backenden ved oppstart.
+
 Testene bruker mock/in-memory database og trenger ikke `DB_URI`.
 
 ## Starte appen

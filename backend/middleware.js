@@ -25,14 +25,19 @@ export const authenticateToken = (req, res, next) => {
   }
 };
 
-export const csrfProtection = csurf({ cookie: true });
+export const csrfProtection = csurf({
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+  },
+});
 
 export const csrfTokenRoute = (app) => {
-  app.get("/csrf-token", authenticateToken, csrfProtection, (req, res) => {
+  app.get("/api/csrf-token", authenticateToken, csrfProtection, (req, res) => {
     const csrfToken = req.csrfToken();
 
-    res.cookie("XSRF-TOKEN", csrfToken);
-
+    res.set("Cache-Control", "no-store");
     res.json({ csrfToken });
   });
 };

@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import MesocycleDetailsModal from "./MesocycleDetailsModal";
-import { getCookie } from "../utils/cookies";
 import { useNavigate } from "react-router";
 import AppModal from "./AppModal";
 import { clearCurrentWorkoutQuery } from "../utils/currentWorkoutQuery";
+import { useApiFetch } from "../utils/apiFetch";
 
 const RedoExerciseBlockModal = ({ isOpen, onRequestClose, exerciseBlock }) => {
   const [weekAsTarget, setWeekAsTarget] = useState(null);
@@ -14,10 +14,10 @@ const RedoExerciseBlockModal = ({ isOpen, onRequestClose, exerciseBlock }) => {
   const [mesocycleName, setMesocycleName] = useState("");
   const [numberOfWeeks, setNumberOfWeeks] = useState("");
   const [includeDeload, setIncludeDeload] = useState(false);
-  const [csrfToken, setCSRFToken] = useState("");
   const [newExerciseBlock, setNewExerciseBlock] = useState(null);
 
   const baseUrl = import.meta.env.VITE_API_URL;
+  const { apiFetch } = useApiFetch();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -26,22 +26,6 @@ const RedoExerciseBlockModal = ({ isOpen, onRequestClose, exerciseBlock }) => {
       setIncludeDeload(!!exerciseBlock?.includeDeload);
     }
   }, [exerciseBlock, isOpen]);
-
-  useEffect(() => {
-    const fetchCsrfToken = async () => {
-      try {
-        const response = await fetch(baseUrl + "/csrf-token", {
-          method: "GET",
-          credentials: "include",
-        });
-        const data = await response.json();
-        setCSRFToken(data.csrfToken);
-      } catch (error) {
-        console.error("Failed to fetch CSRF token:", error);
-      }
-    };
-    fetchCsrfToken();
-  }, [baseUrl]);
 
   if (!exerciseBlock || !Array.isArray(exerciseBlock.plan)) {
     console.error("Invalid exercise block data:", exerciseBlock);
@@ -162,26 +146,20 @@ const RedoExerciseBlockModal = ({ isOpen, onRequestClose, exerciseBlock }) => {
       };
 
       try {
-        const token = getCookie("token");
-
-        const response = await fetch(baseUrl + "/mesocycles", {
+        const { ok } = await apiFetch(baseUrl + "/mesocycles", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "X-CSRF-Token": csrfToken,
-            Authorization: "Bearer " + token,
           },
           credentials: "include",
           body: JSON.stringify(mesocycleData),
         });
 
-        if (!response.ok) {
+        if (!ok) {
           console.error("Network response was not ok");
           return;
         }
         await clearCurrentWorkoutQuery(queryClient);
-
-        await response.json();
 
         setIsDetailsModalOpen(false);
         onRequestClose();

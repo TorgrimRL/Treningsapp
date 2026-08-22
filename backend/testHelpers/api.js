@@ -37,9 +37,12 @@ export async function createAuthenticatedUser(
   const token = signAuthToken(user.id);
   const agent = request.agent(app);
   addTokenCookie(agent, token);
+  const csrfToken = await getCsrfToken(agent);
+  agent.csrfToken = csrfToken;
 
   return {
     agent,
+    csrfToken,
     user,
     userId: user.id,
     username,
@@ -49,6 +52,10 @@ export async function createAuthenticatedUser(
 }
 
 export async function getCsrfToken(agent) {
-  const response = await agent.get("/csrf-token").expect(200);
+  const response = await agent.get("/api/csrf-token").expect(200);
   return response.body.csrfToken;
+}
+
+export function csrfRequest(agent, method, path) {
+  return agent[method](path).set("X-CSRF-Token", agent.csrfToken);
 }

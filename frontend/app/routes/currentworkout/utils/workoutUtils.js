@@ -23,6 +23,9 @@ export const isBlankValue = (value) =>
 export const isUnsetRepValue = (value) =>
   isBlankValue(value) || Number(value) === 0;
 
+export const isRirValue = (value) =>
+  typeof value === "string" && /\bRIR\b/i.test(value.trim());
+
 export const getSetLogWeight = (set) =>
   isBlankValue(set.weight) ? set.targetWeight ?? "" : set.weight;
 
@@ -239,6 +242,10 @@ export const getWeightOptions = (exercise, selectedWeight) => {
 };
 
 export const getPerformanceStatus = (set, exercise, weekIndex) => {
+  if (isRirValue(set.reps) || isRirValue(set.targetReps)) {
+    return "noIndicator";
+  }
+
   if (weekIndex === 1) {
     if (isUnsetRepValue(set.targetReps) || isBlankValue(set.targetWeight)) {
       return "noIndicator";
@@ -257,10 +264,6 @@ export const getPerformanceStatus = (set, exercise, weekIndex) => {
   const targetWeight = parseFloat(set.targetWeight);
   const targetReps = parseInt(set.targetReps, 10);
   const currentWeight = parseFloat(set.weight);
-
-  if (["3 RIR", "2 RIR", "0/1 RIR"].includes(set.reps)) {
-    return "noIndicator";
-  }
 
   const currentReps = parseInt(set.reps, 10);
 

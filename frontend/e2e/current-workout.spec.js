@@ -1,5 +1,9 @@
 import { expect, test } from "@playwright/test";
-import { loginAsDemoUser, resetE2eDatabase } from "./helpers";
+import {
+  getCsrfToken,
+  loginAsDemoUser,
+  resetE2eDatabase,
+} from "./helpers";
 
 test.beforeEach(async () => {
   await resetE2eDatabase();
@@ -376,8 +380,9 @@ test("500 current workout retries once before showing the error UI", async ({
 
 test("logging a bodyweight set keeps target reps when target weight is zero", async ({ page }) => {
   await loginAsDemoUser(page);
+  const csrfToken = await getCsrfToken(page);
 
-  await page.evaluate(async () => {
+  await page.evaluate(async (token) => {
     const apiBase = "http://127.0.0.1:3001/api";
     const response = await fetch(apiBase + "/current-workout", {
       credentials: "include",
@@ -407,14 +412,17 @@ test("logging a bodyweight set keeps target reps when target weight is zero", as
 
     const updateResponse = await fetch(apiBase + "/mesocycles/" + workout.id, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": token,
+      },
       credentials: "include",
       body: JSON.stringify(workout),
     });
     if (!updateResponse.ok) {
       throw new Error(await updateResponse.text());
     }
-  });
+  }, csrfToken);
 
   await page.goto("/currentworkout");
 
@@ -445,6 +453,24 @@ test("logging a bodyweight set keeps target reps when target weight is zero", as
   await expect(
     reloadedBodyweightSet.getByTestId("set-reps-select")
   ).toHaveValue("11");
+});
+
+test("@e2e RIR guidance replaces numeric performance arrows", async ({ page }) => {
+  await loginAsDemoUser(page);
+  await page.goto("/currentworkout");
+
+  const firstExercise = page.getByTestId("workout-exercise-0");
+  const firstSet = page.getByTestId("workout-set-0-0");
+  await expect(firstExercise.getByTestId("rir-explanation-0")).toHaveCount(0);
+
+  await firstSet.getByTestId("set-weight-select").selectOption("100");
+
+  await expect(firstSet.getByTestId("set-reps-select")).toHaveValue(/RIR/);
+  await expect(firstExercise.getByTestId("rir-explanation-0")).toHaveCount(1);
+  await expect(firstExercise.getByTestId("rir-explanation-0")).toContainText(
+    "3 RIR means stopping with about 3 reps left."
+  );
+  await expect(firstSet.locator('[data-icon="arrow-down"]')).toHaveCount(0);
 });
 
 
@@ -538,10 +564,11 @@ test("dropsets can apply to the rest of the mesocycle", async ({ page }) => {
   expect(rawPlan[6].exercises[0].sets[4].targetWeight).toBe(52.5);
 });
 
-test("future dropsets progress reps from each matching set", async ({ page }) => {
+test("@e2e new dropsets start without invented follow-up targets and progress each logged set", async ({ page }) => {
   await loginAsDemoUser(page);
+  const csrfToken = await getCsrfToken(page);
 
-  await page.evaluate(async () => {
+  await page.evaluate(async (token) => {
     const apiBase = "http://127.0.0.1:3001/api";
     const workoutResponse = await fetch(apiBase + "/current-workout", {
       credentials: "include",
@@ -573,7 +600,10 @@ test("future dropsets progress reps from each matching set", async ({ page }) =>
       apiBase + "/mesocycles/" + workout.id,
       {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRF-Token": token,
+        },
         credentials: "include",
         body: JSON.stringify({ ...storedMesocycle, plan }),
       }
@@ -581,7 +611,7 @@ test("future dropsets progress reps from each matching set", async ({ page }) =>
     if (!updateResponse.ok) {
       throw new Error(await updateResponse.text());
     }
-  });
+  }, csrfToken);
 
   await page.goto("/currentworkout");
   await page.getByTestId("exercise-menu-0").click();
@@ -631,28 +661,51 @@ test("future dropsets progress reps from each matching set", async ({ page }) =>
     page.getByTestId("dropset-save").click(),
   ]);
 
+  const initialTargetValues = [];
+  for (let setIndex = 0; setIndex < 5; setIndex += 1) {
+    initialTargetValues.push(
+      await page
+        .getByTestId(`workout-set-0-${setIndex}`)
+        .getByTestId("set-reps-select")
+        .inputValue()
+    );
+  }
+  expect(initialTargetValues).toEqual(["7", "", "", "", ""]);
+
+  const loggedReps = [7, 9, 11, 13, 15];
+  for (const [setIndex, reps] of loggedReps.entries()) {
+    const setRow = page.getByTestId(`workout-set-0-${setIndex}`);
+    if (setIndex > 0) {
+      await setRow.getByTestId("set-reps-select").selectOption(String(reps));
+    }
+
+    await Promise.all([
+      page.waitForResponse(
+        (response) =>
+          /\/api\/mesocycles\/\d+$/.test(response.url()) &&
+          response.request().method() === "PUT" &&
+          response.status() === 200
+      ),
+      setRow.getByTestId("set-log-checkbox").check(),
+    ]);
+  }
+
   const futureSets = await page.evaluate(async () => {
     const apiBase = "http://127.0.0.1:3001/api";
     const workoutResponse = await fetch(apiBase + "/current-workout", {
       credentials: "include",
     });
     const workout = await workoutResponse.json();
-    const mesocycleResponse = await fetch(
-      apiBase + "/mesocycles/" + workout.id,
-      { credentials: "include" }
-    );
-    const storedMesocycle = await mesocycleResponse.json();
-    const plan = JSON.parse(storedMesocycle.plan);
     const futureDayIndex =
       workout.firstIncompleteDayIndex + workout.daysPerWeek;
-    return plan[futureDayIndex].exercises[0].sets;
+    return workout.plan[futureDayIndex].exercises[0].sets;
   });
 
   expect(futureSets.map((set) => Number(set.reps))).toEqual([
-    8, 12, 10, 8, 8,
+    8, 10, 12, 14, 16,
   ]);
   expect(futureSets.map((set) => Number(set.targetReps))).toEqual([
-    8, 12, 10, 8, 8,
+    8, 10, 12, 14, 16,
   ]);
 });
 

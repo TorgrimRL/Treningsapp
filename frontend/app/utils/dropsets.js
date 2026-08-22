@@ -3,6 +3,12 @@ export const DEFAULT_DROPSET_SET_COUNT = 5;
 export const MIN_DROPSET_SET_COUNT = 1;
 export const MAX_DROPSET_SET_COUNT = 8;
 
+export const DROPSET_REP_TARGET_POLICY = {
+  preserve: "preserve",
+  initialize: "initialize",
+  fromPrevious: "from-previous",
+};
+
 const isBlankValue = (value) =>
   value === undefined || value === null || value === "";
 
@@ -138,6 +144,7 @@ export function buildDropsetSets({
   minimumWeight = 0,
   dropPercent = DROPSET_DROP_PERCENT,
   targetRepsBySet = [],
+  targetRepPolicy = DROPSET_REP_TARGET_POLICY.preserve,
 }) {
   const { weights, error } = generateDropsetWeights({
     startWeight,
@@ -160,16 +167,31 @@ export function buildDropsetSets({
     const existingSet = existingSets[index] || {};
     const targetRepsOverride = targetRepsBySet[index];
     const hasTargetRepsOverride = !isUnsetRepValue(targetRepsOverride);
-    const targetReps = hasTargetRepsOverride
-      ? targetRepsOverride
-      : isUnsetRepValue(existingSet.targetReps)
-        ? fallbackTargetReps
-        : existingSet.targetReps;
-    const reps = hasTargetRepsOverride
-      ? targetReps
-      : isUnsetRepValue(existingSet.reps)
+    let targetReps;
+    let reps;
+
+    if (targetRepPolicy === DROPSET_REP_TARGET_POLICY.fromPrevious) {
+      targetReps = hasTargetRepsOverride ? targetRepsOverride : 0;
+      reps = targetReps;
+    } else if (targetRepPolicy === DROPSET_REP_TARGET_POLICY.initialize) {
+      targetReps = index === 0 ? fallbackTargetReps : 0;
+      reps = index === 0
+        ? isUnsetRepValue(existingSet.reps)
+          ? targetReps
+          : existingSet.reps
+        : 0;
+    } else {
+      targetReps = hasTargetRepsOverride
+        ? targetRepsOverride
+        : isUnsetRepValue(existingSet.targetReps)
+          ? fallbackTargetReps
+          : existingSet.targetReps;
+      reps = hasTargetRepsOverride
         ? targetReps
-        : existingSet.reps;
+        : isUnsetRepValue(existingSet.reps)
+          ? targetReps
+          : existingSet.reps;
+    }
 
     return {
       ...existingSet,
