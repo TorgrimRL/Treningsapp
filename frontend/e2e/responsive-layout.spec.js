@@ -241,6 +241,73 @@ test("@responsive mobile set controls and five-week calendar remain aligned with
   await expectNoDocumentOverflow(page);
 });
 
+test("@responsive modal backdrop locks the page while nested modal content scrolls", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 393, height: 360 });
+  await loginAsDemoUser(page);
+  await page.goto("/currentworkout");
+
+  const exercise = page.getByTestId("workout-exercise-5");
+  await page.getByTestId("exercise-menu-5").click();
+  const scrollPosition = await page.evaluate(() => window.scrollY);
+  expect(scrollPosition).toBeGreaterThan(0);
+  await exercise.getByTestId("change-exercise-5").click();
+
+  const chooseDialog = page.getByRole("dialog", { name: "Choose Exercise" });
+  const overlay = page.locator(".ReactModal__Overlay").last();
+  await expect(chooseDialog).toBeVisible();
+  await expect(page.locator("html")).toHaveClass(/ReactModal__Html--open/);
+  await expect(page.locator("body")).toHaveClass(/ReactModal__Body--open/);
+  expect(
+    await overlay.evaluate((element) => getComputedStyle(element).backgroundColor)
+  ).toMatch(/^(rgba\(0, 0, 0, 0\.5\)|oklab\(0 0 0 \/ 0\.5\))$/);
+
+  const overlayBox = await getBox(overlay);
+  expect(Math.abs(overlayBox.x)).toBeLessThanOrEqual(1);
+  expect(Math.abs(overlayBox.y)).toBeLessThanOrEqual(1);
+  expect(Math.abs(overlayBox.width - 393)).toBeLessThanOrEqual(1);
+  expect(Math.abs(overlayBox.height - 360)).toBeLessThanOrEqual(1);
+
+  await page.mouse.move(2, 2);
+  await page.mouse.wheel(0, 800);
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(
+    scrollPosition
+  );
+
+  await chooseDialog.getByTestId("choose-exercise-add-custom").click();
+  const addDialog = page.getByRole("dialog", { name: "Custom exercises" });
+  await expect(addDialog).toBeVisible();
+
+  const scrollRegion = addDialog.locator(":scope > div").first();
+  const scrollDimensions = await scrollRegion.evaluate((element) => ({
+    clientHeight: element.clientHeight,
+    scrollHeight: element.scrollHeight,
+  }));
+  expect(scrollDimensions.scrollHeight).toBeGreaterThan(
+    scrollDimensions.clientHeight
+  );
+  await scrollRegion.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
+  expect(await scrollRegion.evaluate((element) => element.scrollTop)).toBeGreaterThan(0);
+
+  const addDialogBox = await getBox(addDialog);
+  expect(addDialogBox.y).toBeGreaterThanOrEqual(0);
+  expect(addDialogBox.y + addDialogBox.height).toBeLessThanOrEqual(361);
+
+  await addDialog.getByRole("button", { name: "Close modal" }).click();
+  await expect(addDialog).toBeHidden();
+  await expect(page.locator("html")).toHaveClass(/ReactModal__Html--open/);
+  await expect(page.locator("body")).toHaveClass(/ReactModal__Body--open/);
+
+  await chooseDialog.getByRole("button", { name: "Close modal" }).click();
+  await expect(chooseDialog).toBeHidden();
+  await expect(page.locator("html")).not.toHaveClass(/ReactModal__Html--open/);
+  await expect(page.locator("body")).not.toHaveClass(/ReactModal__Body--open/);
+  expect(await page.evaluate(() => window.scrollY)).toBe(scrollPosition);
+});
+
 test("@responsive templates switch from a list to a three-column desktop grid", async ({
   page,
 }) => {

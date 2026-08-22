@@ -30,11 +30,13 @@ export default function AppModal({
       shouldCloseOnEsc={shouldCloseOnEsc}
       shouldCloseOnOverlayClick={shouldCloseOnOverlayClick}
       contentLabel={contentLabel}
+      htmlOpenClassName="ReactModal__Html--open"
+      preventScroll
       className={joinClasses(
-        "relative mx-auto my-0 min-w-0 w-full bg-darkGray text-white rounded focus:outline-none shadow-lg p-0 max-h-[calc(100vh-8rem)] overflow-hidden text-2sm",
+        "relative mx-auto my-0 min-w-0 w-full bg-darkGray text-white rounded focus:outline-none shadow-lg p-0 max-h-[calc(100dvh-2rem)] overflow-hidden text-2sm sm:max-h-[calc(100dvh-8rem)]",
         sizeClasses[size] || sizeClasses.standard
       )}
-      overlayClassName="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black bg-opacity-50 px-4 py-16"
+      overlayClassName="fixed inset-0 z-50 flex items-start justify-center overflow-hidden overscroll-none bg-black/50 px-4 py-4 sm:py-16"
     >
       {showCloseButton && (
         <button
@@ -48,7 +50,7 @@ export default function AppModal({
       )}
       <div
         className={joinClasses(
-          "min-w-0 max-h-[calc(100vh-8rem)] overflow-y-auto p-4",
+          "min-w-0 max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain p-4 sm:max-h-[calc(100dvh-8rem)]",
           bodyClassName
         )}
       >

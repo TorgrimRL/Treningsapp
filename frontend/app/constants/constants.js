@@ -4,6 +4,7 @@ export const muscleGroups = [
   "Biceps",
   "Calves",
   "Chest",
+  "Forearms",
   "Front Delts",
   "Glutes",
   "Hamstrings",
@@ -125,6 +126,14 @@ export const exercises = {
     { name: "Dumbbell Spider Curl", type: "dumbbell" },
     { name: "Alternating Dumbbell Curl", type: "dumbbell" },
     { name: "Cable Rope Twist Curl", type: "cable" },
+  ],
+  Forearms: [
+    { name: "Barbell Wrist Curl", type: "barbell" },
+    { name: "Dumbbell Wrist Curl", type: "dumbbell" },
+    { name: "Cable Wrist Curl", type: "cable" },
+    { name: "Barbell Wrist Extension", type: "barbell" },
+    { name: "Dumbbell Wrist Extension", type: "dumbbell" },
+    { name: "Cable Wrist Extension", type: "cable" },
   ],
   "Rear Delts": [
     { name: "Barbell Facepull", type: "barbell" },
