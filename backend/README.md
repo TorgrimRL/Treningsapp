@@ -121,6 +121,15 @@ Eksempler på nøkkelruter (flere finnes i filene `exerciseRoutes.js` og `mesocy
 | `PUT`   | `/api/mesocycles/:id` | Oppdaterer en gitt treningsplan (vekt, reps, fullførtstatus, m.m.)                |
 | `GET`   | `/api/current-workout` | Henter gjeldende treningsplan og håndterer progresjonsberegning i sanntid        |
 
+## Importing training plans
+
+The frontend can import a reusable future weekly plan from pasted lines or a CSV file.
+The CSV compatibility format uses one exercise per row and requires `day`, `exercise`,
+`sets`, and `reps`. Optional columns are `weight_kg` (kilograms), `muscle_group`,
+`type`, `progression_mode`, `weight_increment`, and `minimum_weight`. The user reviews
+and corrects all rows before the standard authenticated, CSRF-protected mesocycle API
+creates the plan; imports never create completed workouts or personal records.
+
 ## Mulige Forbedringer
 - **Omfattende enhetstester:**
   Flere tester kunne implementeres for å sikre robusthet, særlig rundt kritiske API-endepunkter.
