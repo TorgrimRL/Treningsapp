@@ -236,6 +236,36 @@ describe("exercise and mesocycle regression", () => {
     expect(row.name).toBe("First plan");
   });
 
+  it("rate limits repeated rename attempts per authenticated user", async () => {
+    const userA = await createAuthenticatedUser(app, db, { username: "alice" });
+    const userB = await createAuthenticatedUser(app, db, { username: "bob" });
+    const userAPlan = await createMesocycle(userA.agent, {
+      name: "Alice plan",
+    });
+    const userBPlan = await createMesocycle(userB.agent, {
+      name: "Bob plan",
+    });
+
+    for (let attempt = 1; attempt <= 10; attempt += 1) {
+      await userA.agent
+        .patch(`/api/mesocycles/${userAPlan.id}/name`)
+        .send({ name: `Alice plan ${attempt}` })
+        .expect(200);
+    }
+
+    await userA.agent
+      .patch(`/api/mesocycles/${userAPlan.id}/name`)
+      .send({ name: "Alice blocked plan" })
+      .expect(429, {
+        error: "Too many rename attempts. Please try again in a minute.",
+      });
+
+    await userB.agent
+      .patch(`/api/mesocycles/${userBPlan.id}/name`)
+      .send({ name: "Bob renamed plan" })
+      .expect(200);
+  });
+
   it("keeps private mesocycles scoped to their owner", async () => {
     const userA = await createAuthenticatedUser(app, db, { username: "alice" });
     const userB = await createAuthenticatedUser(app, db, { username: "bob" });

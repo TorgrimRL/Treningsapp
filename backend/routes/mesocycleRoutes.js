@@ -1,4 +1,5 @@
 import express from "express";
+import { rateLimit } from "express-rate-limit";
 import { authenticateToken, csrfProtection } from "../middleware.js";
 import calculateNewTarget, { normalizeProgressionSettings } from "../utils/calculateNewTarget.js";
 import createDeloadWeek from "../utils/createDeloadWeek.js";
@@ -14,6 +15,17 @@ import {
   isWorkoutDayComplete,
 } from "../utils/planPersistence.js";
 const router = express.Router();
+
+const renameMesocycleRateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 10,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  keyGenerator: (req) => String(req.user.id),
+  message: {
+    error: "Too many rename attempts. Please try again in a minute.",
+  },
+});
 
 function parsePlan(plan) {
   const parsedPlan = typeof plan === "string" ? JSON.parse(plan) : plan;
@@ -108,7 +120,7 @@ router.get(
   }
 );
 
-router.patch("/mesocycles/:id/name", authenticateToken, async (req, res) => {
+router.patch("/mesocycles/:id/name", authenticateToken, renameMesocycleRateLimiter, async (req, res) => {
   const normalizedName =
     typeof req.body?.name === "string" ? req.body.name.trim() : "";
 
