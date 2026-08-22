@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
 import bodyParser from "body-parser";
 import cors from "cors";
+import rateLimit from "express-rate-limit";
 import { createAuth0Router } from "./routes/auth0Routes.js";
 import mesocycleRoutes from "./routes/mesocycleRoutes.js";
 import exerciseRoutes from "./routes/exerciseRoutes.js";
@@ -21,6 +22,38 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 const auth0Routes = createAuth0Router();
+
+function parseTrustProxy(value) {
+  if (value === undefined || value === "") {
+    return null;
+  }
+
+  if (!/^\d+$/.test(value)) {
+    throw new Error("TRUST_PROXY must be a non-negative integer");
+  }
+
+  const proxyHops = Number(value);
+  if (!Number.isSafeInteger(proxyHops)) {
+    throw new Error("TRUST_PROXY must be a non-negative integer");
+  }
+
+  return proxyHops;
+}
+
+const trustProxy = parseTrustProxy(process.env.TRUST_PROXY);
+if (trustProxy !== null) {
+  app.set("trust proxy", trustProxy);
+}
+
+const apiRateLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 300,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+  message: {
+    error: "Too many requests. Please try again in a minute.",
+  },
+});
 
 const corsOptions = {
   origin: function (origin, callback) {
@@ -54,6 +87,7 @@ if (!secretKey && process.env.NODE_ENV === "production") {
 app.get("/favicon.ico", (req, res) => res.status(204));
 
 app.use("/api/auth0", auth0Routes);
+app.use("/api", apiRateLimiter);
 csrfTokenRoute(app);
 app.use("/api", exerciseRoutes);
 app.use("/api", mesocycleRoutes);

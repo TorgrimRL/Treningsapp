@@ -21,7 +21,11 @@ function moduleHref(relativePath) {
   return new URL(relativePath, import.meta.url).href;
 }
 
-export async function loadAppWithQuery(query, jwtSecret = "test-secret") {
+export async function loadAppWithQuery(
+  query,
+  jwtSecret = "test-secret",
+  environment = {}
+) {
   if (!query) {
     throw new Error("loadAppWithQuery requires a query function");
   }
@@ -29,6 +33,20 @@ export async function loadAppWithQuery(query, jwtSecret = "test-secret") {
   jest.resetModules();
   process.env.NODE_ENV = "test";
   process.env.JWT_SECRET_KEY = jwtSecret;
+
+  const controlledEnvironment = {
+    TRUST_PROXY: "",
+    ...environment,
+  };
+  const previousEnvironment = new Map();
+  for (const [name, value] of Object.entries(controlledEnvironment)) {
+    previousEnvironment.set(name, process.env[name]);
+    if (value === undefined) {
+      delete process.env[name];
+    } else {
+      process.env[name] = value;
+    }
+  }
 
   let app;
 
@@ -54,7 +72,17 @@ export async function loadAppWithQuery(query, jwtSecret = "test-secret") {
     safeQuery: query,
   }));
 
-  await import(moduleHref("../index.js"));
+  try {
+    await import(moduleHref("../index.js"));
+  } finally {
+    for (const [name, value] of previousEnvironment) {
+      if (value === undefined) {
+        delete process.env[name];
+      } else {
+        process.env[name] = value;
+      }
+    }
+  }
 
   if (!app) {
     throw new Error("Express app was not created while importing index.js");
