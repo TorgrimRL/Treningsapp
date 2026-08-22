@@ -47,6 +47,16 @@ async function useAvailableRequests(client, forwardedFor) {
   return lastResponse;
 }
 
+async function useAvailableAuth0Requests(client) {
+  let lastResponse;
+
+  for (let requestNumber = 0; requestNumber < 300; requestNumber += 1) {
+    lastResponse = await client.get("/api/auth0/me").expect(401);
+  }
+
+  return lastResponse;
+}
+
 describe("API rate limiting", () => {
   let logSpy;
 
@@ -66,6 +76,21 @@ describe("API rate limiting", () => {
       expect(finalAllowedResponse.headers.ratelimit).toEqual(expect.any(String));
 
       const blockedResponse = await client.get("/api/csrf-token").expect(429);
+
+      expect(blockedResponse.body).toEqual(rateLimitResponse);
+      expect(blockedResponse.headers.ratelimit).toEqual(expect.any(String));
+      expect(blockedResponse.headers["retry-after"]).toEqual(expect.any(String));
+    });
+  });
+
+  it("limits Auth0 routes before their authorization handler runs", async () => {
+    const app = await loadAppWithQuery(jest.fn());
+
+    await withTestClient(app, async (client) => {
+      const finalAllowedResponse = await useAvailableAuth0Requests(client);
+      expect(finalAllowedResponse.headers.ratelimit).toEqual(expect.any(String));
+
+      const blockedResponse = await client.get("/api/auth0/me").expect(429);
 
       expect(blockedResponse.body).toEqual(rateLimitResponse);
       expect(blockedResponse.headers.ratelimit).toEqual(expect.any(String));

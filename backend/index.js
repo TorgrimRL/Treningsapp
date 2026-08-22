@@ -69,8 +69,8 @@ if (!secretKey && process.env.NODE_ENV === "production") {
 }
 app.get("/favicon.ico", (req, res) => res.status(204));
 
-app.use("/api/auth0", auth0Routes);
 app.use("/api", apiRateLimiter);
+app.use("/api/auth0", auth0Routes);
 csrfTokenRoute(app);
 app.use("/api", exerciseRoutes);
 app.use("/api", mesocycleRoutes);
