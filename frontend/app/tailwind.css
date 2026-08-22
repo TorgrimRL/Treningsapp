@@ -1,5 +1,11 @@
-@config "../tailwind.config.js";
 @import "tailwindcss";
+@config "../tailwind.config.js";
+
+.ReactModal__Html--open,
+.ReactModal__Body--open {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
 
 input[type="checkbox"] {
   accent-color: #38a169; /* Tailwind green-500 */

@@ -14,10 +14,8 @@ test("@e2e logged-in user can create a training plan", async ({ page }) => {
   await page.getByTestId("training-block-details-save").click();
 
   await page.getByTestId("day-label-0").selectOption("Monday");
-  await page.getByTestId("muscle-group-0-0").selectOption("Chest");
-  await page
-    .getByTestId("exercise-0-0")
-    .selectOption("Medium Grip Bench Press");
+  await page.getByTestId("muscle-group-0-0").selectOption("Forearms");
+  await page.getByTestId("exercise-0-0").selectOption("Barbell Wrist Curl");
   await page.getByTestId("progression-mode-0-0").selectOption("percent");
   await page.getByTestId("weight-increment-0-0").selectOption("4.25");
   await page.getByTestId("minimum-weight-0-0").selectOption("13");
@@ -35,6 +33,20 @@ test("@e2e logged-in user can create a training plan", async ({ page }) => {
 
   await expect(page.getByTestId("current-workout-title")).toContainText(
     "E2E Training Block"
+  );
+  await expect(page.getByTestId("workout-exercise-0")).toContainText(
+    "Barbell Wrist Curl"
+  );
+  await expect(page.getByTestId("workout-exercise-0")).toContainText(
+    "Forearms"
+  );
+
+  await page.reload();
+  await expect(page.getByTestId("workout-exercise-0")).toContainText(
+    "Barbell Wrist Curl"
+  );
+  await expect(page.getByTestId("workout-exercise-0")).toContainText(
+    "Forearms"
   );
 });
 
