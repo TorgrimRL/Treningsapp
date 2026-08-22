@@ -160,7 +160,7 @@ export default function ImportPlanWizard({ onCancel, onSubmit }) {
             type="button"
             onClick={() => setSource("paste")}
             aria-pressed={source === "paste"}
-            className={`min-h-11 px-4 transition-colors ${source === "paste" ? "bg-red-600 text-white" : "bg-darkGray text-gray-300 hover:bg-gray-700"}`}
+            className={`min-h-11 px-4 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400 ${source === "paste" ? "bg-red-600 text-white" : "bg-darkGray text-gray-300 hover:bg-gray-700"}`}
           >
             Paste plan
           </button>
@@ -168,13 +168,16 @@ export default function ImportPlanWizard({ onCancel, onSubmit }) {
             type="button"
             onClick={() => setSource("csv")}
             aria-pressed={source === "csv"}
-            className={`min-h-11 px-4 transition-colors ${source === "csv" ? "bg-red-600 text-white" : "bg-darkGray text-gray-300 hover:bg-gray-700"}`}
+            className={`min-h-11 px-4 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400 ${source === "csv" ? "bg-red-600 text-white" : "bg-darkGray text-gray-300 hover:bg-gray-700"}`}
           >
             Upload CSV
           </button>
         </div>
         {source === "paste" ? (
           <div className="mt-5">
+            <label htmlFor="import-plan-text" className="mb-2 block font-semibold">
+              Plan text
+            </label>
             <p className="mb-2 text-sm text-gray-300">
               One exercise per line. Use{" "}
               <code>Monday: Bench Press — 3 sets</code>, optionally add{" "}
@@ -182,10 +185,11 @@ export default function ImportPlanWizard({ onCancel, onSubmit }) {
               starting weight.
             </p>
             <textarea
+              id="import-plan-text"
               value={input}
               onChange={(event) => setInput(event.target.value)}
               placeholder="Monday: Bench Press — 3 sets @ 60"
-              className="min-h-40 w-full bg-inputBGGray p-3"
+              className="min-h-40 w-full bg-inputBGGray p-3 focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-red-400"
             />
             <p className="mt-2 text-sm text-gray-300">
               You can export a previous training log, then use your preferred AI
@@ -218,7 +222,7 @@ export default function ImportPlanWizard({ onCancel, onSubmit }) {
             <button
               type="button"
               onClick={download}
-              className="mt-3 block text-red-300 underline"
+              className="mt-3 flex min-h-11 items-center text-red-300 underline focus:outline focus:outline-2 focus:outline-offset-2 focus:outline-red-400"
             >
               Download CSV template
             </button>
