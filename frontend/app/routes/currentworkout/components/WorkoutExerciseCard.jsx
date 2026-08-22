@@ -1,6 +1,7 @@
 import ExerciseNote from "./ExerciseNote";
 import WorkoutExerciseMenu from "./WorkoutExerciseMenu";
 import WorkoutSetRow from "./WorkoutSetRow";
+import { isRirValue } from "../utils/workoutUtils";
 
 export default function WorkoutExerciseCard({
   applyToFutureWeeks,
@@ -29,6 +30,10 @@ export default function WorkoutExerciseCard({
   setMenuRefs,
   week,
 }) {
+  const hasRirValue = exerciseSets.some(
+    (set) => isRirValue(set.reps) || isRirValue(set.targetReps)
+  );
+
   return (
     <li
       data-testid={"workout-exercise-" + exerciseIndex}
@@ -64,6 +69,15 @@ export default function WorkoutExerciseCard({
       <div className="break-words font-semibold text-white">
         {exercise.exercise}
       </div>
+      {hasRirValue && (
+        <p
+          className="mt-1 text-pretty text-xs leading-relaxed text-gray-400"
+          data-testid={"rir-explanation-" + exerciseIndex}
+        >
+          RIR means “reps in reserve” — how many more reps you could perform
+          before failure. 3 RIR means stopping with about 3 reps left.
+        </p>
+      )}
       {note && <ExerciseNote note={note} />}
       {exerciseSets.map((set, setIndex) => {
         const setMenuId = exerciseIndex + "-" + setIndex;

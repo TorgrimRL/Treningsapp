@@ -447,6 +447,24 @@ test("logging a bodyweight set keeps target reps when target weight is zero", as
   ).toHaveValue("11");
 });
 
+test("@e2e RIR guidance replaces numeric performance arrows", async ({ page }) => {
+  await loginAsDemoUser(page);
+  await page.goto("/currentworkout");
+
+  const firstExercise = page.getByTestId("workout-exercise-0");
+  const firstSet = page.getByTestId("workout-set-0-0");
+  await expect(firstExercise.getByTestId("rir-explanation-0")).toHaveCount(0);
+
+  await firstSet.getByTestId("set-weight-select").selectOption("100");
+
+  await expect(firstSet.getByTestId("set-reps-select")).toHaveValue(/RIR/);
+  await expect(firstExercise.getByTestId("rir-explanation-0")).toHaveCount(1);
+  await expect(firstExercise.getByTestId("rir-explanation-0")).toContainText(
+    "3 RIR means stopping with about 3 reps left."
+  );
+  await expect(firstSet.locator('[data-icon="arrow-down"]')).toHaveCount(0);
+});
+
 
 test("can configure dropsets and update targets from the first set", async ({ page }) => {
   await loginAsDemoUser(page);

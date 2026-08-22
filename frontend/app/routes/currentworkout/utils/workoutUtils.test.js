@@ -3,9 +3,11 @@ import {
   buildMesocycleWithSets,
   calculateProgressedTarget,
   calculateWorkoutProgress,
+  getPerformanceStatus,
   getSetLogReps,
   getSetProgressionReps,
   getWeightOptions,
+  isRirValue,
   updateDropsetSetsFromStartWeight,
 } from "./workoutUtils";
 
@@ -13,6 +15,54 @@ describe("workoutUtils", () => {
   it("uses target reps for an unlogged bodyweight set", () => {
     expect(getSetLogReps({ weight: 0, reps: 0, targetReps: 12 })).toBe(12);
     expect(getSetLogReps({ weight: 0, reps: 9, targetReps: 12 })).toBe(9);
+  });
+
+  it("recognizes supported RIR values without treating numeric reps as RIR", () => {
+    expect(isRirValue("3 RIR")).toBe(true);
+    expect(isRirValue("2 rir")).toBe(true);
+    expect(isRirValue("3/RIR")).toBe(true);
+    expect(isRirValue(3)).toBe(false);
+    expect(isRirValue("3")).toBe(false);
+  });
+
+  it("does not show a performance indicator for RIR reps or targets", () => {
+    const exercise = { type: "barbell", weightIncrement: 2.5 };
+    const baseSet = {
+      weight: 80,
+      reps: 7,
+      targetWeight: 80,
+      targetReps: 8,
+    };
+
+    expect(
+      getPerformanceStatus(
+        { ...baseSet, targetReps: "3 RIR" },
+        exercise,
+        2
+      )
+    ).toBe("noIndicator");
+    expect(
+      getPerformanceStatus({ ...baseSet, reps: "2 RIR" }, exercise, 2)
+    ).toBe("noIndicator");
+  });
+
+  it("keeps numeric performance indicators unchanged", () => {
+    const exercise = { type: "barbell", weightIncrement: 2.5 };
+    const baseSet = {
+      weight: 80,
+      targetWeight: 80,
+      targetReps: 8,
+    };
+
+    expect(getPerformanceStatus({ ...baseSet, reps: 8 }, exercise, 2)).toBe(
+      "target"
+    );
+    expect(getPerformanceStatus({ ...baseSet, reps: 9 }, exercise, 2)).toBe(
+      "above"
+    );
+    expect(getPerformanceStatus({ ...baseSet, reps: 7 }, exercise, 2)).toBe(
+      "below"
+    );
   });
 
   it("calculates progress from completed sets only", () => {
@@ -60,4 +110,3 @@ describe("workoutUtils", () => {
     expect(updated.plan[0].exercises[1].sets).toEqual([{ reps: 10 }]);
   });
 });
-
