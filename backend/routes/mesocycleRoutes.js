@@ -108,6 +108,65 @@ router.get(
   }
 );
 
+router.patch("/mesocycles/:id/name", authenticateToken, async (req, res) => {
+  const normalizedName =
+    typeof req.body?.name === "string" ? req.body.name.trim() : "";
+
+  if (!normalizedName) {
+    return res.status(400).json({ error: "Mesocycle name is required" });
+  }
+
+  try {
+    const { id } = req.params;
+    const userID = req.user.id;
+    const { result: ownedRows, hadRetry: ownerHadRetry } = await safeQuery`
+      SELECT id FROM mesocycles
+      WHERE id = ${id} AND user_id = ${userID}
+      LIMIT 1
+    `;
+
+    if (!ownedRows || ownedRows.length === 0) {
+      return res.status(404).json({ error: "Mesocycle not found" });
+    }
+
+    const { result: duplicateRows, hadRetry: duplicateHadRetry } =
+      await safeQuery`
+        SELECT id FROM mesocycles
+        WHERE user_id = ${userID}
+          AND id != ${id}
+          AND LOWER(TRIM(name)) = LOWER(${normalizedName})
+        LIMIT 1
+      `;
+
+    if (duplicateRows?.length) {
+      return res
+        .status(409)
+        .json({ error: "Mesocycle name is already in use" });
+    }
+
+    const { hadRetry: updateHadRetry } = await safeQuery`
+      UPDATE mesocycles
+      SET name = ${normalizedName}
+      WHERE id = ${id} AND user_id = ${userID}
+    `;
+    const responsePayload = buildResponsePayload(
+      ownerHadRetry || duplicateHadRetry || updateHadRetry,
+      {
+        message: "Mesocycle renamed successfully",
+        mesocycle: {
+          id: ownedRows[0].id,
+          name: normalizedName,
+        },
+      }
+    );
+
+    return res.status(200).json(responsePayload);
+  } catch (error) {
+    console.error("Error renaming mesocycle:", error.message);
+    return res.status(500).json({ error: "Failed to rename mesocycle" });
+  }
+});
+
 // Update a specific mesocycle
 router.put("/mesocycles/:id", authenticateToken, async (req, res) => {
   try {

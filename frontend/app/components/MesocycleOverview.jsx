@@ -1,9 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEllipsisV } from "@fortawesome/free-solid-svg-icons";
 import RedoExerciseBlockModal from "./RedoExerciseBlockModal";
+import RenameMesocycleModal from "./RenameMesocycleModal";
 import { useApiFetch } from "../utils/apiFetch";
+import { currentWorkoutQueryKey } from "../utils/currentWorkoutQuery";
+import {
+  mergeMesocycleName,
+  requestMesocycleRename,
+} from "../utils/mesocycleName";
+import { personalRecordsQueryKey } from "../utils/personalRecordsQuery";
 
 const MesocycleOverview = () => {
   const [mesocycles, setMesocycles] = useState([]);
@@ -11,8 +19,12 @@ const MesocycleOverview = () => {
   const [sortedPlans, setSortedPlans] = useState([]);
   const [selectedExerciseBlock, setSelectedExerciseBlock] = useState(null);
   const [isRedoModalOpen, setIsRedoModalOpen] = useState(false);
+  const [selectedMesocycleToRename, setSelectedMesocycleToRename] =
+    useState(null);
+  const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
   const baseUrl = import.meta.env.VITE_API_URL;
   const { apiFetch } = useApiFetch();
+  const queryClient = useQueryClient();
   const sortPlansByCurrent = (plans) => {
     const currentPlans = plans.filter((plan) => plan.isCurrent);
     const nonCurrentPlans = plans.filter(
@@ -75,6 +87,47 @@ const MesocycleOverview = () => {
     setIsRedoModalOpen(true);
   };
 
+  const handleOpenRenameModal = (mesocycle) => {
+    setOpenMenus({});
+    setSelectedMesocycleToRename(mesocycle);
+    setIsRenameModalOpen(true);
+  };
+
+  const handleRenameMesocycle = async (name) => {
+    if (!selectedMesocycleToRename) {
+      return { ok: false, error: "No training block selected" };
+    }
+
+    const result = await requestMesocycleRename(
+      apiFetch,
+      baseUrl,
+      selectedMesocycleToRename.id,
+      name
+    );
+
+    if (!result.ok) {
+      return result;
+    }
+
+    setMesocycles((currentMesocycles) =>
+      currentMesocycles.map((mesocycle) =>
+        mergeMesocycleName(mesocycle, result.mesocycle)
+      )
+    );
+    void queryClient.invalidateQueries({
+      queryKey: currentWorkoutQueryKey,
+      exact: true,
+      refetchType: "none",
+    });
+    void queryClient.invalidateQueries({
+      queryKey: personalRecordsQueryKey,
+      exact: true,
+      refetchType: "none",
+    });
+
+    return result;
+  };
+
   return (
     <>
       <div className="text-white">
@@ -134,7 +187,10 @@ const MesocycleOverview = () => {
                   </span>
                   <div className="relative menu-container">
                     <button
+                      aria-label={`Open actions for ${mesocycle.name}`}
+                      data-testid={`mesocycle-actions-${mesocycle.id}`}
                       onClick={() => toggleMenu(mesocycle.id)}
+                      type="button"
                       className="inline-flex min-h-11 min-w-11 items-center justify-center text-white focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
                     >
                       <FontAwesomeIcon icon={faEllipsisV} />
@@ -142,8 +198,18 @@ const MesocycleOverview = () => {
                     {openMenus[mesocycle.id] && (
                       <div className="absolute right-0 z-10 mt-2 w-48 rounded-lg bg-darkGray p-2 shadow-lg">
                         <button
+                          aria-label={`Rename ${mesocycle.name}`}
+                          className="block min-h-11 w-full px-4 py-2 text-left text-sm text-white transition-colors hover:bg-gray-700 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
+                          data-testid={`rename-mesocycle-${mesocycle.id}`}
+                          onClick={() => handleOpenRenameModal(mesocycle)}
+                          type="button"
+                        >
+                          Rename
+                        </button>
+                        <button
                           className="block min-h-11 w-full px-4 py-2 text-left text-sm text-white transition-colors hover:bg-gray-700 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
                           onClick={() => handleRedoExerciseBlock(mesocycle)}
+                          type="button"
                         >
                           Redo Exercise Block
                         </button>
@@ -163,6 +229,12 @@ const MesocycleOverview = () => {
           exerciseBlock={selectedExerciseBlock}
         />
       )}
+      <RenameMesocycleModal
+        isOpen={isRenameModalOpen && Boolean(selectedMesocycleToRename)}
+        mesocycle={selectedMesocycleToRename}
+        onRequestClose={() => setIsRenameModalOpen(false)}
+        onSave={handleRenameMesocycle}
+      />
     </>
   );
 };

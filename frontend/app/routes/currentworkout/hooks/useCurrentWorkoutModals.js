@@ -12,6 +12,8 @@ export default function useCurrentWorkoutModals() {
   const [isWeightIncrementModalOpen, setIsWeightIncrementModalOpen] =
     useState(false);
   const [isDropsetModalOpen, setIsDropsetModalOpen] = useState(false);
+  const [isRenameMesocycleModalOpen, setIsRenameMesocycleModalOpen] =
+    useState(false);
   const [currentNote, setCurrentNote] = useState("");
   const [currentExercise, setCurrentExercise] = useState(null);
   const [progressionModeDrafts, setProgressionModeDrafts] = useState({});
@@ -24,6 +26,10 @@ export default function useCurrentWorkoutModals() {
 
   const openCalendarModal = useCallback(() => setIsCalendarModalOpen(true), []);
   const closeCalendarModal = useCallback(() => setIsCalendarModalOpen(false), []);
+  const openRenameMesocycleModal = useCallback(
+    () => setIsRenameMesocycleModalOpen(true),
+    []
+  );
 
   const openNoteModal = useCallback(({ dayIndex, exerciseIndex, note }) => {
     setCurrentExercise({ dayIndex, exerciseIndex });
@@ -180,6 +186,8 @@ export default function useCurrentWorkoutModals() {
     setIsWeightIncrementModalOpen,
     isDropsetModalOpen,
     setIsDropsetModalOpen,
+    isRenameMesocycleModalOpen,
+    setIsRenameMesocycleModalOpen,
     currentNote,
     setCurrentNote,
     currentExercise,
@@ -191,6 +199,7 @@ export default function useCurrentWorkoutModals() {
     openNoteModal,
     openChooseExerciseModal,
     openDropsetModal,
+    openRenameMesocycleModal,
     openProgressionModeModal,
     openWeightIncrementModal,
     getProgressionModeDraft,

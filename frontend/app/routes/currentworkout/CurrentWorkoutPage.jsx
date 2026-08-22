@@ -173,6 +173,7 @@ export default function CurrentWorkoutPage() {
             )}
             <CurrentWorkoutHeader
               currentMesocycle={currentMesocycle}
+              onRename={workoutModals.openRenameMesocycleModal}
               progress={progress}
             />
           </div>
@@ -243,6 +244,9 @@ export default function CurrentWorkoutPage() {
           isDropsetModalOpen={workoutModals.isDropsetModalOpen}
           isNoteModalOpen={workoutModals.isNoteModalOpen}
           isProgressionModeModalOpen={workoutModals.isProgressionModeModalOpen}
+          isRenameMesocycleModalOpen={
+            workoutModals.isRenameMesocycleModalOpen
+          }
           isPersonalRecordModalOpen={Boolean(personalRecordContext)}
           isWeightIncrementModalOpen={workoutModals.isWeightIncrementModalOpen}
           onApplyProgressionModeToFutureWeeksChange={
@@ -266,6 +270,10 @@ export default function CurrentWorkoutPage() {
             workoutModals.setIsProgressionModeModalOpen(false)
           }
           onProgressionModeSave={actions.handleProgressionModeSave}
+          onRenameMesocycleClose={() =>
+            workoutModals.setIsRenameMesocycleModalOpen(false)
+          }
+          onRenameMesocycleSave={actions.handleRenameMesocycle}
           onPersonalRecordClose={() => setPersonalRecordContext(null)}
           personalRecordContext={personalRecordContext}
           onWeightIncrementChange={actions.handleWeightIncrementChange}

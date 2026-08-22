@@ -1,7 +1,12 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useRef } from "react";
 import { normalizeProgressionSettings } from "../../../constants/constants";
+import { currentWorkoutQueryKey } from "../../../utils/currentWorkoutQuery";
 import { DROPSET_DROP_PERCENT, buildDropsetSets } from "../../../utils/dropsets";
+import {
+  mergeMesocycleName,
+  requestMesocycleRename,
+} from "../../../utils/mesocycleName";
 import { enrichWorkoutWithPersonalRecords } from "../../../utils/personalRecords";
 import { personalRecordsQueryKey } from "../../../utils/personalRecordsQuery";
 import {
@@ -88,6 +93,18 @@ export default function useCurrentWorkoutActions({
   const updateSetsState = (updater) =>
     replaceSetsState(updater(setsRef.current));
 
+  const enqueueMesocycleMutation = (executeMutation) => {
+    const queuedMutation = saveQueueRef.current.then(
+      executeMutation,
+      executeMutation
+    );
+    saveQueueRef.current = queuedMutation.then(
+      () => undefined,
+      () => undefined
+    );
+    return queuedMutation;
+  };
+
   const saveMesocycle = (
     updatedMesocycle,
     failureMessage,
@@ -142,15 +159,45 @@ export default function useCurrentWorkoutActions({
         return false;
       }
     };
-    const queuedSave = saveQueueRef.current.then(
-      executeSave,
-      executeSave
-    );
-    saveQueueRef.current = queuedSave.then(
-      () => undefined,
-      () => undefined
-    );
-    return queuedSave;
+    return enqueueMesocycleMutation(executeSave);
+  };
+
+  const handleRenameMesocycle = (name) => {
+    if (!currentMesocycle) {
+      return Promise.resolve({
+        ok: false,
+        error: "No current training block found",
+      });
+    }
+
+    const mesocycleId = currentMesocycle.id;
+
+    return enqueueMesocycleMutation(async () => {
+      const result = await requestMesocycleRename(
+        apiFetch,
+        baseUrl,
+        mesocycleId,
+        name
+      );
+
+      if (!result.ok) {
+        return result;
+      }
+
+      setCurrentMesocycle((previousMesocycle) =>
+        mergeMesocycleName(previousMesocycle, result.mesocycle)
+      );
+      queryClient.setQueryData(currentWorkoutQueryKey, (previousMesocycle) =>
+        mergeMesocycleName(previousMesocycle, result.mesocycle)
+      );
+      void queryClient.invalidateQueries({
+        queryKey: personalRecordsQueryKey,
+        exact: true,
+        refetchType: "none",
+      });
+
+      return result;
+    });
   };
 
   const handleSetCompletionChange = (
@@ -898,6 +945,7 @@ export default function useCurrentWorkoutActions({
     handleMinimumWeightChange,
     handleProgressionModeChange,
     handleProgressionModeSave,
+    handleRenameMesocycle,
     handleRepsChange,
     handleSaveDropset,
     handleSaveExercise,

@@ -187,6 +187,55 @@ describe("exercise and mesocycle regression", () => {
     });
   });
 
+  it("renames an owned mesocycle without changing its workout data", async () => {
+    const userA = await createAuthenticatedUser(app, db, { username: "alice" });
+    const userB = await createAuthenticatedUser(app, db, { username: "bob" });
+    const { id } = await createMesocycle(userA.agent, {
+      name: "Original plan",
+      includeDeload: true,
+    });
+    await createMesocycle(userB.agent, { name: "Renamed plan" });
+    const before = await db.get("SELECT * FROM mesocycles WHERE id = ?", [id]);
+
+    const response = await userA.agent
+      .patch(`/api/mesocycles/${id}/name`)
+      .send({ name: "  Renamed plan  " })
+      .expect(200);
+
+    expect(response.body).toEqual({
+      message: "Mesocycle renamed successfully",
+      mesocycle: { id, name: "Renamed plan" },
+    });
+    const after = await db.get("SELECT * FROM mesocycles WHERE id = ?", [id]);
+    expect({ ...after, name: before.name }).toEqual(before);
+    expect(after.name).toBe("Renamed plan");
+
+    await userB.agent
+      .patch(`/api/mesocycles/${id}/name`)
+      .send({ name: "Stolen plan" })
+      .expect(404, { error: "Mesocycle not found" });
+  });
+
+  it("rejects blank and duplicate mesocycle names for the same user", async () => {
+    const { agent } = await createAuthenticatedUser(app, db, {
+      username: "alice",
+    });
+    const { id } = await createMesocycle(agent, { name: "First plan" });
+    await createMesocycle(agent, { name: "Second plan" });
+
+    await agent
+      .patch(`/api/mesocycles/${id}/name`)
+      .send({ name: "   " })
+      .expect(400, { error: "Mesocycle name is required" });
+    await agent
+      .patch(`/api/mesocycles/${id}/name`)
+      .send({ name: "  SECOND PLAN " })
+      .expect(409, { error: "Mesocycle name is already in use" });
+
+    const row = await db.get("SELECT name FROM mesocycles WHERE id = ?", [id]);
+    expect(row.name).toBe("First plan");
+  });
+
   it("keeps private mesocycles scoped to their owner", async () => {
     const userA = await createAuthenticatedUser(app, db, { username: "alice" });
     const userB = await createAuthenticatedUser(app, db, { username: "bob" });

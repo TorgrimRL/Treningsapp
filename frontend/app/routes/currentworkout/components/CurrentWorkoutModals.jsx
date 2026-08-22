@@ -2,6 +2,7 @@ import CalendarModal from "../../../components/CalendarModal";
 import ChooseExerciseModal from "../../../components/ChooseExerciseModal";
 import DropsetModal from "../../../components/DropsetModal";
 import NoteModal from "../../../components/NoteModal";
+import RenameMesocycleModal from "../../../components/RenameMesocycleModal";
 import PersonalRecordModal from "./PersonalRecordModal";
 import ProgressionModeModal from "../../../components/ProgressionModeModal";
 import WeightIncrementModal from "../../../components/WeightIncrementModal";
@@ -25,6 +26,7 @@ export default function CurrentWorkoutModals({
   isDropsetModalOpen,
   isNoteModalOpen,
   isProgressionModeModalOpen,
+  isRenameMesocycleModalOpen,
   isPersonalRecordModalOpen,
   isWeightIncrementModalOpen,
   onApplyProgressionModeToFutureWeeksChange,
@@ -40,6 +42,8 @@ export default function CurrentWorkoutModals({
   onProgressionModeChange,
   onProgressionModeClose,
   onProgressionModeSave,
+  onRenameMesocycleClose,
+  onRenameMesocycleSave,
   onPersonalRecordClose,
   personalRecordContext,
   onWeightIncrementChange,
@@ -74,6 +78,14 @@ export default function CurrentWorkoutModals({
         onNoteChange={onNoteChange}
         onSave={onNoteSave}
       />
+      {currentMesocycle && (
+        <RenameMesocycleModal
+          isOpen={isRenameMesocycleModalOpen}
+          mesocycle={currentMesocycle}
+          onRequestClose={onRenameMesocycleClose}
+          onSave={onRenameMesocycleSave}
+        />
+      )}
       <ProgressionModeModal
         isOpen={isProgressionModeModalOpen}
         onRequestClose={onProgressionModeClose}
