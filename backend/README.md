@@ -125,10 +125,13 @@ Eksempler på nøkkelruter (flere finnes i filene `exerciseRoutes.js` og `mesocy
 
 The frontend can import a reusable future weekly plan from pasted lines or a CSV file.
 The CSV compatibility format uses one exercise per row and requires `day`, `exercise`,
-`sets`, and `reps`. Optional columns are `weight_kg` (kilograms), `muscle_group`,
+and `sets`. Optional columns are `weight`, `reps`, `muscle_group`,
 `type`, `progression_mode`, `weight_increment`, and `minimum_weight`. The user reviews
 and corrects all rows before the standard authenticated, CSRF-protected mesocycle API
 creates the plan; imports never create completed workouts or personal records.
+Each mesocycle can also be exported from the plan overview as an import-compatible
+CSV file. Export contains only the reusable first-week plan, not completed sets or
+workout history.
 
 ## Mulige Forbedringer
 - **Omfattende enhetstester:**

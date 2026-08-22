@@ -8,6 +8,11 @@ describe("import plan parser", () => {
     expect(result.rows[0]).toMatchObject({ day: "Monday", exercise: "Bench Press", sets: 3, reps: 8, weight: 60 });
   });
 
+  it("parses spreadsheet-friendly semicolon CSV with comma decimals", () => {
+    const result = parseCsvPlan("day;exercise;sets;weight\nMonday;Bench Press;3;82,5");
+    expect(result.rows[0]).toMatchObject({ sets: 3, weight: 82.5, reps: 0 });
+  });
+
   it("reports missing CSV columns and malformed pasted lines", () => {
     expect(parseCsvPlan("day,exercise\nMonday,Bench Press").errors[0]).toContain("sets");
     expect(parseTextPlan("Bench Press 3x8").errors[0]).toContain("Line 1");

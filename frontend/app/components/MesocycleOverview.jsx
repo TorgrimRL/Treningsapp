@@ -12,6 +12,7 @@ import {
   requestMesocycleRename,
 } from "../utils/mesocycleName";
 import { personalRecordsQueryKey } from "../utils/personalRecordsQuery";
+import { downloadMesocycleCsv } from "../features/import-plan/exportPlanCsv";
 
 const MesocycleOverview = () => {
   const [mesocycles, setMesocycles] = useState([]);
@@ -195,6 +196,18 @@ const MesocycleOverview = () => {
                     </button>
                     {openMenus[mesocycle.id] && (
                       <div className="absolute right-0 z-10 mt-2 w-48 rounded-lg bg-darkGray p-2 shadow-lg">
+                        <button
+                          aria-label={`Export ${mesocycle.name} as CSV`}
+                          className="block min-h-11 w-full px-4 py-2 text-left text-sm text-white transition-colors hover:bg-gray-700 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
+                          data-testid={`export-mesocycle-${mesocycle.id}`}
+                          onClick={() => {
+                            downloadMesocycleCsv(mesocycle);
+                            setOpenMenus({});
+                          }}
+                          type="button"
+                        >
+                          Export CSV
+                        </button>
                         <button
                           aria-label={`Rename ${mesocycle.name}`}
                           className="block min-h-11 w-full px-4 py-2 text-left text-sm text-white transition-colors hover:bg-gray-700 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"

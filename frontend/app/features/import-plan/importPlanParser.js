@@ -4,7 +4,7 @@ const requiredColumns = ["day", "exercise", "sets"];
 export const normalizeExerciseName = (value = "") =>
   String(value).trim().replace(/\s+/g, " ").toLocaleLowerCase();
 
-function splitCsvLine(line) {
+function splitCsvLine(line, delimiter) {
   const values = [];
   let value = "";
   let quoted = false;
@@ -12,7 +12,7 @@ function splitCsvLine(line) {
     const character = line[index];
     if (character === '"' && line[index + 1] === '"') { value += '"'; index += 1; }
     else if (character === '"') quoted = !quoted;
-    else if (character === "," && !quoted) { values.push(value.trim()); value = ""; }
+    else if (character === delimiter && !quoted) { values.push(value.trim()); value = ""; }
     else value += character;
   }
   if (quoted) return null;
@@ -21,7 +21,7 @@ function splitCsvLine(line) {
 }
 
 function parseNumber(value, field, errors) {
-  const number = Number(String(value ?? "").trim());
+  const number = Number(String(value ?? "").trim().replace(",", "."));
   if (!Number.isFinite(number) || number <= 0) errors.push(`${field} must be a positive number`);
   return number;
 }
@@ -36,7 +36,7 @@ function toRow(values, line, headers) {
     ? 0
     : parseNumber(record.reps, "Reps", errors);
   const weightValue = record.weight ?? record.weight_kg ?? "";
-  const weight = weightValue === "" ? undefined : Number(weightValue);
+  const weight = weightValue === "" ? undefined : Number(String(weightValue).replace(",", "."));
   if (weightValue !== "" && (!Number.isFinite(weight) || weight < 0)) errors.push("Weight must be zero or greater");
   return { id: `${line}-${record.day}-${record.exercise}`, line, ...record, sets, reps, weight, errors, warnings: [] };
 }
@@ -44,12 +44,13 @@ function toRow(values, line, headers) {
 export function parseCsvPlan(source) {
   const lines = source.replace(/^\uFEFF/, "").split(/\r?\n/).filter((line) => line.trim());
   if (!lines.length) return { rows: [], errors: ["Choose a CSV file with a header row."] };
-  const headers = splitCsvLine(lines[0])?.map((header) => header.trim().toLowerCase());
+  const delimiter = lines[0].includes(";") ? ";" : ",";
+  const headers = splitCsvLine(lines[0], delimiter)?.map((header) => header.trim().toLowerCase());
   if (!headers) return { rows: [], errors: ["The CSV header has an unclosed quote."] };
   const missing = requiredColumns.filter((column) => !headers.includes(column));
   if (missing.length) return { rows: [], errors: [`Missing required column${missing.length > 1 ? "s" : ""}: ${missing.join(", ")}.`] };
   const rows = lines.slice(1).map((line, index) => {
-    const values = splitCsvLine(line);
+    const values = splitCsvLine(line, delimiter);
     return values ? toRow(values, index + 2, headers) : { id: `line-${index + 2}`, line: index + 2, errors: ["Unclosed quote"], warnings: [] };
   });
   return { rows, errors: [] };
