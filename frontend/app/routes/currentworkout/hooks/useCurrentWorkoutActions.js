@@ -2,7 +2,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useRef } from "react";
 import { normalizeProgressionSettings } from "../../../constants/constants";
 import { currentWorkoutQueryKey } from "../../../utils/currentWorkoutQuery";
-import { DROPSET_DROP_PERCENT, buildDropsetSets } from "../../../utils/dropsets";
+import {
+  DROPSET_DROP_PERCENT,
+  DROPSET_REP_TARGET_POLICY,
+  buildDropsetSets,
+} from "../../../utils/dropsets";
 import {
   mergeMesocycleName,
   requestMesocycleRename,
@@ -438,20 +442,35 @@ export default function useCurrentWorkoutActions({
                   })
                 : { weight: startWeight, reps: undefined };
             const targetRepsBySet =
-              progressedTarget.reps === undefined
-                ? []
-                : progressionSettings.progressionMode === "reps"
-                  ? Array.from({ length: setCount }, (_, setIndex) =>
-                      calculateProgressedTarget({
-                        weight: previousStartWeight,
-                        reps: getSetProgressionReps(
-                          previousWeekSets?.[setIndex]
-                        ),
-                        exercise,
-                        currentWeek,
-                      }).reps
-                    )
-                  : Array(setCount).fill(progressedTarget.reps);
+              shouldApplyToFutureWeeks && dIndex > dayIndex
+                ? Array.from({ length: setCount }, (_, setIndex) => {
+                    const previousSet = previousWeekSets?.[setIndex];
+                    const previousSetWeight = Number(previousSet?.weight);
+                    const previousSetReps = getSetProgressionReps(previousSet);
+
+                    if (
+                      !previousSet?.completed ||
+                      !Number.isFinite(previousSetWeight) ||
+                      previousSetWeight <= 0 ||
+                      previousSetReps <= 0
+                    ) {
+                      return undefined;
+                    }
+
+                    return calculateProgressedTarget({
+                      weight: previousSetWeight,
+                      reps: previousSetReps,
+                      exercise,
+                      currentWeek,
+                    }).reps;
+                  })
+                : [];
+            const targetRepPolicy =
+              shouldApplyToFutureWeeks && dIndex > dayIndex
+                ? DROPSET_REP_TARGET_POLICY.fromPrevious
+                : exercise.dropset?.enabled
+                  ? DROPSET_REP_TARGET_POLICY.preserve
+                  : DROPSET_REP_TARGET_POLICY.initialize;
             const dropsetStartWeight = progressedTarget.weight;
             const { sets: dropsetSets, error } = buildDropsetSets({
               existingSets,
@@ -461,6 +480,7 @@ export default function useCurrentWorkoutActions({
               minimumWeight: progressionSettings.minimumWeight,
               dropPercent: DROPSET_DROP_PERCENT,
               targetRepsBySet,
+              targetRepPolicy,
             });
 
             if (error) {

@@ -194,7 +194,7 @@ function dropsetExercise({ exercise, progressionMode, weightIncrement }) {
       }),
       set({
         weight: 80,
-        reps: 10,
+        reps: 12,
         completed: true,
         progressionMode,
         weightIncrement,
@@ -676,16 +676,53 @@ describe("current workout regression", () => {
 
     expect(percentExercise.sets).toEqual([
       expect.objectContaining({ weight: 105, reps: 10, targetWeight: 105, targetReps: 10 }),
-      expect.objectContaining({ weight: 85, reps: 10, targetWeight: 85, targetReps: 10 }),
+      expect.objectContaining({ weight: 85, reps: 12, targetWeight: 85, targetReps: 12 }),
     ]);
     expect(repExercise.sets).toEqual([
       expect.objectContaining({ weight: 100, reps: 11, targetWeight: 100, targetReps: 11 }),
-      expect.objectContaining({ weight: 80, reps: 11, targetWeight: 80, targetReps: 11 }),
+      expect.objectContaining({ weight: 80, reps: 13, targetWeight: 80, targetReps: 13 }),
     ]);
     expect(weightExercise.sets).toEqual([
       expect.objectContaining({ weight: 105, reps: 10, targetWeight: 105, targetReps: 10 }),
-      expect.objectContaining({ weight: 85, reps: 10, targetWeight: 85, targetReps: 10 }),
+      expect.objectContaining({ weight: 85, reps: 12, targetWeight: 85, targetReps: 12 }),
     ]);
+  });
+
+  it("leaves a future dropset target blank when its matching set is not logged", async () => {
+    const { agent } = await createAuthenticatedUser(app, db, { username: "alice" });
+    const previousExercise = dropsetExercise({
+      exercise: "Partially logged Dropset",
+      progressionMode: "reps",
+    });
+    previousExercise.sets[1].completed = false;
+    const futureExercise = {
+      ...previousExercise,
+      sets: [
+        set({ weight: 100, reps: 20 }),
+        set({ weight: 80, reps: 20 }),
+      ],
+    };
+
+    await agent
+      .post("/api/mesocycles")
+      .send({
+        name: "Dropset without invented targets",
+        weeks: 2,
+        daysPerWeek: 1,
+        plan: [
+          { label: "Week 1", exercises: [previousExercise] },
+          { label: "Week 2", exercises: [futureExercise] },
+        ],
+        completedDate: null,
+        isCurrent: true,
+      })
+      .expect(201);
+
+    const response = await agent.get("/api/current-workout").expect(200);
+    const futureSets = response.body.plan[1].exercises[0].sets;
+
+    expect(futureSets[0]).toMatchObject({ reps: 11, targetReps: 11 });
+    expect(futureSets[1]).toMatchObject({ reps: 0, targetReps: 0 });
   });
 
   it("progresses every configured dropset set in reps mode without changing weights", async () => {

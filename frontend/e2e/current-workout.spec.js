@@ -538,7 +538,7 @@ test("dropsets can apply to the rest of the mesocycle", async ({ page }) => {
   expect(rawPlan[6].exercises[0].sets[4].targetWeight).toBe(52.5);
 });
 
-test("future dropsets progress reps from each matching set", async ({ page }) => {
+test("@e2e new dropsets start without invented follow-up targets and progress each logged set", async ({ page }) => {
   await loginAsDemoUser(page);
 
   await page.evaluate(async () => {
@@ -631,28 +631,51 @@ test("future dropsets progress reps from each matching set", async ({ page }) =>
     page.getByTestId("dropset-save").click(),
   ]);
 
+  const initialTargetValues = [];
+  for (let setIndex = 0; setIndex < 5; setIndex += 1) {
+    initialTargetValues.push(
+      await page
+        .getByTestId(`workout-set-0-${setIndex}`)
+        .getByTestId("set-reps-select")
+        .inputValue()
+    );
+  }
+  expect(initialTargetValues).toEqual(["7", "", "", "", ""]);
+
+  const loggedReps = [7, 9, 11, 13, 15];
+  for (const [setIndex, reps] of loggedReps.entries()) {
+    const setRow = page.getByTestId(`workout-set-0-${setIndex}`);
+    if (setIndex > 0) {
+      await setRow.getByTestId("set-reps-select").selectOption(String(reps));
+    }
+
+    await Promise.all([
+      page.waitForResponse(
+        (response) =>
+          /\/api\/mesocycles\/\d+$/.test(response.url()) &&
+          response.request().method() === "PUT" &&
+          response.status() === 200
+      ),
+      setRow.getByTestId("set-log-checkbox").check(),
+    ]);
+  }
+
   const futureSets = await page.evaluate(async () => {
     const apiBase = "http://127.0.0.1:3001/api";
     const workoutResponse = await fetch(apiBase + "/current-workout", {
       credentials: "include",
     });
     const workout = await workoutResponse.json();
-    const mesocycleResponse = await fetch(
-      apiBase + "/mesocycles/" + workout.id,
-      { credentials: "include" }
-    );
-    const storedMesocycle = await mesocycleResponse.json();
-    const plan = JSON.parse(storedMesocycle.plan);
     const futureDayIndex =
       workout.firstIncompleteDayIndex + workout.daysPerWeek;
-    return plan[futureDayIndex].exercises[0].sets;
+    return workout.plan[futureDayIndex].exercises[0].sets;
   });
 
   expect(futureSets.map((set) => Number(set.reps))).toEqual([
-    8, 12, 10, 8, 8,
+    8, 10, 12, 14, 16,
   ]);
   expect(futureSets.map((set) => Number(set.targetReps))).toEqual([
-    8, 12, 10, 8, 8,
+    8, 10, 12, 14, 16,
   ]);
 });
 
