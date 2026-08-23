@@ -11,6 +11,7 @@ import {
 } from "../utils/mesocycleLimits.js";
 import {
   PlanValidationError,
+  parseAndValidateStoredPlan,
   validateMesocycleInput,
 } from "../utils/planValidation.js";
 import { loadAppWithQuery } from "../testHelpers/loadApp.js";
@@ -82,6 +83,20 @@ describe("security boundary utilities", () => {
     expect(() =>
       validateMesocycleInput({ weeks: 6, daysPerWeek: 1, plan })
     ).toThrow(PlanValidationError);
+  });
+
+  it("converts unexpected stored-plan normalization failures into validation errors", () => {
+    const storedPlan = [
+      {
+        get exercises() {
+          throw new TypeError("Unexpected legacy shape");
+        },
+      },
+    ];
+
+    expect(() => parseAndValidateStoredPlan(storedPlan)).toThrow(
+      new PlanValidationError("Stored plan could not be normalized")
+    );
   });
 
   it("enforces aggregate plan storage and validates quota configuration", () => {

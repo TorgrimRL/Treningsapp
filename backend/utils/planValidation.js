@@ -164,21 +164,26 @@ function normalizeLegacyStoredPlan(plan) {
 // placeholders directly on each exercise. Keep writes strict, but adapt those
 // stored plans on read so historical training blocks remain accessible.
 export function parseAndValidateStoredPlan(plan) {
-  if (typeof plan !== "string") {
-    return validatePlan(normalizeLegacyStoredPlan(plan));
-  }
-
-  if (getPlanByteLength(plan) > MAX_PLAN_BYTES) {
-    fail(`Plan must not exceed ${MAX_PLAN_BYTES} bytes`);
-  }
-
   try {
-    return validatePlan(normalizeLegacyStoredPlan(JSON.parse(plan)));
+    let parsedPlan = plan;
+    if (typeof plan === "string") {
+      if (getPlanByteLength(plan) > MAX_PLAN_BYTES) {
+        fail(`Plan must not exceed ${MAX_PLAN_BYTES} bytes`);
+      }
+
+      try {
+        parsedPlan = JSON.parse(plan);
+      } catch {
+        fail("Plan must contain valid JSON");
+      }
+    }
+
+    return validatePlan(normalizeLegacyStoredPlan(parsedPlan));
   } catch (error) {
     if (error instanceof PlanValidationError) {
       throw error;
     }
-    fail("Plan must contain valid JSON");
+    fail("Stored plan could not be normalized");
   }
 }
 
