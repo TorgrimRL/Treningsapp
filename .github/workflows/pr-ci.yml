@@ -13,8 +13,42 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: Detect changed areas
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Classify changed files
+        id: filter
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git diff --name-only "$BASE_SHA" "$HEAD_SHA" > changed-files.txt
+          backend=false
+          frontend=false
+          if grep -Eq '^(backend/|\.github/workflows/)' changed-files.txt; then
+            backend=true
+          fi
+          if grep -Eq '^(frontend/|\.github/workflows/)' changed-files.txt; then
+            frontend=true
+          fi
+          echo "backend=$backend" >> "$GITHUB_OUTPUT"
+          echo "frontend=$frontend" >> "$GITHUB_OUTPUT"
+
   backend-tests:
     name: Backend tests
+    needs: changes
+    if: needs.changes.outputs.backend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -41,6 +75,8 @@ jobs:
 
   frontend-quality:
     name: Frontend quality
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -75,6 +111,8 @@ jobs:
 
   playwright-e2e:
     name: Playwright E2E
+    needs: changes
+    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -129,6 +167,8 @@ jobs:
 
   production-dependency-audit:
     name: Production dependency audit
+    needs: changes
+    if: needs.changes.outputs.backend == 'true' || needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -148,9 +188,11 @@ jobs:
             frontend/package-lock.json
 
       - name: Audit backend production dependencies
+        if: needs.changes.outputs.backend == 'true'
         working-directory: backend
         run: npm audit --package-lock-only --omit=dev --audit-level=high
 
       - name: Audit frontend production dependencies
+        if: needs.changes.outputs.frontend == 'true'
         working-directory: frontend
         run: npm audit --package-lock-only --omit=dev --audit-level=high
