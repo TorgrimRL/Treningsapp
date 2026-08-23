@@ -22,7 +22,7 @@ import {
   MAX_DROPSET_SET_COUNT,
   PlanValidationError,
   getPlanByteLength,
-  parseAndValidatePlan,
+  parseAndValidateStoredPlan,
   validateMesocycleInput,
 } from "../utils/planValidation.js";
 const router = express.Router();
@@ -49,7 +49,7 @@ const renameUserRateLimiter = rateLimit({
 });
 
 function parsePlan(plan) {
-  return parseAndValidatePlan(plan);
+  return parseAndValidateStoredPlan(plan);
 }
 
 function normalizeCompletedDate(value) {
@@ -62,13 +62,34 @@ function normalizeCompletedDate(value) {
 }
 
 function normalizeMesocycleRow(row, plan = parsePlan(row.plan)) {
+  const storedDaysPerWeek = Number(row.daysPerWeek);
+  const storedWeeks = Number(row.weeks);
+  const inferredDaysPerWeek =
+    Number.isInteger(storedWeeks) &&
+    storedWeeks > 0 &&
+    plan.length >= storedWeeks &&
+    plan.length % storedWeeks === 0
+      ? plan.length / storedWeeks
+      : Math.max(1, Math.min(plan.length, 14));
+
   return {
     ...row,
     plan,
+    daysPerWeek:
+      Number.isInteger(storedDaysPerWeek) && storedDaysPerWeek > 0
+        ? storedDaysPerWeek
+        : inferredDaysPerWeek,
     isCurrent: !!row.isCurrent,
     includeDeload: !!row.include_deload,
     completedDate: normalizeCompletedDate(row.completedDate),
   };
+}
+
+function isPlanValidationError(error) {
+  return (
+    error instanceof PlanValidationError ||
+    error?.name === "PlanValidationError"
+  );
 }
 
 function normalizeMesocycleRows(rows) {
@@ -76,7 +97,7 @@ function normalizeMesocycleRows(rows) {
     try {
       return [normalizeMesocycleRow(row)];
     } catch (error) {
-      if (!(error instanceof PlanValidationError)) {
+      if (!isPlanValidationError(error)) {
         throw error;
       }
 
@@ -265,6 +286,7 @@ router.get(
       console.error("Error fetching mesocycles", {
         code: err?.code,
         name: err?.name,
+        message: err?.message,
       });
       res.status(500).json({ error: "Failed to fetch mesocycles" });
     }
@@ -507,7 +529,11 @@ router.get("/mesocycles/:id", authenticateToken, async (req, res) => {
     if (!rows || rows.length === 0) {
       return res.status(404).json({ error: "Mesocycle not found" });
     }
-    const row = rows[0];
+    const normalizedRow = normalizeMesocycleRow(rows[0]);
+    const row = {
+      ...normalizedRow,
+      plan: JSON.stringify(normalizedRow.plan),
+    };
     const responsePayload = hadRetry
       ? buildResponsePayload(hadRetry, { data: row })
       : row;

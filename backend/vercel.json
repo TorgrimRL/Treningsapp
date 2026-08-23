@@ -1,5 +1,8 @@
 {
   "version": 2,
+  "env": {
+    "TRUST_PROXY": "1"
+  },
   "builds": [
     {
       "src": "index.js",
