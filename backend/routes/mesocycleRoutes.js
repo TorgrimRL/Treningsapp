@@ -71,6 +71,26 @@ function normalizeMesocycleRow(row, plan = parsePlan(row.plan)) {
   };
 }
 
+function normalizeMesocycleRows(rows) {
+  return rows.flatMap((row) => {
+    try {
+      return [normalizeMesocycleRow(row)];
+    } catch (error) {
+      if (!(error instanceof PlanValidationError)) {
+        throw error;
+      }
+
+      console.warn("Skipping invalid stored mesocycle", {
+        mesocycleId: row.id,
+        isCurrent: !!row.isCurrent,
+        name: error.name,
+        message: error.message,
+      });
+      return [];
+    }
+  });
+}
+
 function sendMesocycleWriteError(res, error, fallbackMessage) {
   if (error instanceof PlanValidationError) {
     return res.status(400).json({ error: "Invalid plan data" });
@@ -110,11 +130,55 @@ function getMesocycleCompletion(plan) {
   );
 }
 
+async function runOnboardingTransaction(operation) {
+  await safeQuery`BEGIN IMMEDIATE`;
+  try {
+    const result = await operation();
+    await safeQuery`COMMIT`;
+    return result;
+  } catch (error) {
+    try {
+      await safeQuery`ROLLBACK`;
+    } catch {
+      // Preserve the original transaction error.
+    }
+    throw error;
+  }
+}
+
 // Endpoint to add a new mesocycle
 router.post("/mesocycles", authenticateToken, csrfProtection, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { name, weeks, daysPerWeek, plan, includeDeload } = req.body;
+    const { name, weeks, daysPerWeek, plan, includeDeload, onboardingDraftId } = req.body;
+    const normalizedDraftId =
+      typeof onboardingDraftId === "string" && onboardingDraftId.trim()
+        ? onboardingDraftId.trim()
+        : null;
+    if (normalizedDraftId) {
+      // noinspection SqlResolve -- source_onboarding_draft_id is added idempotently in db/schema.js.
+      const { result: existingOnboardingPlan } = await safeQuery`
+        SELECT id FROM mesocycles
+        WHERE user_id = ${userId} AND source_onboarding_draft_id = ${normalizedDraftId}
+        LIMIT 1
+      `;
+      if (existingOnboardingPlan[0]) {
+        return res.status(200).json({
+          message: "Mesocycle already created",
+          mesocycleId: existingOnboardingPlan[0].id,
+          idempotent: true,
+        });
+      }
+      // noinspection SqlResolve -- onboarding_drafts is created idempotently in db/schema.js.
+      const { result: ownedDraft } = await safeQuery`
+        SELECT id FROM onboarding_drafts
+        WHERE id = ${normalizedDraftId} AND user_id = ${userId}
+        LIMIT 1
+      `;
+      if (!ownedDraft[0]) {
+        return res.status(404).json({ error: "Onboarding draft not found" });
+      }
+    }
     const normalizedWeeks = Number(weeks);
     const normalizedDaysPerWeek = Number(daysPerWeek);
     const validatedPlan = validateMesocycleInput({
@@ -136,17 +200,36 @@ router.post("/mesocycles", authenticateToken, csrfProtection, async (req, res) =
       isCreate: true,
     });
 
-    const { hadRetry: updateHadRetry } = await safeQuery`
-      UPDATE mesocycles 
-      SET isCurrent = 0 
-      WHERE user_id = ${userId}
-    `;
+    const persistMesocycle = async () => {
+      const { hadRetry: updateHadRetry } = await safeQuery`
+        UPDATE mesocycles
+        SET isCurrent = 0
+        WHERE user_id = ${userId}
+      `;
 
-    // noinspection SqlResolve -- include_deload is added idempotently in db/schema.js.
-    const { result: insertResult, hadRetry: insertHadRetry } = await safeQuery`
-      INSERT INTO mesocycles (name, weeks, daysPerWeek, plan, user_id, completedDate, isCurrent, include_deload)
-      VALUES (${name}, ${normalizedWeeks}, ${normalizedDaysPerWeek}, ${planJson}, ${userId}, ${completedDate}, 1, ${includeDeload ? 1 : 0})
-    `;
+      // noinspection SqlResolve -- onboarding columns are added idempotently in db/schema.js.
+      const { result: insertResult, hadRetry: insertHadRetry } = await safeQuery`
+        INSERT INTO mesocycles (name, weeks, daysPerWeek, plan, user_id, completedDate, isCurrent, include_deload, source_onboarding_draft_id)
+        VALUES (${name}, ${normalizedWeeks}, ${normalizedDaysPerWeek}, ${planJson}, ${userId}, ${completedDate}, 1, ${includeDeload ? 1 : 0}, ${normalizedDraftId})
+      `;
+
+      if (normalizedDraftId) {
+        const completedAt = new Date().toISOString();
+        // noinspection SqlResolve -- onboarding columns are added idempotently in db/schema.js.
+        await safeQuery`UPDATE users SET onboarding_status = ${"completed"},
+          onboarding_step = ${"completed"}, onboarding_completed_at = ${completedAt}
+          WHERE id = ${userId}`;
+        // noinspection SqlResolve -- onboarding_drafts is created idempotently in db/schema.js.
+        await safeQuery`DELETE FROM onboarding_drafts
+          WHERE id = ${normalizedDraftId} AND user_id = ${userId}`;
+      }
+
+      return { insertHadRetry, insertResult, updateHadRetry };
+    };
+
+    const { insertHadRetry, insertResult, updateHadRetry } = normalizedDraftId
+      ? await runOnboardingTransaction(persistMesocycle)
+      : await persistMesocycle();
 
     const hadRetry = usage.hadRetry || updateHadRetry || insertHadRetry;
     const basePayload = {
@@ -173,7 +256,7 @@ router.get(
       const userID = req.user.id;
       const { result: rows, hadRetry } =
         await safeQuery`SELECT * FROM mesocycles WHERE user_id = ${userID}`;
-      const mesocycles = rows.map((row) => normalizeMesocycleRow(row));
+      const mesocycles = normalizeMesocycleRows(rows);
       const responsePayload = hadRetry
         ? buildResponsePayload(hadRetry, { data: mesocycles })
         : mesocycles;
@@ -825,6 +908,17 @@ function getExercises(
       const previousWeekExercise =
           plan[previousWeekIndex].exercises[exerciseIndex];
       if (!previousWeekExercise) return exerciseWithProgression;
+      const currentExerciseName = String(exercise.exercise || "")
+        .trim()
+        .replace(/\s+/g, " ")
+        .toLocaleLowerCase("en");
+      const previousExerciseName = String(previousWeekExercise.exercise || "")
+        .trim()
+        .replace(/\s+/g, " ")
+        .toLocaleLowerCase("en");
+      if (!currentExerciseName || currentExerciseName !== previousExerciseName) {
+        return exerciseWithProgression;
+      }
       if (!Array.isArray(exercise.sets)) return exerciseWithProgression;
       const isDeloadWeek = includeDeload && currentWeek === totalWeeks;
       if (isDeloadWeek) {

@@ -26,6 +26,7 @@ export default function WorkoutExerciseCard({
   onToggleMenu,
   onToggleSetMenu,
   onWeightChange,
+  onboardingTourStep,
   openSetMenus,
   setMenuRefs,
   week,
@@ -65,6 +66,7 @@ export default function WorkoutExerciseCard({
         onOpenWeightIncrement={() =>
           onOpenWeightIncrement({ dayIndex: currentDayIndex, exerciseIndex })
         }
+        showOnboardingHint={onboardingTourStep === "exercise"}
       />
       <div className="break-words font-semibold text-white">
         {exercise.exercise}
@@ -137,6 +139,8 @@ export default function WorkoutExerciseCard({
             }
             set={set}
             setIndex={setIndex}
+            showOnboardingHint={onboardingTourStep === "set" && setIndex === 0}
+            showTargetHint={onboardingTourStep === "targets" && setIndex === 0}
             setMenuRef={(element) => {
               setMenuRefs.current[setMenuId] = element;
             }}

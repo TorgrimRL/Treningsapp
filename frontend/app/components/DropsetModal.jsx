@@ -43,6 +43,7 @@ export default function DropsetModal({
   onRequestClose,
   exercise,
   onSave,
+  showApplyToFutureWeeks = true,
 }) {
   const [startWeight, setStartWeight] = useState("");
   const [setCount, setSetCount] = useState(DEFAULT_DROPSET_SET_COUNT);
@@ -72,10 +73,6 @@ export default function DropsetModal({
     [setCount, startWeight, weightIncrement, minimumWeight]
   );
 
-  if (!exercise) {
-    return null;
-  }
-
   return (
     <AppModal
       isOpen={isOpen}
@@ -84,7 +81,7 @@ export default function DropsetModal({
       title="Dropsets"
     >
       <div className="mb-4 text-sm text-gray-400 uppercase">
-        {exercise.exercise}
+        {exercise?.exercise}
       </div>
       <label className="flex flex-col gap-2">
         <span>Start weight</span>
@@ -126,16 +123,18 @@ export default function DropsetModal({
           ))}
         </select>
       </label>
-      <label className="mt-4 flex items-center gap-3">
-        <input
-          data-testid="dropset-apply-future"
-          type="checkbox"
-          checked={applyToFutureWeeks}
-          onChange={(event) => setApplyToFutureWeeks(event.target.checked)}
-          className="scale-125"
-        />
-        <span>Apply to rest of mesocycle</span>
-      </label>
+      {showApplyToFutureWeeks && (
+        <label className="mt-4 flex min-h-11 items-center gap-3">
+          <input
+            data-testid="dropset-apply-future"
+            type="checkbox"
+            checked={applyToFutureWeeks}
+            onChange={(event) => setApplyToFutureWeeks(event.target.checked)}
+            className="h-5 w-5 accent-red-600"
+          />
+          <span>Apply to rest of mesocycle</span>
+        </label>
+      )}
       <div className="mt-4 text-sm text-gray-300">
         {preview.error ? (
           <div className="text-red-400 break-words">{preview.error}</div>

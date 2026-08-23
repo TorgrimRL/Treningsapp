@@ -17,11 +17,12 @@ import AddExerciseModal from "./AddExerciseModal";
 import MesocycleDetailsModal from "./MesocycleDetailsModal";
 import { useApiFetch } from "../utils/apiFetch";
 import { buildMesocyclePayload, createEmptyExercise } from "../utils/mesocyclePlan";
+import PlanBuilderGuide from "../features/onboarding/PlanBuilderGuide";
 
 const sortExercisesByName = (exerciseList = []) =>
   [...exerciseList].sort((a, b) => a.name.localeCompare(b.name));
 
-const MesocycleForm = ({ onCancel, onSubmit }) => {
+const MesocycleForm = ({ isOnboarding = false, onCancel, onSubmit }) => {
   const location = useLocation();
   const { template, weeks, daysPerWeek, muscleGroups, dayLabels, importedPlan } =
     location.state || {};
@@ -36,6 +37,7 @@ const MesocycleForm = ({ onCancel, onSubmit }) => {
   const [numberOfWeeks, setNumberOfWeeks] = useState(importedPlan?.weeks || "");
   const [includeDeload, setIncludeDeload] = useState(importedPlan?.includeDeload || false);
   const [isExerciseModalOpen, setIsExerciseModalOpen] = useState(false);
+  const [customExerciseTarget, setCustomExerciseTarget] = useState(null);
   const [customExercises, setCustomExercises] = useState({});
   const baseUrl = import.meta.env.VITE_API_URL;
   const { apiFetch } = useApiFetch();
@@ -113,13 +115,14 @@ const MesocycleForm = ({ onCancel, onSubmit }) => {
     setIsModalOpen(false);
   };
 
-  const handleOpenAddExerciseModal = () => {
+  const handleOpenAddExerciseModal = (dayIndex, exerciseIndex) => {
+    setCustomExerciseTarget({ dayIndex, exerciseIndex });
     setIsExerciseModalOpen(true);
   };
 
   const handleSaveCustomExercise = async (newExercise) => {
     if (!newExercise) {
-      return;
+      return { ok: false, error: "Exercise details are missing." };
     }
 
     const exerciseToSave = {
@@ -130,18 +133,6 @@ const MesocycleForm = ({ onCancel, onSubmit }) => {
       videolink: newExercise.videoLink || newExercise.videolink || "",
     };
 
-    setCustomExercises((prevCustomExercises) => ({
-      ...prevCustomExercises,
-      [exerciseToSave.muscleGroup]: [
-        ...(prevCustomExercises[exerciseToSave.muscleGroup] || []),
-        {
-          name: exerciseToSave.name,
-          type: exerciseToSave.type,
-          videoLink: exerciseToSave.videoLink,
-        },
-      ],
-    }));
-
     try {
       const { ok, data } = await apiFetch(`${baseUrl}/exercises`, {
         method: "POST",
@@ -151,14 +142,56 @@ const MesocycleForm = ({ onCancel, onSubmit }) => {
       });
 
       if (!ok) {
-        console.error(
-          `Failed to update custom exercises: ${
-            data.message || "Unknown error"
-          }`
-        );
+        const error = data?.message || data?.error || "Unknown error";
+        console.error(`Failed to update custom exercises: ${error}`);
+        return { ok: false, error };
       }
+
+      setCustomExercises((prevCustomExercises) => ({
+        ...prevCustomExercises,
+        [exerciseToSave.muscleGroup]: [
+          ...(prevCustomExercises[exerciseToSave.muscleGroup] || []),
+          {
+            name: exerciseToSave.name,
+            type: exerciseToSave.type,
+            videoLink: exerciseToSave.videoLink,
+          },
+        ],
+      }));
+
+      if (customExerciseTarget) {
+        setPlan((currentPlan) => currentPlan.map((day, dayIndex) =>
+          dayIndex === customExerciseTarget.dayIndex
+            ? {
+                ...day,
+                exercises: day.exercises.map((exercise, exerciseIndex) => {
+                  if (exerciseIndex !== customExerciseTarget.exerciseIndex) {
+                    return exercise;
+                  }
+                  const nextExercise = {
+                    ...exercise,
+                    muscleGroup: exerciseToSave.muscleGroup,
+                    exercise: exerciseToSave.name,
+                    type: exerciseToSave.type,
+                    videoLink: exerciseToSave.videoLink,
+                  };
+                  return {
+                    ...nextExercise,
+                    ...normalizeProgressionSettings(nextExercise),
+                  };
+                }),
+              }
+            : day
+        ));
+      }
+
+      return { ok: true };
     } catch (error) {
       console.error("Error trying to send exercise to backend", error);
+      return {
+        ok: false,
+        error: "Unable to save this exercise. Please try again.",
+      };
     }
   };
 
@@ -278,6 +311,10 @@ const MesocycleForm = ({ onCancel, onSubmit }) => {
 
   const handleSubmit = (event) => {
     event.preventDefault();
+    if (!planIsComplete) {
+      focusNextMissingChoice();
+      return;
+    }
     handleModalSave();
   };
 
@@ -329,6 +366,34 @@ const MesocycleForm = ({ onCancel, onSubmit }) => {
       : "";
   };
 
+  const missingExercises = plan.flatMap((day, dayIndex) =>
+    day.exercises.flatMap((exercise, exerciseIndex) =>
+      exercise.muscleGroup && exercise.exercise
+        ? []
+        : [{ dayIndex, exerciseIndex }]
+    )
+  );
+  const missingLabelCount = plan.filter((day) => !day.label?.trim()).length;
+  const planIsComplete =
+    plan.length > 0 &&
+    missingExercises.length === 0 &&
+    missingLabelCount === 0;
+  const focusNextMissingChoice = () => {
+    const firstMissingExercise = missingExercises[0];
+    let elementId = null;
+    if (firstMissingExercise) {
+      const exercise = plan[firstMissingExercise.dayIndex]
+        .exercises[firstMissingExercise.exerciseIndex];
+      const field = exercise.muscleGroup ? "exercise" : "muscle-group";
+      elementId = `${field}-${firstMissingExercise.dayIndex}-${firstMissingExercise.exerciseIndex}`;
+    } else if (missingLabelCount > 0) {
+      elementId = `day-label-${plan.findIndex((day) => !day.label?.trim())}`;
+    }
+    const element = elementId ? document.getElementById(elementId) : null;
+    element?.scrollIntoView({ block: "center" });
+    element?.focus({ preventScroll: true });
+  };
+
   if (isModalOpen) {
     return (
       <MesocycleDetailsModal
@@ -348,24 +413,41 @@ const MesocycleForm = ({ onCancel, onSubmit }) => {
 
   return (
     <div>
+      {isOnboarding && (
+        <PlanBuilderGuide
+          missingExerciseCount={missingExercises.length}
+          missingLabelCount={missingLabelCount}
+          onFindNext={focusNextMissingChoice}
+        />
+      )}
       <form data-testid="mesocycle-form" onSubmit={handleSubmit}>
         <div className="flex min-w-0 flex-col items-center">
           <div className="flex w-full flex-wrap justify-center gap-3 px-4 py-6">
             <button
               data-testid="save-training-plan"
               type="submit"
-              className="w-full cursor-pointer bg-red-600 px-4 py-2 text-lg text-white sm:w-auto"
+              disabled={!planIsComplete}
+              aria-describedby={!planIsComplete ? "save-plan-requirements" : undefined}
+              className="min-h-11 w-full rounded-lg bg-red-600 px-5 py-2 text-lg font-semibold text-white transition-colors hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400 active:scale-[0.96] disabled:cursor-not-allowed disabled:bg-gray-700 disabled:text-gray-400 disabled:opacity-70 sm:w-auto"
             >
               Save Plan
             </button>
             <button
               data-testid="autofill-exercises"
               type="button"
-              className="w-full cursor-pointer bg-red-600 px-4 py-2 text-lg text-white sm:w-auto"
+              className="min-h-11 w-full rounded-lg border border-red-500 bg-transparent px-5 py-2 text-lg font-semibold text-red-100 transition-colors hover:bg-red-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400 active:scale-[0.96] sm:w-auto"
               onClick={handleAutofillExercises}
             >
               Auto Fill Exercises
             </button>
+            {!planIsComplete && (
+              <p
+                id="save-plan-requirements"
+                className="w-full text-center text-sm font-semibold text-amber-200"
+              >
+                Save Plan unlocks after every day has a label, muscle group, and exercise.
+              </p>
+            )}
           </div>
           <div className="w-full min-w-0 lg:overflow-x-auto lg:pb-4">
             <div
@@ -381,6 +463,7 @@ const MesocycleForm = ({ onCancel, onSubmit }) => {
                   <label className="mb-3 flex min-w-0 items-center justify-between gap-3">
                     <select
                       data-testid={`day-label-${dayIndex}`}
+                      id={`day-label-${dayIndex}`}
                       value={day.label}
                       onChange={(event) =>
                         handleLabelChange(dayIndex, event.target.value)
@@ -416,7 +499,11 @@ const MesocycleForm = ({ onCancel, onSubmit }) => {
                     return (
                       <div
                         key={exerciseIndex}
-                        className="mb-3 flex min-w-0 flex-col justify-between border border-gray-700 bg-darkGray p-3"
+                        className={`mb-3 flex min-w-0 flex-col justify-between rounded-lg border bg-darkGray p-3 ${
+                          isOnboarding && (!exercise.muscleGroup || !exercise.exercise)
+                            ? "border-red-500/70"
+                            : "border-gray-700"
+                        }`}
                       >
                         <div className="mb-2 flex min-w-0 items-start justify-between gap-2">
                           <div className="flex min-w-0 flex-1 flex-col">
@@ -425,6 +512,7 @@ const MesocycleForm = ({ onCancel, onSubmit }) => {
                               data-testid={`muscle-group-${dayIndex}-${exerciseIndex}`}
                               id={muscleGroupId}
                               value={exercise.muscleGroup}
+                              aria-invalid={!exercise.muscleGroup}
                               onChange={(event) =>
                                 handleChange(
                                   dayIndex,
@@ -447,10 +535,12 @@ const MesocycleForm = ({ onCancel, onSubmit }) => {
 
                           <button
                             type="button"
+                            aria-label={`Remove exercise ${exerciseIndex + 1} from day ${dayIndex + 1}`}
+                            disabled={day.exercises.length === 1}
                             onClick={() =>
                               handleRemoveExercise(dayIndex, exerciseIndex)
                             }
-                            className="shrink-0 p-2 text-white hover:text-red-800"
+                            className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center text-white transition-colors hover:text-red-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-400 disabled:cursor-not-allowed disabled:text-gray-600"
                           >
                             <FontAwesomeIcon icon={faTrash} />
                           </button>
@@ -464,6 +554,12 @@ const MesocycleForm = ({ onCancel, onSubmit }) => {
                             data-testid={`exercise-${dayIndex}-${exerciseIndex}`}
                             id={exerciseId}
                             value={exercise.exercise}
+                            aria-invalid={!exercise.exercise}
+                            aria-describedby={
+                              isOnboarding && !exercise.exercise
+                                ? `exercise-help-${dayIndex}-${exerciseIndex}`
+                                : undefined
+                            }
                             onChange={(event) =>
                               handleChange(
                                 dayIndex,
@@ -511,6 +607,14 @@ const MesocycleForm = ({ onCancel, onSubmit }) => {
                               </option>
                             ))}
                           </select>
+                          {isOnboarding && !exercise.exercise && (
+                            <p
+                              id={`exercise-help-${dayIndex}-${exerciseIndex}`}
+                              className="mt-2 text-sm font-semibold text-red-200"
+                            >
+                              Choose an exercise for {exercise.muscleGroup || "this muscle group"}.
+                            </p>
+                          )}
                         </div>
 
                         <div className="mb-2 grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-3">
@@ -595,10 +699,10 @@ const MesocycleForm = ({ onCancel, onSubmit }) => {
 
                         <button
                           type="button"
-                          onClick={handleOpenAddExerciseModal}
-                          className="text-sm"
+                          onClick={() => handleOpenAddExerciseModal(dayIndex, exerciseIndex)}
+                          className="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-gray-600 bg-inputBGGray px-4 py-2 text-sm font-semibold text-gray-100 transition-colors hover:border-gray-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400 active:scale-[0.96]"
                         >
-                          Add custom exercise
+                          + Add custom exercise
                         </button>
                       </div>
                     );
@@ -628,7 +732,10 @@ const MesocycleForm = ({ onCancel, onSubmit }) => {
         </div>
         <AddExerciseModal
           isOpen={isExerciseModalOpen}
-          onRequestClose={() => setIsExerciseModalOpen(false)}
+          onRequestClose={() => {
+            setIsExerciseModalOpen(false);
+            setCustomExerciseTarget(null);
+          }}
           onSave={handleSaveCustomExercise}
         />
       </form>

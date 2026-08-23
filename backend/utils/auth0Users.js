@@ -72,6 +72,12 @@ export function serializeUser(user) {
     email: user.email || null,
     emailVerified: Boolean(user.email_verified),
     picture: user.picture || null,
+    onboardingVersion: Number(user.onboarding_version) || 1,
+    onboardingStatus: user.onboarding_status || "completed",
+    onboardingStep: user.onboarding_step || null,
+    onboardingStartedAt: user.onboarding_started_at || null,
+    onboardingFirstSetAt: user.onboarding_first_set_at || null,
+    onboardingCompletedAt: user.onboarding_completed_at || null,
   };
 }
 
@@ -139,9 +145,11 @@ export async function upsertAuth0User(profile, query) {
 
   await activeQuery`
     INSERT INTO users
-      (username, password, auth_provider, auth0_sub, email, email_verified, picture)
+      (username, password, auth_provider, auth0_sub, email, email_verified, picture,
+       onboarding_version, onboarding_status)
     VALUES
-      (${username}, ${null}, ${"auth0"}, ${auth0Sub}, ${email}, ${emailVerified}, ${picture})
+      (${username}, ${null}, ${"auth0"}, ${auth0Sub}, ${email}, ${emailVerified}, ${picture},
+       ${1}, ${"not_started"})
   `;
   const insertedUser = await findUserByAuth0Sub(activeQuery, auth0Sub);
 

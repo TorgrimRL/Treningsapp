@@ -44,6 +44,12 @@ describe("local SQLite database adapter", () => {
         email: null,
         email_verified: 0,
         picture: null,
+        onboarding_version: 1,
+        onboarding_status: "completed",
+        onboarding_step: null,
+        onboarding_started_at: null,
+        onboarding_first_set_at: null,
+        onboarding_completed_at: null,
       },
     ]);
 

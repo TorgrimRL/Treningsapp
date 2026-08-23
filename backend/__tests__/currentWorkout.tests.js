@@ -656,6 +656,37 @@ describe("current workout regression", () => {
     });
   });
 
+  it("does not inherit targets when an exercise changes at the same plan index", async () => {
+    const { agent } = await createAuthenticatedUser(app, db, { username: "exercise-switch" });
+    const plan = progressionPlan().slice(0, 2);
+    plan[1].exercises[0].exercise = "Incline Bench Press";
+    plan[1].exercises[0].sets[0] = {
+      weight: 0,
+      reps: 0,
+      targetWeight: 0,
+      targetReps: 0,
+      completed: false,
+    };
+
+    await csrfRequest(agent, "post", "/api/mesocycles")
+      .send({
+        name: "Exercise replacement",
+        weeks: 2,
+        daysPerWeek: 1,
+        plan,
+        isCurrent: true,
+      })
+      .expect(201);
+
+    const response = await agent.get("/api/current-workout").expect(200);
+    expect(response.body.plan[1].exercises[0].sets[0]).toMatchObject({
+      weight: 0,
+      reps: 0,
+      targetWeight: 0,
+      targetReps: 0,
+    });
+  });
+
   it("progresses dropset sets with each exercise progression mode", async () => {
     const { agent } = await createAuthenticatedUser(app, db, { username: "alice" });
 

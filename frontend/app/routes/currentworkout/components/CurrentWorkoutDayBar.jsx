@@ -5,6 +5,7 @@ export default function CurrentWorkoutDayBar({
   dayLabel,
   dayNumber,
   onClick,
+  showOnboardingHint = false,
   week,
 }) {
   return (
@@ -19,10 +20,20 @@ export default function CurrentWorkoutDayBar({
       <button
         type="button"
         aria-label="Open workout calendar"
+        aria-describedby={showOnboardingHint ? "current-workout-tour-description" : undefined}
         onClick={onClick}
         className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center text-xl text-white focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
       >
-        <FaCalendarAlt aria-hidden="true" />
+        <span
+          aria-hidden="true"
+          className={`inline-flex h-7 w-7 items-center justify-center rounded-md ${
+            showOnboardingHint
+              ? "bg-red-600/20 outline outline-2 outline-offset-1 outline-red-400"
+              : ""
+          }`}
+        >
+          <FaCalendarAlt />
+        </span>
       </button>
     </div>
   );

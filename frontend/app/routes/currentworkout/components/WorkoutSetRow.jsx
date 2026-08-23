@@ -27,6 +27,8 @@ export default function WorkoutSetRow({
   set,
   setIndex,
   setMenuRef,
+  showOnboardingHint = false,
+  showTargetHint = false,
   week,
 }) {
   const setMenuId = exerciseIndex + "-" + setIndex;
@@ -55,8 +57,11 @@ export default function WorkoutSetRow({
       <div className="relative mt-7">
         <button
           type="button"
+          aria-label={`Set ${setIndex + 1} options`}
+          aria-describedby={showOnboardingHint ? "current-workout-tour-description" : undefined}
+          data-testid={`set-menu-${exerciseIndex}-${setIndex}`}
           onClick={() => onToggleSetMenu(setMenuId)}
-          className="inline-flex min-h-11 min-w-11 items-center justify-center text-white focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
+          className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-white focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400 ${showOnboardingHint ? "bg-red-600/20 outline outline-2 outline-offset-2 outline-red-400" : ""}`}
         >
           <FontAwesomeIcon icon={faEllipsisV} />
         </button>
@@ -87,10 +92,12 @@ export default function WorkoutSetRow({
           WEIGHT
         </div>
         <select
+          aria-label={`Set ${setIndex + 1} weight`}
+          aria-describedby={showTargetHint ? "current-workout-tour-description" : undefined}
           data-testid="set-weight-select"
           value={getSetLogWeight(set)}
           onChange={(event) => onWeightChange(setIndex, event.target.value)}
-          className="h-11 min-h-11 min-w-0 w-full rounded border-black bg-inputBGGray px-1 py-0 text-center leading-none [font-variant-numeric:tabular-nums] [text-align-last:center]"
+          className={`h-11 min-h-11 min-w-0 w-full rounded border-black bg-inputBGGray px-1 py-0 text-center leading-none [font-variant-numeric:tabular-nums] [text-align-last:center] ${showTargetHint ? "outline outline-2 outline-offset-2 outline-red-400" : ""}`}
         >
           <option className="text-center" value="">Choose weight</option>
           {getWeightOptions(exercise, getSetLogWeight(set)).map((weight) => (
@@ -105,10 +112,12 @@ export default function WorkoutSetRow({
           REPS
         </div>
         <select
+          aria-label={`Set ${setIndex + 1} reps`}
+          aria-describedby={showTargetHint ? "current-workout-tour-description" : undefined}
           data-testid="set-reps-select"
           value={getSetRepsSelectValue(set)}
           onChange={(event) => onRepsChange(setIndex, event.target.value)}
-          className="h-11 min-h-11 min-w-0 w-full rounded border-black bg-inputBGGray px-1 py-0 text-center leading-none [font-variant-numeric:tabular-nums] [text-align-last:center]"
+          className={`h-11 min-h-11 min-w-0 w-full rounded border-black bg-inputBGGray px-1 py-0 text-center leading-none [font-variant-numeric:tabular-nums] [text-align-last:center] ${showTargetHint ? "outline outline-2 outline-offset-2 outline-red-400" : ""}`}
         >
           <option className="text-center" value="">Choose reps</option>
           {week <= 2 && (
