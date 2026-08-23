@@ -7,11 +7,39 @@ const AddExerciseModal = ({ isOpen, onRequestClose, onSave }) => {
   const [type, setType] = useState("");
   const [muscleGroup, setMuscleGroup] = useState("");
   const [videolink, setVideolink] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
-  const handleSave = () => {
+  const resetForm = () => {
+    setName("");
+    setType("");
+    setMuscleGroup("");
+    setVideolink("");
+    setSaveError("");
+  };
+
+  const handleSave = async () => {
+    if (isSaving) {
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveError("");
     const exercise = { name, type, muscleGroup, videolink };
-    onSave(exercise);
-    onRequestClose();
+    try {
+      const result = await onSave(exercise);
+      if (result?.ok === false) {
+        setSaveError(result.error || "Unable to save this exercise.");
+        return;
+      }
+
+      resetForm();
+      onRequestClose();
+    } catch (error) {
+      setSaveError(error?.message || "Unable to save this exercise.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -88,11 +116,17 @@ const AddExerciseModal = ({ isOpen, onRequestClose, onSave }) => {
             type="button"
             data-testid="custom-exercise-save"
             onClick={handleSave}
-            className="bg-red-600 text-white border-none py-2 px-4 cursor-pointer text-large flex justify center"
+            disabled={isSaving}
+            className="flex min-h-11 cursor-pointer items-center justify-center border-none bg-red-600 px-4 py-2 text-lg text-white disabled:cursor-wait disabled:opacity-60"
           >
-            Save exercise
+            {isSaving ? "Saving..." : "Save exercise"}
           </button>
         </div>
+        {saveError && (
+          <p className="text-pretty text-center text-sm text-red-300" role="alert">
+            {saveError}
+          </p>
+        )}
       </form>
     </AppModal>
   );
