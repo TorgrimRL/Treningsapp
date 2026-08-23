@@ -216,6 +216,43 @@ describe("exercise and mesocycle regression", () => {
     });
   });
 
+  it("lets an owner reactivate or manually complete a historical mesocycle", async () => {
+    const { agent } = await createAuthenticatedUser(app, db, { username: "alice" });
+    const first = await createMesocycle(agent, { name: "First plan" });
+    const second = await createMesocycle(agent, { name: "Second plan" });
+
+    const currentResponse = await csrfRequest(
+      agent,
+      "patch",
+      `/api/mesocycles/${first.id}/status`
+    )
+      .send({ status: "current" })
+      .expect(200);
+    expect(currentResponse.body.mesocycle).toMatchObject({
+      id: first.id,
+      isCurrent: true,
+      completedDate: null,
+    });
+
+    const completedResponse = await csrfRequest(
+      agent,
+      "patch",
+      `/api/mesocycles/${first.id}/status`
+    )
+      .send({ status: "completed" })
+      .expect(200);
+    expect(completedResponse.body.mesocycle).toMatchObject({
+      id: first.id,
+      isCurrent: false,
+    });
+    expect(completedResponse.body.mesocycle.completedDate).toEqual(
+      expect.any(String)
+    );
+
+    const list = await agent.get("/api/mesocycles").expect(200);
+    expect(list.body.find((plan) => plan.id === second.id).isCurrent).toBe(false);
+  });
+
   it("renames an owned mesocycle without changing its workout data", async () => {
     const userA = await createAuthenticatedUser(app, db, { username: "alice" });
     const userB = await createAuthenticatedUser(app, db, { username: "bob" });

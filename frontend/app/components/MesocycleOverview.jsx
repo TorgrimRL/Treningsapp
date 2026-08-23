@@ -15,6 +15,7 @@ import { personalRecordsQueryKey } from "../utils/personalRecordsQuery";
 import { downloadMesocycleCsv } from "../features/import-plan/exportPlanCsv";
 import { parseMesocycleListResponse } from "../utils/mesocycleListResponse";
 import { clearCurrentWorkoutQuery } from "../utils/currentWorkoutQuery";
+import { sortMesocyclesByActivity } from "../utils/mesocycleSort";
 
 const MesocycleOverview = () => {
   const [mesocycles, setMesocycles] = useState([]);
@@ -28,19 +29,9 @@ const MesocycleOverview = () => {
   const baseUrl = import.meta.env.VITE_API_URL;
   const { apiFetch } = useApiFetch();
   const queryClient = useQueryClient();
-  const sortPlansByCurrent = (plans) => {
-    const currentPlans = plans.filter((plan) => plan.isCurrent);
-    const nonCurrentPlans = plans.filter(
-      (plan) => !plan.isCurrent && plan.completedDate === null
-    );
-    const finnishedPlans = plans.filter((plan) => plan.completedDate !== null);
-
-    return currentPlans.concat(nonCurrentPlans, finnishedPlans);
-  };
 
   useEffect(() => {
-    const sorted = sortPlansByCurrent(mesocycles);
-    setSortedPlans(sorted);
+    setSortedPlans(sortMesocyclesByActivity(mesocycles));
   }, [mesocycles]);
 
   useEffect(() => {

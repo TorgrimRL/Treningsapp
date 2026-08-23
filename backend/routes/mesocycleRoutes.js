@@ -355,6 +355,65 @@ router.put("/mesocycles/:id", authenticateToken, csrfProtection, async (req, res
   }
 });
 
+router.patch(
+  "/mesocycles/:id/status",
+  authenticateToken,
+  csrfProtection,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      const userId = req.user.id;
+
+      if (status !== "current" && status !== "completed") {
+        return res.status(400).json({ error: "Invalid mesocycle status" });
+      }
+
+      const { result: ownedRows, hadRetry: ownershipHadRetry } = await safeQuery`
+        SELECT id FROM mesocycles WHERE id = ${id} AND user_id = ${userId}
+      `;
+      if (!ownedRows?.length) {
+        return res.status(404).json({ error: "Mesocycle not found" });
+      }
+
+      let hadRetry = ownershipHadRetry;
+      if (status === "current") {
+        const resetResult = await safeQuery`
+          UPDATE mesocycles SET isCurrent = 0 WHERE user_id = ${userId}
+        `;
+        hadRetry ||= resetResult.hadRetry;
+        const updateResult = await safeQuery`
+          UPDATE mesocycles
+          SET isCurrent = 1, completedDate = NULL
+          WHERE id = ${id} AND user_id = ${userId}
+        `;
+        hadRetry ||= updateResult.hadRetry;
+      } else {
+        const updateResult = await safeQuery`
+          UPDATE mesocycles
+          SET isCurrent = 0, completedDate = ${new Date().toISOString()}
+          WHERE id = ${id} AND user_id = ${userId}
+        `;
+        hadRetry ||= updateResult.hadRetry;
+      }
+
+      const { result: rows, hadRetry: rowHadRetry } = await safeQuery`
+        SELECT * FROM mesocycles WHERE id = ${id} AND user_id = ${userId}
+      `;
+      const responsePayload = buildResponsePayload(hadRetry || rowHadRetry, {
+        mesocycle: normalizeMesocycleRow(rows[0]),
+      });
+      return res.json(responsePayload);
+    } catch (error) {
+      console.error("Error updating mesocycle status", {
+        code: error?.code,
+        name: error?.name,
+      });
+      return res.status(500).json({ error: "Failed to update mesocycle status" });
+    }
+  }
+);
+
 // Endpoint to fetch a specific mesocycle
 router.get("/mesocycles/:id", authenticateToken, async (req, res) => {
   try {
