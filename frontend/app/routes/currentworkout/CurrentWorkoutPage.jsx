@@ -1,6 +1,9 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation } from "react-router";
 import PageContainer from "../../components/PageContainer";
+import CurrentWorkoutTour from "../../features/onboarding/CurrentWorkoutTour";
 import { useApiFetch } from "../../utils/apiFetch";
+import { useAuth } from "../../utils/AuthContext";
 import CompletedWorkoutState from "./components/CompletedWorkoutState";
 import CurrentWorkoutDayBar from "./components/CurrentWorkoutDayBar";
 import CurrentWorkoutHeader from "./components/CurrentWorkoutHeader";
@@ -22,9 +25,12 @@ import {
 export default function CurrentWorkoutPage() {
   const baseUrl = import.meta.env.VITE_API_URL;
   const { apiFetch } = useApiFetch();
+  const { currentUser } = useAuth();
+  const location = useLocation();
   const calendarIconRef = useRef(null);
   const [applyToFutureWeeks, setApplyToFutureWeeks] = useState(false);
   const [personalRecordContext, setPersonalRecordContext] = useState(null);
+  const [onboardingTourStep, setOnboardingTourStep] = useState(null);
 
   const workoutData = useCurrentWorkoutData(apiFetch, baseUrl);
   const {
@@ -38,6 +44,7 @@ export default function CurrentWorkoutPage() {
     loading,
     markWorkoutDirty,
     notes,
+    reconcilePersonalRecords,
     refreshWorkoutData,
     setCurrentDayIndex,
     setCurrentMesocycle,
@@ -70,6 +77,7 @@ export default function CurrentWorkoutPage() {
     commitWorkoutData,
     markWorkoutDirty,
     menus,
+    reconcilePersonalRecords,
     refreshWorkoutData,
     selectedExercise,
     setApplyToFutureWeeks,
@@ -80,6 +88,46 @@ export default function CurrentWorkoutPage() {
     sets,
     workoutModals,
   });
+
+  const onboardingTourRunId = location.state?.onboardingTourId || currentUser?.onboardingCompletedAt;
+  const onboardingTourKey = currentUser?.id && onboardingTourRunId
+    ? `current-workout-onboarding-tour-${currentUser.id}-${onboardingTourRunId}`
+    : null;
+
+  useEffect(() => {
+    if (
+      location.state?.onboardingTour &&
+      onboardingTourKey &&
+      localStorage.getItem(onboardingTourKey) !== "completed"
+    ) {
+      localStorage.setItem(onboardingTourKey, "in_progress");
+      setOnboardingTourStep("name");
+    }
+  }, [location.state?.onboardingTour, onboardingTourKey]);
+
+  const dismissOnboardingTour = () => {
+    if (onboardingTourKey) {
+      localStorage.setItem(onboardingTourKey, "completed");
+    }
+    menus.setOpenMenus({});
+    menus.setOpenSetMenus({});
+    setOnboardingTourStep(null);
+  };
+
+  const advanceOnboardingTour = () => {
+    menus.setOpenMenus({});
+    menus.setOpenSetMenus({});
+    const nextStep = {
+      name: "navigation",
+      navigation: "calendar",
+      calendar: "targets",
+      targets: "indicators",
+      indicators: "exercise",
+      exercise: "set",
+      set: "complete",
+    };
+    setOnboardingTourStep((current) => nextStep[current] || "complete");
+  };
 
   if (loading) {
     return <LoadingState />;
@@ -169,15 +217,22 @@ export default function CurrentWorkoutPage() {
                 dayNumber={dayNumber}
                 dayLabel={getDayLabel(currentDay)}
                 onClick={workoutModals.openCalendarModal}
+                showOnboardingHint={onboardingTourStep === "calendar"}
               />
             )}
             <CurrentWorkoutHeader
               currentMesocycle={currentMesocycle}
               onRename={workoutModals.openRenameMesocycleModal}
               progress={progress}
+              showOnboardingHint={onboardingTourStep === "name"}
             />
           </div>
         )}
+        <CurrentWorkoutTour
+          step={onboardingTourStep}
+          onNext={advanceOnboardingTour}
+          onDismiss={dismissOnboardingTour}
+        />
         {currentDay ? (
           <ul
             data-testid="current-workout-exercises"
@@ -211,6 +266,7 @@ export default function CurrentWorkoutPage() {
                 onToggleSetMenu={menus.toggleSetMenu}
                 onWeightChange={actions.handleWeightChange}
                 openSetMenus={menus.openSetMenus}
+                onboardingTourStep={exerciseIndex === 0 ? onboardingTourStep : null}
                 setMenuRefs={menus.setMenuRefs}
                 week={week}
               />

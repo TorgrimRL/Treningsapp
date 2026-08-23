@@ -64,6 +64,7 @@ export const AuthProvider = ({ children }) => {
       value={{
         isLoggedIn,
         currentUser,
+        onboardingStatus: currentUser?.onboardingStatus || null,
         login,
         logout,
         setAuthStatus,

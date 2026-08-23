@@ -12,6 +12,7 @@ export default function WorkoutExerciseMenu({
   onOpenDropset,
   onOpenProgressionMode,
   onOpenWeightIncrement,
+  showOnboardingHint = false,
 }) {
   const menuButtonClassName =
     "flex min-h-11 w-full items-center rounded-md px-3 text-left transition-colors hover:bg-darkestGray focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400";
@@ -28,9 +29,11 @@ export default function WorkoutExerciseMenu({
       </div>
       <button
         type="button"
+        aria-label="Exercise options"
+        aria-describedby={showOnboardingHint ? "current-workout-tour-description" : undefined}
         data-testid={"exercise-menu-" + exerciseIndex}
         onClick={() => onToggleMenu(exerciseIndex)}
-        className="mr-1 inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center text-white focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
+        className={`mr-1 inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center rounded-lg text-white focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400 ${showOnboardingHint ? "bg-red-600/20 outline outline-2 outline-offset-2 outline-red-400" : ""}`}
       >
         <FontAwesomeIcon icon={faEllipsisV} />
       </button>

@@ -7,6 +7,7 @@ import {
   demoCredentials,
   seedLocalDatabase,
 } from "../scripts/seedLocalDb.js";
+import { resetOnboarding } from "../scripts/resetOnboarding.js";
 
 async function readSeededRows(dbPath) {
   const db = createLocalDatabase({ dbPath });
@@ -77,6 +78,7 @@ describe("local database seed script", () => {
       auth0_sub: demoCredentials.auth0Sub,
       email: demoCredentials.username,
       email_verified: 1,
+      onboarding_status: "completed",
     });
 
     expect(exercises).toHaveLength(12);
@@ -319,5 +321,32 @@ describe("local database seed script", () => {
         workoutDate: "2026-07-27T16:00:00.000Z",
       },
     ]);
+  });
+
+  it("resets onboarding for the demo user without deleting plans", async () => {
+    await seedLocalDatabase({ dbPath, requireLocalMode: false, logger: null });
+    const previousMode = process.env.DB_MODE;
+    process.env.DB_MODE = "local";
+    try {
+      await resetOnboarding({ dbPath, logger: null });
+    } finally {
+      if (previousMode === undefined) delete process.env.DB_MODE;
+      else process.env.DB_MODE = previousMode;
+    }
+
+    const db = createLocalDatabase({ dbPath });
+    try {
+      const users = await db.sql("SELECT * FROM users");
+      const mesocycles = await db.sql("SELECT * FROM Mesocycles");
+      expect(users[0]).toMatchObject({
+        username: demoCredentials.username,
+        onboarding_status: "not_started",
+        onboarding_step: null,
+        onboarding_started_at: null,
+      });
+      expect(mesocycles).toHaveLength(3);
+    } finally {
+      await db.close();
+    }
   });
 });
