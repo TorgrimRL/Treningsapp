@@ -122,7 +122,7 @@ const MesocycleForm = ({ isOnboarding = false, onCancel, onSubmit }) => {
 
   const handleSaveCustomExercise = async (newExercise) => {
     if (!newExercise) {
-      return;
+      return { ok: false, error: "Exercise details are missing." };
     }
 
     const exerciseToSave = {
@@ -133,44 +133,6 @@ const MesocycleForm = ({ isOnboarding = false, onCancel, onSubmit }) => {
       videolink: newExercise.videoLink || newExercise.videolink || "",
     };
 
-    setCustomExercises((prevCustomExercises) => ({
-      ...prevCustomExercises,
-      [exerciseToSave.muscleGroup]: [
-        ...(prevCustomExercises[exerciseToSave.muscleGroup] || []),
-        {
-          name: exerciseToSave.name,
-          type: exerciseToSave.type,
-          videoLink: exerciseToSave.videoLink,
-        },
-      ],
-    }));
-
-    if (customExerciseTarget) {
-      setPlan((currentPlan) => currentPlan.map((day, dayIndex) =>
-        dayIndex === customExerciseTarget.dayIndex
-          ? {
-              ...day,
-              exercises: day.exercises.map((exercise, exerciseIndex) => {
-                if (exerciseIndex !== customExerciseTarget.exerciseIndex) {
-                  return exercise;
-                }
-                const nextExercise = {
-                  ...exercise,
-                  muscleGroup: exerciseToSave.muscleGroup,
-                  exercise: exerciseToSave.name,
-                  type: exerciseToSave.type,
-                  videoLink: exerciseToSave.videoLink,
-                };
-                return {
-                  ...nextExercise,
-                  ...normalizeProgressionSettings(nextExercise),
-                };
-              }),
-            }
-          : day
-      ));
-    }
-
     try {
       const { ok, data } = await apiFetch(`${baseUrl}/exercises`, {
         method: "POST",
@@ -180,14 +142,56 @@ const MesocycleForm = ({ isOnboarding = false, onCancel, onSubmit }) => {
       });
 
       if (!ok) {
-        console.error(
-          `Failed to update custom exercises: ${
-            data.message || "Unknown error"
-          }`
-        );
+        const error = data?.message || data?.error || "Unknown error";
+        console.error(`Failed to update custom exercises: ${error}`);
+        return { ok: false, error };
       }
+
+      setCustomExercises((prevCustomExercises) => ({
+        ...prevCustomExercises,
+        [exerciseToSave.muscleGroup]: [
+          ...(prevCustomExercises[exerciseToSave.muscleGroup] || []),
+          {
+            name: exerciseToSave.name,
+            type: exerciseToSave.type,
+            videoLink: exerciseToSave.videoLink,
+          },
+        ],
+      }));
+
+      if (customExerciseTarget) {
+        setPlan((currentPlan) => currentPlan.map((day, dayIndex) =>
+          dayIndex === customExerciseTarget.dayIndex
+            ? {
+                ...day,
+                exercises: day.exercises.map((exercise, exerciseIndex) => {
+                  if (exerciseIndex !== customExerciseTarget.exerciseIndex) {
+                    return exercise;
+                  }
+                  const nextExercise = {
+                    ...exercise,
+                    muscleGroup: exerciseToSave.muscleGroup,
+                    exercise: exerciseToSave.name,
+                    type: exerciseToSave.type,
+                    videoLink: exerciseToSave.videoLink,
+                  };
+                  return {
+                    ...nextExercise,
+                    ...normalizeProgressionSettings(nextExercise),
+                  };
+                }),
+              }
+            : day
+        ));
+      }
+
+      return { ok: true };
     } catch (error) {
       console.error("Error trying to send exercise to backend", error);
+      return {
+        ok: false,
+        error: "Unable to save this exercise. Please try again.",
+      };
     }
   };
 
@@ -696,7 +700,7 @@ const MesocycleForm = ({ isOnboarding = false, onCancel, onSubmit }) => {
                         <button
                           type="button"
                           onClick={() => handleOpenAddExerciseModal(dayIndex, exerciseIndex)}
-                          className="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-gray-600 bg-gray-800 px-4 py-2 text-sm font-semibold text-gray-100 transition-colors hover:border-gray-500 hover:bg-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400 active:scale-[0.96]"
+                          className="inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-gray-600 bg-inputBGGray px-4 py-2 text-sm font-semibold text-gray-100 transition-colors hover:border-gray-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400 active:scale-[0.96]"
                         >
                           + Add custom exercise
                         </button>

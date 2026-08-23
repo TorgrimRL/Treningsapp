@@ -112,10 +112,12 @@ describe("exercise and mesocycle regression", () => {
   let app;
   let logSpy;
   let errorSpy;
+  let warnSpy;
 
   beforeEach(async () => {
     logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
     errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
     db = await createTestDb();
     app = await loadAppWithQuery(db.query);
   });
@@ -123,6 +125,7 @@ describe("exercise and mesocycle regression", () => {
   afterEach(async () => {
     logSpy.mockRestore();
     errorSpy.mockRestore();
+    warnSpy.mockRestore();
     await db?.close();
   });
 
@@ -214,6 +217,37 @@ describe("exercise and mesocycle regression", () => {
       name: "Second plan",
       isCurrent: true,
     });
+  });
+
+  it("skips an invalid stored plan without failing the mesocycle list", async () => {
+    const { agent, userId } = await createAuthenticatedUser(app, db, {
+      username: "alice",
+    });
+    const valid = await createMesocycle(agent, { name: "Valid plan" });
+    const invalid = await db.run(
+      `INSERT INTO mesocycles
+        (name, weeks, daysPerWeek, plan, user_id, completedDate, isCurrent)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      ["Broken legacy plan", 1, 1, "{broken", userId, null, 0]
+    );
+
+    const response = await agent.get("/api/mesocycles").expect(200);
+
+    expect(response.body).toHaveLength(1);
+    expect(response.body[0]).toMatchObject({
+      id: valid.id,
+      name: "Valid plan",
+    });
+    expect(warnSpy).toHaveBeenCalledWith(
+      "Skipping invalid stored mesocycle",
+      expect.objectContaining({
+        mesocycleId: invalid.lastID,
+        isCurrent: false,
+        name: "PlanValidationError",
+        message: "Plan must contain valid JSON",
+      })
+    );
+    expect(warnSpy.mock.calls.at(-1)?.[1]).not.toHaveProperty("plan");
   });
 
   it("lets an owner reactivate or manually complete a historical mesocycle", async () => {
