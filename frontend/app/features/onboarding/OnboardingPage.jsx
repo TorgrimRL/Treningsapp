@@ -158,7 +158,7 @@ function ExerciseChooser({
             />
           </div>
           {!muscleGroup && <p className="mt-3 text-sm text-red-300">Choose a muscle group to add this exercise.</p>}
-          <button type="button" disabled={!muscleGroup} onClick={() => onChoose({ name: search.trim(), muscleGroup, type, isCustom: true })} className={`${primaryButton} mt-4`}>
+          <button type="button" disabled={!muscleGroup} onClick={() => onChoose({ name: search.trim(), muscleGroup, type, isCustom: true })} className={`${secondaryButton} mt-4`}>
             Add custom exercise
           </button>
           </div>

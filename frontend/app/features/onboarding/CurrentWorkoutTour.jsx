@@ -1,4 +1,11 @@
 import OnboardingProgress from "./OnboardingProgress";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faArrowDown,
+  faArrowUp,
+  faBullseye,
+  faTrophy,
+} from "@fortawesome/free-solid-svg-icons";
 
 const content = {
   name: {
@@ -11,12 +18,24 @@ const content = {
     eyebrow: "Main navigation",
     title: "The navbar is always at the top.",
     description: "It takes you to Current workout, personal records, new training blocks, templates, and history. On mobile, open it with the highlighted menu button.",
+    action: "Next: workout calendar",
+  },
+  calendar: {
+    eyebrow: "Workout calendar",
+    title: "Use the calendar to move between workouts.",
+    description: "The bar shows your current week, day, and workout name. Open the highlighted calendar to see the whole training block and jump to another day.",
     action: "Next: workout targets",
   },
   targets: {
     eyebrow: "Weight and reps",
     title: "These values are your targets for today.",
     description: "Target Weight and Reps are calculated from what you logged for the same exercise in the previous week. Treat them as suggestions: adjust them to what you actually perform, then check Log.",
+    action: "Next: workout symbols",
+  },
+  indicators: {
+    eyebrow: "Workout symbols",
+    title: "These symbols compare the set with its target.",
+    description: "They appear after reps and weight are available. They are feedback, not a requirement to change what you performed.",
     action: "Next: exercise options",
   },
   exercise: {
@@ -32,6 +51,33 @@ const content = {
     action: "Finish onboarding",
   },
 };
+
+const indicatorItems = [
+  {
+    icon: faBullseye,
+    label: "Bullseye",
+    description: "You matched the adjusted weight and reps target.",
+    className: "text-white",
+  },
+  {
+    icon: faArrowUp,
+    label: "Arrow up",
+    description: "You performed above the adjusted target.",
+    className: "text-white",
+  },
+  {
+    icon: faArrowDown,
+    label: "Arrow down",
+    description: "You performed below or outside the adjusted target range.",
+    className: "text-white",
+  },
+  {
+    icon: faTrophy,
+    label: "Trophy",
+    description: "You set a personal record. Tap it to open your PR history.",
+    className: "text-amber-400",
+  },
+];
 
 export default function CurrentWorkoutTour({ step, onNext, onDismiss }) {
   if (!step) return null;
@@ -52,6 +98,24 @@ export default function CurrentWorkoutTour({ step, onNext, onDismiss }) {
         <p className="mt-2 text-pretty text-sm leading-relaxed text-gray-300">
           {isComplete ? "Your first training block is active, and you know where to find exercise and set tools." : stepContent.description}
         </p>
+        {step === "indicators" && (
+          <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+            {indicatorItems.map((item) => (
+              <li
+                key={item.label}
+                className="flex min-h-11 items-start gap-3 rounded-lg bg-darkestGray p-3"
+              >
+                <span className={`inline-flex h-6 w-6 shrink-0 items-center justify-center ${item.className}`}>
+                  <FontAwesomeIcon aria-hidden="true" icon={item.icon} />
+                </span>
+                <span className="text-sm">
+                  <span className="block font-semibold text-white">{item.label}</span>
+                  <span className="mt-0.5 block text-pretty text-gray-400">{item.description}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
       <div className="mt-4 flex flex-wrap gap-3">
         <button

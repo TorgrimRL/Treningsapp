@@ -22,16 +22,21 @@ export default function CurrentWorkoutHeader({
           <button
             aria-label="Rename training block"
             aria-describedby={showOnboardingHint ? "current-workout-tour-description" : undefined}
-            className={`inline-flex min-h-11 min-w-11 shrink-0 items-center justify-start rounded-lg pl-2 text-gray-400 transition-colors hover:text-white focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400 ${showOnboardingHint ? "bg-red-600/20 text-white outline outline-2 outline-offset-2 outline-red-400" : ""}`}
+            className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-start pl-2 text-gray-400 transition-colors hover:text-white focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
             data-testid="rename-current-mesocycle"
             onClick={onRename}
             type="button"
           >
-            <FontAwesomeIcon
+            <span
               aria-hidden="true"
-              className="h-3 w-3"
-              icon={faPen}
-            />
+              className={`inline-flex h-6 w-6 items-center justify-center rounded-md ${
+                showOnboardingHint
+                  ? "bg-red-600/20 text-white outline outline-2 outline-offset-1 outline-red-400"
+                  : ""
+              }`}
+            >
+              <FontAwesomeIcon className="h-3 w-3" icon={faPen} />
+            </span>
           </button>
         </div>
       </div>

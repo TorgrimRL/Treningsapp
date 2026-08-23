@@ -97,7 +97,11 @@ export default function NewMesocycle() {
       <div className="min-h-full bg-darkGray text-white">
         <PageContainer size="wide" className="lg:px-6">
           {onboardingDraftId && <OnboardingRouteHeader onBack={handleCancel} stage="training-block" />}
-          <MesocycleForm onCancel={handleCancel} onSubmit={handleSubmit} />
+          <MesocycleForm
+            isOnboarding={Boolean(onboardingDraftId)}
+            onCancel={handleCancel}
+            onSubmit={handleSubmit}
+          />
         </PageContainer>
       </div>
     </ProtectedRoute>

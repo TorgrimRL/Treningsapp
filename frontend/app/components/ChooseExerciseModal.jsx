@@ -179,9 +179,9 @@ const ChooseExerciseModal = ({ isOpen, onRequestClose, onSave }) => {
         type="button"
         data-testid="choose-exercise-add-custom"
         onClick={() => setIsAddExerciseModalOpen(true)}
-        className="text-sm text-left mb-4"
+        className="mb-4 inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-gray-600 bg-gray-800 px-4 py-2 text-sm font-semibold text-gray-100 transition-colors hover:border-gray-500 hover:bg-gray-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400 active:scale-[0.96]"
       >
-        Add custom exercise
+        + Add custom exercise
       </button>
       <div>
         <input

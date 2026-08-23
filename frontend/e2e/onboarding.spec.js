@@ -89,10 +89,19 @@ test("@responsive new user can log a first week and open week 2", async ({ page 
   await page.getByRole("button", { name: "Next: navigation" }).click();
   await expect(page.getByRole("heading", { name: "The navbar is always at the top." })).toBeVisible();
   await expect(page.getByRole("navigation", { name: "Primary navigation" })).toBeVisible();
+  await page.getByRole("button", { name: "Next: workout calendar" }).click();
+  await expect(page.getByRole("heading", { name: "Use the calendar to move between workouts." })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open workout calendar" })).toHaveAttribute("aria-describedby", "current-workout-tour-description");
   await page.getByRole("button", { name: "Next: workout targets" }).click();
   await expect(page.getByRole("heading", { name: "These values are your targets for today." })).toBeVisible();
   await expect(page.getByLabel("Set 1 weight").first()).toHaveAttribute("aria-describedby", "current-workout-tour-description");
   await expect(page.getByLabel("Set 1 reps").first()).toHaveAttribute("aria-describedby", "current-workout-tour-description");
+  await page.getByRole("button", { name: "Next: workout symbols" }).click();
+  await expect(page.getByRole("heading", { name: "These symbols compare the set with its target." })).toBeVisible();
+  await expect(page.getByText("Bullseye", { exact: true })).toBeVisible();
+  await expect(page.getByText("Arrow up", { exact: true })).toBeVisible();
+  await expect(page.getByText("Arrow down", { exact: true })).toBeVisible();
+  await expect(page.getByText("Trophy", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Next: exercise options" }).click();
   await expect(page.getByRole("heading", { name: "Exercise tools are behind these dots." })).toBeVisible();
   await expect(page.getByTestId("exercise-menu-0")).toHaveAttribute("aria-describedby", "current-workout-tour-description");
@@ -137,7 +146,18 @@ test("@responsive template onboarding shows Current Workout tips after save", as
   await page.getByTestId("training-block-name").fill("Template onboarding block");
   await page.getByTestId("training-block-weeks").selectOption("4");
   await page.getByTestId("training-block-details-save").click();
+
+  await expect(page.getByRole("heading", { name: "Choose an exercise for every slot." })).toBeVisible();
+  await expect(page.getByTestId("save-training-plan")).toBeDisabled();
+  await expect(page.getByText(/Save Plan unlocks after every day/)).toBeVisible();
+  await page.getByRole("button", { name: "Show next missing choice" }).click();
+  await expect(page.getByTestId("exercise-0-0")).toBeFocused();
+  await page.getByTestId("exercise-0-0").selectOption({ index: 1 });
+  await expect(page.getByTestId("exercise-0-0")).toHaveAttribute("aria-invalid", "false");
+  await expect(page.getByTestId("save-training-plan")).toBeDisabled();
   await page.getByTestId("autofill-exercises").click();
+  await expect(page.getByRole("heading", { name: "Your plan is ready to save." })).toBeVisible();
+  await expect(page.getByTestId("save-training-plan")).toBeEnabled();
 
   await Promise.all([
     page.waitForURL("**/currentworkout"),

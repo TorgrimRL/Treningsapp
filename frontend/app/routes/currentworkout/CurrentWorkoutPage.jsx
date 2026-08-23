@@ -117,8 +117,10 @@ export default function CurrentWorkoutPage() {
     menus.setOpenSetMenus({});
     const nextStep = {
       name: "navigation",
-      navigation: "targets",
-      targets: "exercise",
+      navigation: "calendar",
+      calendar: "targets",
+      targets: "indicators",
+      indicators: "exercise",
       exercise: "set",
       set: "complete",
     };
@@ -213,6 +215,7 @@ export default function CurrentWorkoutPage() {
                 dayNumber={dayNumber}
                 dayLabel={getDayLabel(currentDay)}
                 onClick={workoutModals.openCalendarModal}
+                showOnboardingHint={onboardingTourStep === "calendar"}
               />
             )}
             <CurrentWorkoutHeader
