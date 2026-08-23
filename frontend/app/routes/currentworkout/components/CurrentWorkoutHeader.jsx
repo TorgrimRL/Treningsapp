@@ -29,7 +29,7 @@ export default function CurrentWorkoutHeader({
           >
             <span
               aria-hidden="true"
-              className={`inline-flex h-6 w-6 items-center justify-center rounded-md ${
+              className={`inline-flex h-5 w-5 items-center justify-center rounded ${
                 showOnboardingHint
                   ? "bg-red-600/20 text-white outline outline-2 outline-offset-1 outline-red-400"
                   : ""
