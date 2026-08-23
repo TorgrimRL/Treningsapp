@@ -2,17 +2,12 @@ import TemplateSelector from "../components/TemplateSelector";
 import { useLocation, useNavigate } from "react-router";
 import ProtectedRoute from "../components/ProtectedRoute";
 import PageContainer from "../components/PageContainer";
-import { useApiFetch } from "../utils/apiFetch";
-import { useAuth } from "../utils/AuthContext";
 import { onboardingV1Enabled } from "../features/onboarding/config";
 import OnboardingRouteHeader from "../features/onboarding/OnboardingRouteHeader";
 
 export default function Templates() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { apiFetch } = useApiFetch();
-  const { checkAuthStatus } = useAuth();
-  const baseUrl = import.meta.env.VITE_API_URL;
   const onboardingDraftId = location.state?.onboardingDraftId;
   const isOnboarding = Boolean(onboardingDraftId);
   const returnToSetup = () => navigate("/onboarding", {
@@ -32,17 +27,9 @@ export default function Templates() {
       },
     });
   };
-  const startGuidedSetup = async () => {
-    const response = await apiFetch(`${baseUrl}/onboarding/start`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ kind: "discovery" }),
-    });
-    if (response.ok) {
-      await checkAuthStatus();
-      navigate("/onboarding");
-    }
-  };
+  const startGuidedSetup = () => navigate("/onboarding", {
+    state: { returnToSetup: true, startFresh: true },
+  });
   return (
     <ProtectedRoute>
       <PageContainer size="standard" className="md:px-6">

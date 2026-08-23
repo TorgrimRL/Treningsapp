@@ -26,16 +26,9 @@ export default function CompletedWorkoutState({
   const [isRedoModalOpen, setIsRedoModalOpen] = useState(false);
   const navigate = useNavigate();
 
-  const startGuidedSetup = async () => {
-    const response = await apiFetch(`${baseUrl}/onboarding/start`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ kind: "discovery" }),
-    });
-    if (response.ok) {
-      navigate("/onboarding");
-    }
-  };
+  const startGuidedSetup = () => navigate("/onboarding", {
+    state: { returnToSetup: true, startFresh: true },
+  });
 
   useEffect(() => {
     if (completedMesocycle) {

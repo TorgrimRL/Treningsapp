@@ -147,3 +147,16 @@ test("@responsive template onboarding shows Current Workout tips after save", as
   await expect(page.getByRole("heading", { name: "You can rename your block at any time." })).toBeVisible();
   await expect(page.getByRole("progressbar", { name: "3 of 4 onboarding steps complete" })).toBeVisible();
 });
+
+test("@responsive Guided setup restarts at the plan choice", async ({ page }) => {
+  await page.goto("/currentworkout");
+  await expect(page).toHaveURL(/\/onboarding$/);
+  await page.getByRole("button", { name: "Skip for now" }).click();
+  await expect(page).toHaveURL(/\/templates$/);
+  await page.getByRole("button", { name: "Guided setup" }).click();
+  await expect(page).toHaveURL(/\/onboarding$/);
+  await expect(page.getByRole("heading", { name: "Do you already have a training plan?" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Yes, I have a plan" })).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByRole("button", { name: "No, I need a plan" })).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByRole("progressbar", { name: "1 of 4 onboarding steps complete" })).toBeVisible();
+});

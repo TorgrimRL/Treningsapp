@@ -694,7 +694,7 @@ export default function Onboarding() {
   const content = useMemo(() => {
     if (loading) return <div className="py-20 text-center text-gray-300">Loading your setup…</div>;
     if (!draft || status === "not_started" || ["completed", "skipped"].includes(status)) return <Welcome onStart={start} onSkip={skip} busy={busy} />;
-    if (location.state?.returnToSetup) return <Welcome onStart={start} onSkip={skip} busy={busy} initialPlanChoice={location.state?.onboardingPlanChoice || (data.kind === "template" || data.kind === "scratch" ? "needs-plan" : "has-plan")} />;
+    if (location.state?.returnToSetup) return <Welcome onStart={start} onSkip={skip} busy={busy} initialPlanChoice={location.state?.startFresh ? null : location.state?.onboardingPlanChoice || (data.kind === "template" || data.kind === "scratch" ? "needs-plan" : "has-plan")} />;
     if (path === "review") return <Review catalog={exerciseCatalog} data={data} onChange={setData} onFinalize={finalize} onRememberExercise={rememberExercise} busy={busy} error={error} />;
     if (path === "summary") return <WeekSummary days={data.days} onAnother={anotherDay} onFinishWeek={() => { setData({ ...data, review: { name: "My first training block", weeks: 5, includeDeload: false, replacements: data.review?.replacements || [] } }); setPath("review"); }} onEdit={(index) => { setEditingDay(index); setPath("logging"); }} />;
     if (needsFirstExercise) {
@@ -711,7 +711,7 @@ export default function Onboarding() {
     return <TrainingDay day={activeDay} dayIndex={activeDayIndex} onChange={(nextDay) => setData({ ...data, days: data.days.map((day, index) => index === activeDayIndex ? nextDay : day) })} onAddExercise={() => setChoosingExercise(true)} onConfigureDropset={(exerciseIndex) => { setDropsetExerciseIndex(exerciseIndex); setIsDropsetModalOpen(true); }} onFinish={finishDay} error={error} />;
   // Event handlers intentionally close over the latest draft state.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeDay, activeDayIndex, busy, data, draft, error, exerciseCatalog, loading, location.state?.onboardingPlanChoice, location.state?.returnToSetup, needsFirstExercise, path, rememberExercise, status]);
+  }, [activeDay, activeDayIndex, busy, data, draft, error, exerciseCatalog, loading, location.state?.onboardingPlanChoice, location.state?.returnToSetup, location.state?.startFresh, needsFirstExercise, path, rememberExercise, status]);
 
   const progressStage = ["summary", "review"].includes(path)
     ? "training-block"
