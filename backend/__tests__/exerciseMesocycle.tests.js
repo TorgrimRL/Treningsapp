@@ -112,10 +112,12 @@ describe("exercise and mesocycle regression", () => {
   let app;
   let logSpy;
   let errorSpy;
+  let warnSpy;
 
   beforeEach(async () => {
     logSpy = jest.spyOn(console, "log").mockImplementation(() => {});
     errorSpy = jest.spyOn(console, "error").mockImplementation(() => {});
+    warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
     db = await createTestDb();
     app = await loadAppWithQuery(db.query);
   });
@@ -123,6 +125,7 @@ describe("exercise and mesocycle regression", () => {
   afterEach(async () => {
     logSpy.mockRestore();
     errorSpy.mockRestore();
+    warnSpy.mockRestore();
     await db?.close();
   });
 
@@ -214,6 +217,100 @@ describe("exercise and mesocycle regression", () => {
       name: "Second plan",
       isCurrent: true,
     });
+  });
+
+  it("skips an invalid stored plan without failing the mesocycle list", async () => {
+    const { agent, userId } = await createAuthenticatedUser(app, db, {
+      username: "alice",
+    });
+    const valid = await createMesocycle(agent, { name: "Valid plan" });
+    const invalid = await db.run(
+      `INSERT INTO mesocycles
+        (name, weeks, daysPerWeek, plan, user_id, completedDate, isCurrent)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      ["Broken legacy plan", 1, 1, "{broken", userId, null, 0]
+    );
+
+    const response = await agent.get("/api/mesocycles").expect(200);
+
+    expect(response.body).toHaveLength(1);
+    expect(response.body[0]).toMatchObject({
+      id: valid.id,
+      name: "Valid plan",
+    });
+    expect(warnSpy).toHaveBeenCalledWith(
+      "Skipping invalid stored mesocycle",
+      expect.objectContaining({
+        mesocycleId: invalid.lastID,
+        isCurrent: false,
+        name: "PlanValidationError",
+        message: "Plan must contain valid JSON",
+      })
+    );
+    expect(warnSpy.mock.calls.at(-1)?.[1]).not.toHaveProperty("plan");
+  });
+
+  it("adapts legacy exercise placeholders when reading workout history", async () => {
+    const { agent, userId } = await createAuthenticatedUser(app, db, {
+      username: "alice",
+    });
+    const legacyPlan = [
+      {
+        label: "Monday",
+        exercises: [
+          {
+            muscleGroup: "Chest",
+            exercise: "Bench Press",
+            weight: 0,
+            set: 0,
+            reps: 0,
+            priority: "secondary",
+          },
+        ],
+      },
+    ];
+    const storedPlan = JSON.stringify(legacyPlan);
+    const result = await db.run(
+      `INSERT INTO mesocycles
+        (name, weeks, daysPerWeek, plan, user_id, completedDate, isCurrent)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      ["Legacy plan", 4, null, storedPlan, userId, null, 0]
+    );
+
+    const listResponse = await agent.get("/api/mesocycles").expect(200);
+    const listedPlan = listResponse.body.find(
+      (mesocycle) => mesocycle.id === result.lastID
+    );
+
+    expect(listedPlan).toMatchObject({
+      name: "Legacy plan",
+      daysPerWeek: 1,
+    });
+    expect(listedPlan.plan[0].exercises[0]).toMatchObject({
+      exercise: "Bench Press",
+      weight: 0,
+      set: 0,
+      reps: 0,
+      sets: [],
+    });
+    expect(warnSpy).not.toHaveBeenCalledWith(
+      "Skipping invalid stored mesocycle",
+      expect.objectContaining({ mesocycleId: result.lastID })
+    );
+
+    const detailResponse = await agent
+      .get(`/api/mesocycles/${result.lastID}`)
+      .expect(200);
+    expect(JSON.parse(detailResponse.body.plan)[0].exercises[0].sets).toEqual(
+      []
+    );
+
+    const storedRow = await db.get(
+      "SELECT plan, daysPerWeek FROM mesocycles WHERE id = ?",
+      [result.lastID]
+    );
+    expect(storedRow.plan).toBe(storedPlan);
+    expect(storedRow.daysPerWeek).toBeNull();
   });
 
   it("lets an owner reactivate or manually complete a historical mesocycle", async () => {

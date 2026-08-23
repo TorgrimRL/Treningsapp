@@ -48,6 +48,18 @@ export async function resetE2eDatabase() {
   });
 }
 
+export async function resetDemoOnboarding() {
+  await execFileAsync(process.execPath, ["scripts/resetOnboarding.js"], {
+    cwd: backendDir,
+    env: {
+      ...process.env,
+      DB_MODE: "local",
+      LOCAL_DB_PATH: "database.e2e.sqlite",
+    },
+    timeout: 30_000,
+  });
+}
+
 export async function loginAsDemoUser(page) {
   await page.context().addCookies([
     {

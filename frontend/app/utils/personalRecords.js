@@ -179,6 +179,103 @@ function collectDayCandidates(day) {
   return candidates;
 }
 
+function isMilestoneFromWorkout(milestone, workout) {
+  return identifiersMatch(
+    milestone?.mesocycleId,
+    workout?.id ?? workout?.mesocycleId
+  );
+}
+
+function getRecordKey(value) {
+  const exerciseKey = getExerciseKey(value);
+  const weightKey = getMilestoneWeightKey(value);
+
+  return exerciseKey && weightKey !== null
+    ? JSON.stringify([exerciseKey, weightKey])
+    : null;
+}
+
+function getWorkoutDate(day) {
+  const startedAt = day?.startedAt;
+
+  return typeof startedAt === "string" && !Number.isNaN(Date.parse(startedAt))
+    ? startedAt
+    : null;
+}
+
+export function projectCurrentWorkoutPersonalRecords(workout) {
+  if (!workout || typeof workout !== "object") {
+    return workout;
+  }
+
+  const confirmedHistory = Array.isArray(workout.personalRecordHistory)
+    ? workout.personalRecordHistory
+    : [];
+  const historicalMilestones = confirmedHistory.filter(
+    (milestone) => !isMilestoneFromWorkout(milestone, workout)
+  );
+  const recordBests = new Map();
+
+  historicalMilestones.forEach((milestone) => {
+    const recordKey = getRecordKey(milestone);
+    const reps = normalizeReps(milestone?.reps);
+    if (recordKey === null || reps === null) {
+      return;
+    }
+
+    const previousBest = recordBests.get(recordKey);
+    if (previousBest === undefined || reps > previousBest) {
+      recordBests.set(recordKey, reps);
+    }
+  });
+
+  const projectedMilestones = [];
+  const daysPerWeek = Number.isInteger(Number(workout.daysPerWeek)) &&
+    Number(workout.daysPerWeek) > 0
+    ? Number(workout.daysPerWeek)
+    : 1;
+
+  workout.plan?.forEach((day, dayIndex) => {
+    collectDayCandidates(day).forEach((candidate) => {
+      const recordKey = getRecordKey(candidate);
+      const previousRecord = recordBests.get(recordKey);
+      if (previousRecord !== undefined && candidate.reps <= previousRecord) {
+        return;
+      }
+
+      const exercise = day.exercises?.[candidate.exerciseIndex] || {};
+      recordBests.set(recordKey, candidate.reps);
+      projectedMilestones.push({
+        exercise: exercise.exercise || "",
+        exerciseKey: candidate.exerciseKey,
+        muscleGroup: exercise.muscleGroup || "",
+        weight: candidate.weight,
+        weightKey: candidate.weightKey,
+        reps: candidate.reps,
+        mesocycleId: workout.id ?? workout.mesocycleId,
+        mesocycleName: workout.name || "",
+        week: Math.floor(dayIndex / daysPerWeek) + 1,
+        day: (dayIndex % daysPerWeek) + 1,
+        dayIndex,
+        exerciseIndex: candidate.exerciseIndex,
+        exercisePosition: candidate.exerciseIndex + 1,
+        setIndex: candidate.setIndex,
+        setPosition: candidate.setIndex + 1,
+        workoutDate: getWorkoutDate(day),
+        optimistic: true,
+      });
+    });
+  });
+
+  return enrichWorkoutWithPersonalRecords({
+    ...workout,
+    personalRecordHistory: [
+      ...historicalMilestones,
+      ...projectedMilestones,
+    ],
+  });
+}
+
 function cloneExercise(exercise) {
   return {
     ...exercise,

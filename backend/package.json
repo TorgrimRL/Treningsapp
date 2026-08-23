@@ -11,7 +11,8 @@
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
     "dev:local": "DB_MODE=local PORT=3000 AUTH0_BASE_URL=http://localhost:3000 FRONTEND_URL=http://localhost:5173 node --watch index.js",
     "db:seed": "DB_MODE=local node scripts/seedLocalDb.js",
-    "db:reset": "npm run db:seed"
+    "db:reset": "npm run db:seed",
+    "onboarding:reset": "DB_MODE=local node scripts/resetOnboarding.js"
   },
   "keywords": [],
   "author": "",

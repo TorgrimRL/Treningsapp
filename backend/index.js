@@ -7,6 +7,7 @@ import rateLimit from "express-rate-limit";
 import { createAuth0Router } from "./routes/auth0Routes.js";
 import mesocycleRoutes from "./routes/mesocycleRoutes.js";
 import exerciseRoutes from "./routes/exerciseRoutes.js";
+import onboardingRoutes from "./features/onboarding/routes.js";
 import {
   authenticateToken,
   clearCsrfCookie,
@@ -25,9 +26,9 @@ const app = express();
 const port = process.env.PORT || 3000;
 const auth0Routes = createAuth0Router();
 
-function parseTrustProxy(value) {
+function parseTrustProxy(value, isVercel = false) {
   if (value === undefined || value === "") {
-    return null;
+    return isVercel ? 1 : null;
   }
 
   if (!/^\d+$/.test(value)) {
@@ -42,7 +43,10 @@ function parseTrustProxy(value) {
   return proxyHops;
 }
 
-const trustProxy = parseTrustProxy(process.env.TRUST_PROXY);
+const trustProxy = parseTrustProxy(
+  process.env.TRUST_PROXY,
+  process.env.VERCEL === "1" || Boolean(process.env.VERCEL_REGION)
+);
 if (trustProxy !== null) {
   app.set("trust proxy", trustProxy);
 }
@@ -74,6 +78,7 @@ app.use("/api/auth0", auth0Routes);
 csrfTokenRoute(app);
 app.use("/api", exerciseRoutes);
 app.use("/api", mesocycleRoutes);
+app.use("/api", onboardingRoutes);
 
 app.get("/api/", (req, res) => {
   res.send("Welcome to the API");
@@ -114,7 +119,9 @@ app.get("/api/me", async (req, res) => {
   try {
     // noinspection SqlResolve
     const { result } = await safeQuery`
-      SELECT id, username, auth_provider, auth0_sub, email, email_verified, picture
+      SELECT id, username, auth_provider, auth0_sub, email, email_verified, picture,
+             onboarding_version, onboarding_status, onboarding_step,
+             onboarding_started_at, onboarding_first_set_at, onboarding_completed_at
       FROM users
       WHERE id = ${decodedToken.id}
       LIMIT 1

@@ -11,7 +11,10 @@ import {
   mergeMesocycleName,
   requestMesocycleRename,
 } from "../../../utils/mesocycleName";
-import { enrichWorkoutWithPersonalRecords } from "../../../utils/personalRecords";
+import {
+  enrichWorkoutWithPersonalRecords,
+  projectCurrentWorkoutPersonalRecords,
+} from "../../../utils/personalRecords";
 import { personalRecordsQueryKey } from "../../../utils/personalRecordsQuery";
 import {
   buildMesocycleWithSets,
@@ -73,6 +76,7 @@ export default function useCurrentWorkoutActions({
   commitWorkoutData,
   markWorkoutDirty,
   menus,
+  reconcilePersonalRecords,
   refreshWorkoutData,
   selectedExercise,
   setApplyToFutureWeeks,
@@ -131,11 +135,13 @@ export default function useCurrentWorkoutActions({
         if (!ok) {
           const errorText = data?.message || data?.error || "Unknown error";
           console.error(failureMessage + ": " + errorText);
+          reconcilePersonalRecords(revision);
           return false;
         }
 
         if (!data?.mesocycle) {
           console.error(failureMessage + ": Missing saved mesocycle");
+          reconcilePersonalRecords(revision);
           return false;
         }
 
@@ -160,6 +166,7 @@ export default function useCurrentWorkoutActions({
         return committed ? savedWorkout : false;
       } catch (error) {
         console.error(failureMessage + ":", error);
+        reconcilePersonalRecords(revision);
         return false;
       }
     };
@@ -230,9 +237,8 @@ export default function useCurrentWorkoutActions({
         ),
       },
     }));
-    const updatedMesocycle = buildMesocycleWithSets(
-      currentMesocycle,
-      updatedSets
+    const updatedMesocycle = projectCurrentWorkoutPersonalRecords(
+      buildMesocycleWithSets(currentMesocycle, updatedSets)
     );
 
     setCurrentMesocycle(updatedMesocycle);

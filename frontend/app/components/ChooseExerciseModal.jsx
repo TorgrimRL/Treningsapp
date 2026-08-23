@@ -80,7 +80,7 @@ const ChooseExerciseModal = ({ isOpen, onRequestClose, onSave }) => {
 
   const handleSaveCustomExercise = async (newExercise) => {
     if (!newExercise) {
-      return;
+      return { ok: false, error: "Exercise details are missing." };
     }
 
     const exerciseToSave = {
@@ -91,20 +91,6 @@ const ChooseExerciseModal = ({ isOpen, onRequestClose, onSave }) => {
       videolink: newExercise.videoLink || newExercise.videolink || "",
     };
 
-    setAvailableExercises((currentExercises) => ({
-      ...currentExercises,
-      [exerciseToSave.muscleGroup]: [
-        ...(currentExercises[exerciseToSave.muscleGroup] || []),
-        {
-          name: exerciseToSave.name,
-          type: exerciseToSave.type,
-          videoLink: exerciseToSave.videoLink,
-        },
-      ],
-    }));
-    setSelectedMuscleGroup(exerciseToSave.muscleGroup);
-    setSelectedExerciseId(exerciseToSave.name);
-
     try {
       const { ok, data } = await apiFetch(baseUrl + "/exercises", {
         method: "POST",
@@ -114,13 +100,31 @@ const ChooseExerciseModal = ({ isOpen, onRequestClose, onSave }) => {
       });
 
       if (!ok) {
-        console.error(
-          "Failed to update custom exercises: " +
-            (data.message || "Unknown error")
-        );
+        const error = data?.message || data?.error || "Unknown error";
+        console.error("Failed to update custom exercises: " + error);
+        return { ok: false, error };
       }
+
+      setAvailableExercises((currentExercises) => ({
+        ...currentExercises,
+        [exerciseToSave.muscleGroup]: [
+          ...(currentExercises[exerciseToSave.muscleGroup] || []),
+          {
+            name: exerciseToSave.name,
+            type: exerciseToSave.type,
+            videoLink: exerciseToSave.videoLink,
+          },
+        ],
+      }));
+      setSelectedMuscleGroup(exerciseToSave.muscleGroup);
+      setSelectedExerciseId(exerciseToSave.name);
+      return { ok: true };
     } catch (error) {
       console.error("Error trying to send exercise to backend", error);
+      return {
+        ok: false,
+        error: "Unable to save this exercise. Please try again.",
+      };
     }
   };
 
@@ -179,9 +183,9 @@ const ChooseExerciseModal = ({ isOpen, onRequestClose, onSave }) => {
         type="button"
         data-testid="choose-exercise-add-custom"
         onClick={() => setIsAddExerciseModalOpen(true)}
-        className="text-sm text-left mb-4"
+        className="mb-4 inline-flex min-h-11 w-full items-center justify-center rounded-lg border border-gray-600 bg-inputBGGray px-4 py-2 text-sm font-semibold text-gray-100 transition-colors hover:border-gray-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400 active:scale-[0.96]"
       >
-        Add custom exercise
+        + Add custom exercise
       </button>
       <div>
         <input

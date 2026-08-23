@@ -417,7 +417,7 @@ test("@e2e old record lazy-loads once, shows the full workout, and reuses the ca
   await expect(modal.getByTestId("personal-record-history-list")).toBeVisible();
 });
 
-test("new PR icon waits for the mesocycle PUT confirmation", async ({ page }) => {
+test("@e2e new PR icon appears while the mesocycle PUT is still pending", async ({ page }) => {
   await loginAsDemoUser(page);
   const fixture = await preparePersonalRecordFixture(page, {
     completeCurrentSet: false,
@@ -425,6 +425,10 @@ test("new PR icon waits for the mesocycle PUT confirmation", async ({ page }) =>
   await page.goto("/currentworkout");
 
   const recordIcon = getRecordIcon(page);
+  const loggedReps = await page
+    .getByTestId("workout-set-0-0")
+    .getByTestId("set-reps-select")
+    .inputValue();
   await expect(recordIcon).toHaveCount(0);
 
   let putStarted = false;
@@ -456,7 +460,18 @@ test("new PR icon waits for the mesocycle PUT confirmation", async ({ page }) =>
       .getByTestId("set-log-checkbox")
       .check();
     await expect.poll(() => putStarted).toBe(true);
-    await expect(recordIcon).toHaveCount(0);
+    await expect(recordIcon).toBeVisible();
+
+    await recordIcon.click();
+    const pendingRecordModal = page.getByRole("dialog", {
+      name: "Personal records for Paused Bench Press",
+    });
+    await expect(
+      pendingRecordModal.getByTestId("personal-record-current-summary")
+    ).toContainText(`${loggedReps} reps`);
+    await pendingRecordModal
+      .getByRole("button", { name: "Close modal" })
+      .click();
 
     releasePut();
     await putResponse;
@@ -467,7 +482,7 @@ test("new PR icon waits for the mesocycle PUT confirmation", async ({ page }) =>
 });
 
 
-test("each sequential PR keeps its icon and opens its own milestone", async ({
+test("@e2e each sequential PR keeps its icon and opens its own milestone", async ({
   page,
 }) => {
   await loginAsDemoUser(page);
@@ -491,7 +506,7 @@ test("each sequential PR keeps its icon and opens its own milestone", async ({
     () => secondSetCheckbox.check(),
     async () => {
       await expect(firstRecordIcon).toBeVisible();
-      await expect(secondRecordIcon).toHaveCount(0);
+      await expect(secondRecordIcon).toBeVisible();
     }
   );
 
@@ -531,7 +546,7 @@ test("each sequential PR keeps its icon and opens its own milestone", async ({
     () => secondSetCheckbox.check(),
     async () => {
       await expect(firstRecordIcon).toBeVisible();
-      await expect(secondRecordIcon).toBeVisible();
+      await expect(secondRecordIcon).toHaveCount(0);
     }
   );
 
@@ -628,7 +643,7 @@ test("historical workout shows loading and error before retry succeeds", async (
 });
 
 
-test("confirmed PR metadata merges while preserving a newer unsaved reps draft", async ({
+test("@e2e confirmed PR metadata merges while preserving a newer unsaved reps draft", async ({
   page,
 }) => {
   await loginAsDemoUser(page);
@@ -651,7 +666,7 @@ test("confirmed PR metadata merges while preserving a newer unsaved reps draft",
     async () => {
       await unsavedReps.selectOption("12");
       await expect(unsavedReps).toHaveValue("12");
-      await expect(recordIcon).toHaveCount(0);
+      await expect(recordIcon).toBeVisible();
     }
   );
 
@@ -659,7 +674,7 @@ test("confirmed PR metadata merges while preserving a newer unsaved reps draft",
   await expect(unsavedReps).toHaveValue("12");
 });
 
-test("correction below the previous record removes the icon only after PUT", async ({
+test("@e2e correction below the previous record removes the icon while PUT is pending", async ({
   page,
 }) => {
   await loginAsDemoUser(page);
@@ -681,11 +696,49 @@ test("correction below the previous record removes the icon only after PUT", asy
     fixture.currentId,
     () => checkbox.check(),
     async () => {
-      await expect(recordIcon).toBeVisible();
+      await expect(recordIcon).toHaveCount(0);
     }
   );
 
   await expect(recordIcon).toHaveCount(0);
+});
+
+test("@e2e failed save removes an unconfirmed optimistic PR icon", async ({ page }) => {
+  await loginAsDemoUser(page);
+  const fixture = await preparePersonalRecordFixture(page, {
+    completeCurrentSet: false,
+  });
+  await page.goto("/currentworkout");
+
+  const firstSet = page.getByTestId("workout-set-0-0");
+  const recordIcon = firstSet.getByTestId("personal-record-icon");
+  let releasePut;
+  const putGate = new Promise((resolve) => {
+    releasePut = resolve;
+  });
+
+  await page.route(`**/api/mesocycles/${fixture.currentId}`, async (route) => {
+    if (!isMesocycleRequest(route.request(), fixture.currentId, "PUT")) {
+      await route.continue();
+      return;
+    }
+
+    await putGate;
+    await route.fulfill({
+      status: 500,
+      contentType: "application/json",
+      body: JSON.stringify({ error: "Temporary save failure" }),
+    });
+  });
+
+  try {
+    await firstSet.getByTestId("set-log-checkbox").check();
+    await expect(recordIcon).toBeVisible();
+    releasePut();
+    await expect(recordIcon).toHaveCount(0);
+  } finally {
+    releasePut();
+  }
 });
 
 

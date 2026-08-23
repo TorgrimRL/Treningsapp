@@ -34,7 +34,7 @@ function LandingPage() {
         />
         <div
           data-testid="landing-hero-content"
-          className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-45 px-4 text-center lg:justify-start lg:pt-[32svh]"
+          className="absolute inset-0 flex flex-col items-center justify-center bg-black/45 px-4 text-center lg:justify-start lg:pt-[32svh]"
         >
           <h1 className="text-4xl text-white md:text-6xl">
             Simplifying Muscle Growth
@@ -164,7 +164,10 @@ function LandingPage() {
                 alt=""
                 className="absolute inset-0 h-full w-full object-cover"
               />
-              <div className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-55 px-4 text-center">
+              <div
+                data-testid="landing-footer-image-content"
+                className="absolute inset-0 flex flex-col items-center justify-center bg-black/55 px-4 text-center"
+              >
                 <h2 className="text-4xl text-white md:text-6xl">
                   Simplifying Muscle Growth
                 </h2>

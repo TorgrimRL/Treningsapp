@@ -125,6 +125,16 @@ describe("API rate limiting", () => {
     15000
   );
 
+  it("trusts one proxy hop automatically on Vercel", async () => {
+    const app = await loadAppWithQuery(jest.fn(), "test-secret", {
+      TRUST_PROXY: "",
+      VERCEL: "1",
+      VERCEL_REGION: "iad1",
+    });
+
+    expect(app.get("trust proxy")).toBe(1);
+  });
+
   it("rejects an invalid TRUST_PROXY setting during startup", async () => {
     await expect(
       loadAppWithQuery(jest.fn(), "test-secret", {

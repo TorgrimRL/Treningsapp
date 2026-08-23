@@ -129,6 +129,59 @@ export function parseAndValidatePlan(plan) {
   return validatePlan(plan);
 }
 
+function hasLegacyExerciseShape(exercise) {
+  return (
+    isRecord(exercise) &&
+    !Array.isArray(exercise.sets) &&
+    (Object.hasOwn(exercise, "set") ||
+      Object.hasOwn(exercise, "weight") ||
+      Object.hasOwn(exercise, "reps"))
+  );
+}
+
+function normalizeLegacyStoredPlan(plan) {
+  if (!Array.isArray(plan)) {
+    return plan;
+  }
+
+  return plan.map((day) => {
+    if (!isRecord(day) || !Array.isArray(day.exercises)) {
+      return day;
+    }
+
+    return {
+      ...day,
+      exercises: day.exercises.map((exercise) =>
+        hasLegacyExerciseShape(exercise)
+          ? { ...exercise, sets: [] }
+          : exercise
+      ),
+    };
+  });
+}
+
+// Plans created before set logging was introduced stored unused weight/set/reps
+// placeholders directly on each exercise. Keep writes strict, but adapt those
+// stored plans on read so historical training blocks remain accessible.
+export function parseAndValidateStoredPlan(plan) {
+  if (typeof plan !== "string") {
+    return validatePlan(normalizeLegacyStoredPlan(plan));
+  }
+
+  if (getPlanByteLength(plan) > MAX_PLAN_BYTES) {
+    fail(`Plan must not exceed ${MAX_PLAN_BYTES} bytes`);
+  }
+
+  try {
+    return validatePlan(normalizeLegacyStoredPlan(JSON.parse(plan)));
+  } catch (error) {
+    if (error instanceof PlanValidationError) {
+      throw error;
+    }
+    fail("Plan must contain valid JSON");
+  }
+}
+
 export function validateMesocycleInput({ weeks, daysPerWeek, plan }) {
   parsePositiveInteger(weeks, MAX_MESOCYCLE_WEEKS, "weeks");
   parsePositiveInteger(daysPerWeek, MAX_DAYS_PER_WEEK, "daysPerWeek");
