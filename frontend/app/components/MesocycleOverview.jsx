@@ -13,6 +13,8 @@ import {
 } from "../utils/mesocycleName";
 import { personalRecordsQueryKey } from "../utils/personalRecordsQuery";
 import { downloadMesocycleCsv } from "../features/import-plan/exportPlanCsv";
+import { parseMesocycleListResponse } from "../utils/mesocycleListResponse";
+import { clearCurrentWorkoutQuery } from "../utils/currentWorkoutQuery";
 
 const MesocycleOverview = () => {
   const [mesocycles, setMesocycles] = useState([]);
@@ -65,7 +67,7 @@ const MesocycleOverview = () => {
           credentials: "include",
         });
         if (ok) {
-          setMesocycles(data);
+          setMesocycles(parseMesocycleListResponse(data));
         } else {
           console.error(data.message || "Failed to fetch mesocycles");
         }
@@ -92,6 +94,37 @@ const MesocycleOverview = () => {
     setOpenMenus({});
     setSelectedMesocycleToRename(mesocycle);
     setIsRenameModalOpen(true);
+  };
+
+  const handleStatusChange = async (mesocycle, status) => {
+    try {
+      const { ok, data } = await apiFetch(
+        `${baseUrl}/mesocycles/${mesocycle.id}/status`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ status }),
+        }
+      );
+      if (!ok || !data?.mesocycle) {
+        console.error(data?.error || "Failed to update mesocycle status");
+        return;
+      }
+      setMesocycles((current) =>
+        current.map((item) =>
+          item.id === mesocycle.id
+            ? data.mesocycle
+            : status === "current"
+            ? { ...item, isCurrent: false }
+            : item
+        )
+      );
+      setOpenMenus({});
+      await clearCurrentWorkoutQuery(queryClient);
+    } catch (error) {
+      console.error("Error updating mesocycle status", error);
+    }
   };
 
   const handleRenameMesocycle = async (name) => {
@@ -208,6 +241,24 @@ const MesocycleOverview = () => {
                         >
                           Export CSV
                         </button>
+                        {!mesocycle.isCurrent && (
+                          <button
+                            className="block min-h-11 w-full px-4 py-2 text-left text-sm text-white transition-colors hover:bg-gray-700 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
+                            onClick={() => handleStatusChange(mesocycle, "current")}
+                            type="button"
+                          >
+                            Set as current
+                          </button>
+                        )}
+                        {!isCompleted && (
+                          <button
+                            className="block min-h-11 w-full px-4 py-2 text-left text-sm text-white transition-colors hover:bg-gray-700 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
+                            onClick={() => handleStatusChange(mesocycle, "completed")}
+                            type="button"
+                          >
+                            Mark as completed
+                          </button>
+                        )}
                         <button
                           aria-label={`Rename ${mesocycle.name}`}
                           className="block min-h-11 w-full px-4 py-2 text-left text-sm text-white transition-colors hover:bg-gray-700 focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
