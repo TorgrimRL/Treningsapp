@@ -125,6 +125,16 @@ describe("backend utility regression", () => {
     ]);
   });
 
+  it("does not apply first-week deload targets to a replacement exercise", () => {
+    const replacement = {
+      exercise: "Incline Bench Press",
+      sets: [{ weight: 0, reps: 0, targetWeight: 0, targetReps: 0, completed: false }],
+    };
+    expect(createDeloadWeek([
+      { exercise: "Bench Press", sets: [{ weight: 80, reps: 8, completed: true }] },
+    ], [replacement])).toEqual([replacement]);
+  });
+
   it("marks completed days and finds the first incomplete day", () => {
     const result = processPlan([
       {

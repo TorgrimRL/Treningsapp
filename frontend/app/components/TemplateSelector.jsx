@@ -2,7 +2,7 @@ import { useState } from "react";
 import TemplateOverviewModal from "./TemplatePreviewModal";
 import { templates } from "../constants/constants";
 
-const TemplateSelector = ({ onSelectTemplate }) => {
+const TemplateSelector = ({ onSelectTemplate, onBuildFromScratch }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
 
@@ -23,12 +23,22 @@ const TemplateSelector = ({ onSelectTemplate }) => {
     <div className="text-white">
       <header className="flex flex-col gap-4 px-4 py-6 sm:flex-row sm:items-center sm:justify-between md:px-0">
         <h1 className="m-0 text-2xl">Templates</h1>
-        <a
-          className="inline-flex items-center justify-center bg-red-600 px-4 py-2 text-center text-lg text-white transition-colors hover:bg-red-700"
-          href="/mesocycles-new"
-        >
-          Build a training block from scratch
-        </a>
+        {onBuildFromScratch ? (
+          <button
+            type="button"
+            onClick={onBuildFromScratch}
+            className="inline-flex min-h-11 items-center justify-center bg-red-600 px-4 py-2 text-center text-lg text-white transition-colors hover:bg-red-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
+          >
+            Build a training block from scratch
+          </button>
+        ) : (
+          <a
+            className="inline-flex min-h-11 items-center justify-center bg-red-600 px-4 py-2 text-center text-lg text-white transition-colors hover:bg-red-700"
+            href="/mesocycles-new"
+          >
+            Build a training block from scratch
+          </a>
+        )}
       </header>
       <p className="px-4 pb-6 text-center text-gray-300 md:px-0">
         or select a template

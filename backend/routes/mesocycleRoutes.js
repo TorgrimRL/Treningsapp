@@ -112,9 +112,36 @@ function getMesocycleCompletion(plan) {
 
 // Endpoint to add a new mesocycle
 router.post("/mesocycles", authenticateToken, csrfProtection, async (req, res) => {
+  let onboardingTransactionStarted = false;
   try {
     const userId = req.user.id;
-    const { name, weeks, daysPerWeek, plan, includeDeload } = req.body;
+    const { name, weeks, daysPerWeek, plan, includeDeload, onboardingDraftId } = req.body;
+    const normalizedDraftId =
+      typeof onboardingDraftId === "string" && onboardingDraftId.trim()
+        ? onboardingDraftId.trim()
+        : null;
+    if (normalizedDraftId) {
+      const { result: existingOnboardingPlan } = await safeQuery`
+        SELECT id FROM mesocycles
+        WHERE user_id = ${userId} AND source_onboarding_draft_id = ${normalizedDraftId}
+        LIMIT 1
+      `;
+      if (existingOnboardingPlan[0]) {
+        return res.status(200).json({
+          message: "Mesocycle already created",
+          mesocycleId: existingOnboardingPlan[0].id,
+          idempotent: true,
+        });
+      }
+      const { result: ownedDraft } = await safeQuery`
+        SELECT id FROM onboarding_drafts
+        WHERE id = ${normalizedDraftId} AND user_id = ${userId}
+        LIMIT 1
+      `;
+      if (!ownedDraft[0]) {
+        return res.status(404).json({ error: "Onboarding draft not found" });
+      }
+    }
     const normalizedWeeks = Number(weeks);
     const normalizedDaysPerWeek = Number(daysPerWeek);
     const validatedPlan = validateMesocycleInput({
@@ -136,6 +163,11 @@ router.post("/mesocycles", authenticateToken, csrfProtection, async (req, res) =
       isCreate: true,
     });
 
+    if (normalizedDraftId) {
+      await safeQuery`BEGIN IMMEDIATE`;
+      onboardingTransactionStarted = true;
+    }
+
     const { hadRetry: updateHadRetry } = await safeQuery`
       UPDATE mesocycles 
       SET isCurrent = 0 
@@ -144,9 +176,20 @@ router.post("/mesocycles", authenticateToken, csrfProtection, async (req, res) =
 
     // noinspection SqlResolve -- include_deload is added idempotently in db/schema.js.
     const { result: insertResult, hadRetry: insertHadRetry } = await safeQuery`
-      INSERT INTO mesocycles (name, weeks, daysPerWeek, plan, user_id, completedDate, isCurrent, include_deload)
-      VALUES (${name}, ${normalizedWeeks}, ${normalizedDaysPerWeek}, ${planJson}, ${userId}, ${completedDate}, 1, ${includeDeload ? 1 : 0})
+      INSERT INTO mesocycles (name, weeks, daysPerWeek, plan, user_id, completedDate, isCurrent, include_deload, source_onboarding_draft_id)
+      VALUES (${name}, ${normalizedWeeks}, ${normalizedDaysPerWeek}, ${planJson}, ${userId}, ${completedDate}, 1, ${includeDeload ? 1 : 0}, ${normalizedDraftId})
     `;
+
+    if (normalizedDraftId) {
+      const completedAt = new Date().toISOString();
+      await safeQuery`UPDATE users SET onboarding_status = ${"completed"},
+        onboarding_step = ${"completed"}, onboarding_completed_at = ${completedAt}
+        WHERE id = ${userId}`;
+      await safeQuery`DELETE FROM onboarding_drafts
+        WHERE id = ${normalizedDraftId} AND user_id = ${userId}`;
+      await safeQuery`COMMIT`;
+      onboardingTransactionStarted = false;
+    }
 
     const hadRetry = usage.hadRetry || updateHadRetry || insertHadRetry;
     const basePayload = {
@@ -156,6 +199,13 @@ router.post("/mesocycles", authenticateToken, csrfProtection, async (req, res) =
     const responsePayload = buildResponsePayload(hadRetry, basePayload);
     return res.status(201).json(responsePayload);
   } catch (err) {
+    if (onboardingTransactionStarted) {
+      try {
+        await safeQuery`ROLLBACK`;
+      } catch {
+        // Preserve the original write error.
+      }
+    }
     return sendMesocycleWriteError(
       res,
       err,
@@ -825,6 +875,17 @@ function getExercises(
       const previousWeekExercise =
           plan[previousWeekIndex].exercises[exerciseIndex];
       if (!previousWeekExercise) return exerciseWithProgression;
+      const currentExerciseName = String(exercise.exercise || "")
+        .trim()
+        .replace(/\s+/g, " ")
+        .toLocaleLowerCase("en");
+      const previousExerciseName = String(previousWeekExercise.exercise || "")
+        .trim()
+        .replace(/\s+/g, " ")
+        .toLocaleLowerCase("en");
+      if (!currentExerciseName || currentExerciseName !== previousExerciseName) {
+        return exerciseWithProgression;
+      }
       if (!Array.isArray(exercise.sets)) return exerciseWithProgression;
       const isDeloadWeek = includeDeload && currentWeek === totalWeeks;
       if (isDeloadWeek) {

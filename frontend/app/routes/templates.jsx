@@ -1,10 +1,23 @@
 import TemplateSelector from "../components/TemplateSelector";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import ProtectedRoute from "../components/ProtectedRoute";
 import PageContainer from "../components/PageContainer";
+import { useApiFetch } from "../utils/apiFetch";
+import { useAuth } from "../utils/AuthContext";
+import { onboardingV1Enabled } from "../features/onboarding/config";
+import OnboardingRouteHeader from "../features/onboarding/OnboardingRouteHeader";
 
 export default function Templates() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { apiFetch } = useApiFetch();
+  const { checkAuthStatus } = useAuth();
+  const baseUrl = import.meta.env.VITE_API_URL;
+  const onboardingDraftId = location.state?.onboardingDraftId;
+  const isOnboarding = Boolean(onboardingDraftId);
+  const returnToSetup = () => navigate("/onboarding", {
+    state: { returnToSetup: true, onboardingPlanChoice: "needs-plan" },
+  });
 
   const handleSelectTemplate = (selectedTemplate) => {
     navigate("/mesocycles-new", {
@@ -14,13 +27,27 @@ export default function Templates() {
         daysPerWeek: selectedTemplate.days,
         muscleGroups: selectedTemplate.muscleGroups,
         dayLabels: selectedTemplate.dayLabels,
+        onboardingDraftId,
+        onboardingPlanChoice: location.state?.onboardingPlanChoice,
       },
     });
+  };
+  const startGuidedSetup = async () => {
+    const response = await apiFetch(`${baseUrl}/onboarding/start`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ kind: "discovery" }),
+    });
+    if (response.ok) {
+      await checkAuthStatus();
+      navigate("/onboarding");
+    }
   };
   return (
     <ProtectedRoute>
       <PageContainer size="standard" className="md:px-6">
-        <div className="px-4 pt-6 md:px-0">
+        {isOnboarding && <OnboardingRouteHeader onBack={returnToSetup} />}
+        {!isOnboarding && <div className="flex flex-wrap gap-3 px-4 pt-6 md:px-0">
           <button
             type="button"
             data-testid="import-plan-link"
@@ -29,8 +56,20 @@ export default function Templates() {
           >
             Import a plan
           </button>
-        </div>
-        <TemplateSelector onSelectTemplate={handleSelectTemplate} />
+          {onboardingV1Enabled && (
+            <button
+              type="button"
+              onClick={startGuidedSetup}
+              className="min-h-11 border border-gray-600 px-4 py-2 text-gray-200 transition-colors hover:border-red-500 hover:text-red-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
+            >
+              Guided setup
+            </button>
+          )}
+        </div>}
+        <TemplateSelector
+          onSelectTemplate={handleSelectTemplate}
+          onBuildFromScratch={isOnboarding ? () => navigate("/mesocycles-new", { state: { onboardingDraftId, onboardingPlanChoice: "needs-plan" } }) : undefined}
+        />
       </PageContainer>
     </ProtectedRoute>
   );

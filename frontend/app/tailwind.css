@@ -26,3 +26,14 @@ input[type="checkbox"] {
   border-bottom-color: transparent;
   border-left-color: transparent;
 }
+
+body:has([data-onboarding-tour-step="navigation"]) [data-testid="navbar"] {
+  box-shadow: inset 0 -2px 0 #f87171, 0 8px 24px rgb(0 0 0 / 0.45);
+}
+
+body:has([data-onboarding-tour-step="navigation"]) [data-testid="navbar-menu-button"] {
+  border-radius: 0.5rem;
+  outline: 2px solid #f87171;
+  outline-offset: -4px;
+  background: rgb(220 38 38 / 0.2);
+}

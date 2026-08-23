@@ -38,7 +38,7 @@ export default defineConfig({
   projects: [
     {
       name: "mobile-chrome",
-      testMatch: /responsive-layout\.spec\.js/,
+      testMatch: /(responsive-layout|onboarding)\.spec\.js/,
       grep: /@responsive/,
       use: { ...devices["Pixel 5"] },
     },

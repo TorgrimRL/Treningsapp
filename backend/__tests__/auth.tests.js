@@ -148,6 +148,7 @@ describe("auth regression", () => {
       email: "auth0@example.com",
       email_verified: 1,
       picture: "https://example.com/avatar.png",
+      onboarding_status: "not_started",
     });
 
     const updated = await upsertAuth0User(

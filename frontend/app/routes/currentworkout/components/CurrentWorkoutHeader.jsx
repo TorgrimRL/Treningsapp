@@ -6,6 +6,7 @@ export default function CurrentWorkoutHeader({
   currentMesocycle,
   onRename,
   progress,
+  showOnboardingHint = false,
 }) {
   return (
     <div className="min-w-0">
@@ -20,7 +21,8 @@ export default function CurrentWorkoutHeader({
           </h1>
           <button
             aria-label="Rename training block"
-            className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-start pl-2 text-gray-400 transition-colors hover:text-white focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
+            aria-describedby={showOnboardingHint ? "current-workout-tour-description" : undefined}
+            className={`inline-flex min-h-11 min-w-11 shrink-0 items-center justify-start rounded-lg pl-2 text-gray-400 transition-colors hover:text-white focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400 ${showOnboardingHint ? "bg-red-600/20 text-white outline outline-2 outline-offset-2 outline-red-400" : ""}`}
             data-testid="rename-current-mesocycle"
             onClick={onRename}
             type="button"
