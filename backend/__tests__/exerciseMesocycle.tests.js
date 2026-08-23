@@ -253,6 +253,19 @@ describe("exercise and mesocycle regression", () => {
     expect(list.body.find((plan) => plan.id === second.id).isCurrent).toBe(false);
   });
 
+  it("does not let another user change a mesocycle status", async () => {
+    const userA = await createAuthenticatedUser(app, db, { username: "alice" });
+    const userB = await createAuthenticatedUser(app, db, { username: "bob" });
+    const { id } = await createMesocycle(userA.agent, { name: "Alice plan" });
+
+    await csrfRequest(userB.agent, "patch", `/api/mesocycles/${id}/status`)
+      .send({ status: "completed" })
+      .expect(404, { error: "Mesocycle not found" });
+
+    const storedPlan = await db.get("SELECT isCurrent, completedDate FROM mesocycles WHERE id = ?", [id]);
+    expect(storedPlan).toMatchObject({ isCurrent: 1, completedDate: null });
+  });
+
   it("renames an owned mesocycle without changing its workout data", async () => {
     const userA = await createAuthenticatedUser(app, db, { username: "alice" });
     const userB = await createAuthenticatedUser(app, db, { username: "bob" });
