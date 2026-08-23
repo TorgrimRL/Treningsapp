@@ -93,23 +93,28 @@ function isPlanValidationError(error) {
 }
 
 function normalizeMesocycleRows(rows) {
-  return rows.flatMap((row) => {
-    try {
-      return [normalizeMesocycleRow(row)];
-    } catch (error) {
-      if (!isPlanValidationError(error)) {
-        throw error;
-      }
+  const mesocycles = [];
 
-      console.warn("Skipping invalid stored mesocycle", {
+  for (const row of rows) {
+    try {
+      mesocycles.push(normalizeMesocycleRow(row));
+    } catch (error) {
+      const logContext = {
         mesocycleId: row.id,
         isCurrent: !!row.isCurrent,
         name: error.name,
         message: error.message,
-      });
-      return [];
+      };
+
+      if (isPlanValidationError(error)) {
+        console.warn("Skipping invalid stored mesocycle", logContext);
+      } else {
+        console.error("Skipping unreadable stored mesocycle", logContext);
+      }
     }
-  });
+  }
+
+  return mesocycles;
 }
 
 function sendMesocycleWriteError(res, error, fallbackMessage) {
@@ -287,6 +292,7 @@ router.get(
         code: err?.code,
         name: err?.name,
         message: err?.message,
+        stack: err?.stack?.split("\n").slice(0, 6).join("\n"),
       });
       res.status(500).json({ error: "Failed to fetch mesocycles" });
     }
