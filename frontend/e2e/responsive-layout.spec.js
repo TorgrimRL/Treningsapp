@@ -86,6 +86,14 @@ test("@responsive landing shell and feature content stay within responsive bound
   await expect(hero).toHaveCSS("background-image", /linear-gradient/);
 
   const heroContentBox = await getBox(page.getByTestId("landing-hero-content"));
+  await expect(page.getByTestId("landing-hero-content")).toHaveCSS(
+    "background-color",
+    /\/ 0\.45\)$/
+  );
+  await expect(page.getByTestId("landing-footer-image-content")).toHaveCSS(
+    "background-color",
+    /\/ 0\.55\)$/
+  );
   const heroHeadingBox = await getBox(
     page.getByRole("heading", { name: "Simplifying Muscle Growth" }).first()
   );
