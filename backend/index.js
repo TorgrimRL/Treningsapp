@@ -26,9 +26,9 @@ const app = express();
 const port = process.env.PORT || 3000;
 const auth0Routes = createAuth0Router();
 
-function parseTrustProxy(value) {
+function parseTrustProxy(value, isVercel = false) {
   if (value === undefined || value === "") {
-    return null;
+    return isVercel ? 1 : null;
   }
 
   if (!/^\d+$/.test(value)) {
@@ -43,7 +43,10 @@ function parseTrustProxy(value) {
   return proxyHops;
 }
 
-const trustProxy = parseTrustProxy(process.env.TRUST_PROXY);
+const trustProxy = parseTrustProxy(
+  process.env.TRUST_PROXY,
+  process.env.VERCEL === "1" || Boolean(process.env.VERCEL_REGION)
+);
 if (trustProxy !== null) {
   app.set("trust proxy", trustProxy);
 }
