@@ -154,6 +154,8 @@ async function resetTables(db, existingDemoUser) {
   await db.sql("DELETE FROM exercises");
   // noinspection SqlNoDataSourceInspection
   await db.sql("DELETE FROM Mesocycles");
+  // noinspection SqlNoDataSourceInspection
+  await db.sql("DELETE FROM onboarding_drafts");
   if (existingDemoUser) {
     // noinspection SqlNoDataSourceInspection
     await db.sql`DELETE FROM users WHERE id != ${existingDemoUser.id}`;
@@ -205,16 +207,24 @@ export async function seedLocalDatabase({
             password = ${null},
             auth_provider = ${"auth0"},
             email = ${demoCredentials.username},
-            email_verified = ${1}
+            email_verified = ${1},
+            onboarding_version = ${1},
+            onboarding_status = ${"completed"},
+            onboarding_step = ${null},
+            onboarding_started_at = ${null},
+            onboarding_first_set_at = ${null},
+            onboarding_completed_at = ${null}
         WHERE id = ${userId}
       `;
     } else {
       // noinspection SqlNoDataSourceInspection
       const userResult = await db.sql`
         INSERT INTO users
-          (username, password, auth_provider, auth0_sub, email, email_verified, picture)
+          (username, password, auth_provider, auth0_sub, email, email_verified, picture,
+           onboarding_version, onboarding_status)
         VALUES
-          (${demoCredentials.username}, ${null}, ${"auth0"}, ${demoCredentials.auth0Sub}, ${demoCredentials.username}, ${1}, ${null})
+          (${demoCredentials.username}, ${null}, ${"auth0"}, ${demoCredentials.auth0Sub}, ${demoCredentials.username}, ${1}, ${null},
+           ${1}, ${"completed"})
       `;
       userId = userResult.lastID;
     }

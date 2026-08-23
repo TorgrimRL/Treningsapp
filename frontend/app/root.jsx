@@ -12,6 +12,7 @@ import {
   CurrentWorkoutQueryLifecycle,
   QueryProvider,
 } from "./utils/QueryProvider";
+import OnboardingGate from "./features/onboarding/OnboardingGate";
 
 const vippsDonationUrl =
   "https://qr.vipps.no/box/89367565-e970-4b18-89ab-6a35c66c09b3/pay-in";
@@ -30,8 +31,9 @@ export default function Root() {
       <body className="min-h-screen bg-darkestGray text-white">
         <QueryProvider>
             <AuthProvider>
-              <CurrentWorkoutQueryLifecycle />
-              <div id="root" className="flex min-h-screen flex-col pt-12">
+              <OnboardingGate>
+                <CurrentWorkoutQueryLifecycle />
+                <div id="root" className="flex min-h-screen flex-col pt-12 antialiased">
                 <Navbar />
                 <main className="min-w-0 flex-1">
                   <Outlet />
@@ -58,7 +60,8 @@ export default function Root() {
                     <p className="mt-4 text-xs">&copy; 2026 SETOPTIMIZER.COM</p>
                   </div>
                 </footer>
-              </div>
+                </div>
+              </OnboardingGate>
             </AuthProvider>
           </QueryProvider>
         <ScrollRestoration />

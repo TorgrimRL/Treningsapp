@@ -9,7 +9,13 @@ const createUsersTableSql = `CREATE TABLE IF NOT EXISTS users (
       ${auth0SubColumn} TEXT,
       email TEXT,
       email_verified INTEGER DEFAULT 0,
-      picture TEXT
+      picture TEXT,
+      onboarding_version INTEGER DEFAULT 1,
+      onboarding_status TEXT DEFAULT 'completed',
+      onboarding_step TEXT,
+      onboarding_started_at TEXT,
+      onboarding_first_set_at TEXT,
+      onboarding_completed_at TEXT
     )`;
 
 // noinspection SqlNoDataSourceInspection,SqlDialectInspection
@@ -22,6 +28,7 @@ const createMesocyclesTableSql = `CREATE TABLE IF NOT EXISTS Mesocycles (
       completedDate TEXT,
       isCurrent INTEGER,
       include_deload INTEGER DEFAULT 0,
+      source_onboarding_draft_id TEXT,
       user_id INTEGER,
       FOREIGN KEY(user_id) REFERENCES users(id)
     )`;
@@ -37,6 +44,18 @@ const createExercisesTableSql = `CREATE TABLE IF NOT EXISTS exercises (
       FOREIGN KEY(user_id) REFERENCES users(id)
     )`;
 
+const createOnboardingDraftsTableSql = `CREATE TABLE IF NOT EXISTS onboarding_drafts (
+      id TEXT PRIMARY KEY,
+      user_id INTEGER NOT NULL,
+      path TEXT NOT NULL,
+      revision INTEGER NOT NULL DEFAULT 0,
+      data TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY(user_id) REFERENCES users(id),
+      UNIQUE(user_id)
+    )`;
+
 export const schemaStatements = [
   {
     name: "users",
@@ -49,6 +68,10 @@ export const schemaStatements = [
   {
     name: "exercises",
     sql: createExercisesTableSql,
+  },
+  {
+    name: "onboarding_drafts",
+    sql: createOnboardingDraftsTableSql,
   },
 ];
 
@@ -84,10 +107,58 @@ export const schemaMigrationStatements = [
     sql: "ALTER TABLE users ADD COLUMN picture TEXT",
   },
   {
+    name: "users.onboarding_version",
+    table: "users",
+    column: "onboarding_version",
+    sql: "ALTER TABLE users ADD COLUMN onboarding_version INTEGER DEFAULT 1",
+  },
+  {
+    name: "users.onboarding_status",
+    table: "users",
+    column: "onboarding_status",
+    sql: "ALTER TABLE users ADD COLUMN onboarding_status TEXT DEFAULT 'completed'",
+  },
+  {
+    name: "users.onboarding_step",
+    table: "users",
+    column: "onboarding_step",
+    sql: "ALTER TABLE users ADD COLUMN onboarding_step TEXT",
+  },
+  {
+    name: "users.onboarding_started_at",
+    table: "users",
+    column: "onboarding_started_at",
+    sql: "ALTER TABLE users ADD COLUMN onboarding_started_at TEXT",
+  },
+  {
+    name: "users.onboarding_first_set_at",
+    table: "users",
+    column: "onboarding_first_set_at",
+    sql: "ALTER TABLE users ADD COLUMN onboarding_first_set_at TEXT",
+  },
+  {
+    name: "users.onboarding_completed_at",
+    table: "users",
+    column: "onboarding_completed_at",
+    sql: "ALTER TABLE users ADD COLUMN onboarding_completed_at TEXT",
+  },
+  {
     name: "mesocycles.include_deload",
     table: "Mesocycles",
     column: "include_deload",
     sql: "ALTER TABLE Mesocycles ADD COLUMN include_deload INTEGER DEFAULT 0",
+  },
+  {
+    name: "mesocycles.source_onboarding_draft_id",
+    table: "Mesocycles",
+    column: "source_onboarding_draft_id",
+    sql: "ALTER TABLE Mesocycles ADD COLUMN source_onboarding_draft_id TEXT",
+  },
+  {
+    name: "mesocycles.source_onboarding_draft_id_unique",
+    sql: `CREATE UNIQUE INDEX IF NOT EXISTS idx_mesocycles_onboarding_source
+      ON Mesocycles(source_onboarding_draft_id)
+      WHERE source_onboarding_draft_id IS NOT NULL`,
   },
   {
     name: "users.auth0_sub_unique",
@@ -103,14 +174,19 @@ export const schemaMigrationStatements = [
       ON Mesocycles(user_id, isCurrent)`,
   },
   {
+    name: "users.delete_owned_data.replace",
+    sql: "DROP TRIGGER IF EXISTS delete_user_owned_data",
+  },
+  {
     name: "users.delete_owned_data",
     // noinspection SqlNoDataSourceInspection,SqlDialectInspection,SqlResolve
-    sql: `CREATE TRIGGER IF NOT EXISTS delete_user_owned_data
+    sql: `CREATE TRIGGER delete_user_owned_data
       BEFORE DELETE ON users
       FOR EACH ROW
       BEGIN
         DELETE FROM Mesocycles WHERE user_id = OLD.id;
         DELETE FROM exercises WHERE user_id = OLD.id;
+        DELETE FROM onboarding_drafts WHERE user_id = OLD.id;
       END`,
   },
 ];

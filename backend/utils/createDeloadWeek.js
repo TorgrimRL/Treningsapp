@@ -8,11 +8,25 @@ export default function createDeloadWeek(
 
   return currentWeeksExercises.map((exercise, exerciseIndex) => {
     const firstWeekExercise = firstWeekExercises[exerciseIndex];
+    const currentName = String(exercise?.exercise || "")
+      .trim()
+      .replace(/\s+/g, " ")
+      .toLocaleLowerCase("en");
+    const firstWeekName = String(firstWeekExercise?.exercise || "")
+      .trim()
+      .replace(/\s+/g, " ")
+      .toLocaleLowerCase("en");
 
     if (!firstWeekExercise || !Array.isArray(firstWeekExercise.sets)) {
       return {
         ...exercise,
         sets: [],
+      };
+    }
+
+    if (!currentName || currentName !== firstWeekName) {
+      return {
+        ...exercise,
       };
     }
     const updatedSets = firstWeekExercise.sets

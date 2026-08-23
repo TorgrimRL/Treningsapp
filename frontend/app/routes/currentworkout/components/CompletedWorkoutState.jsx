@@ -1,6 +1,7 @@
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
 import RedoExerciseBlockModal from "../../../components/RedoExerciseBlockModal";
+import { onboardingV1Enabled } from "../../../features/onboarding/config";
 
 function getMostRecentCompletedMesocycle(mesocycles) {
   return (
@@ -23,6 +24,11 @@ export default function CompletedWorkoutState({
     completedMesocycle || null
   );
   const [isRedoModalOpen, setIsRedoModalOpen] = useState(false);
+  const navigate = useNavigate();
+
+  const startGuidedSetup = () => navigate("/onboarding", {
+    state: { returnToSetup: true, startFresh: true },
+  });
 
   useEffect(() => {
     if (completedMesocycle) {
@@ -79,6 +85,15 @@ export default function CompletedWorkoutState({
           >
             Create new plan
           </Link>
+          {onboardingV1Enabled && (
+            <button
+              type="button"
+              onClick={startGuidedSetup}
+              className="inline-flex min-h-11 items-center justify-center border border-red-500 px-4 py-2 font-semibold text-red-100 transition-colors hover:bg-red-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
+            >
+              Guided setup
+            </button>
+          )}
           {latestCompletedMesocycle && (
             <button
               type="button"

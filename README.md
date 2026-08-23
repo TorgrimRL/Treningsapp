@@ -100,6 +100,26 @@ VITE_API_URL=http://localhost:3000/api
 
 Vanlig `npm run dev` i backend bruker fortsatt SQLite Cloud med mindre `DB_MODE=local` settes eksplisitt.
 
+### Teste onboarding raskt
+
+For å teste nybrukerredirecten med den lokale demobrukeren uten å slette planer eller treningshistorikk:
+
+```bash
+cd backend
+npm run db:seed
+npm run onboarding:reset
+```
+
+Start deretter backend og frontend som vanlig og logg inn som demobrukeren. Første beskyttede side sender brukeren til `/onboarding`.
+
+En annen lokal bruker kan resettes ved å sende inn brukernavnet:
+
+```bash
+npm run onboarding:reset -- user@example.com
+```
+
+For en allerede innlogget bruker som ikke skal resettes, åpne **Templates** og velg **Guided setup**. Dette starter en ny guide, men beholder alle eksisterende planer. Sett `VITE_ONBOARDING_V1_ENABLED=false` i frontendmiljøet for å deaktivere den automatiske redirect-gaten uten å slette drafts.
+
 ## Kjøre tester
 
 Backend-testene kjøres slik:
