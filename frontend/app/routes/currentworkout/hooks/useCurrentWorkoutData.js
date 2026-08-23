@@ -8,7 +8,10 @@ import {
   fetchPersonalRecords,
   personalRecordsQueryOptions,
 } from "../../../utils/personalRecordsQuery";
-import { enrichWorkoutWithPersonalRecords } from "../../../utils/personalRecords";
+import {
+  enrichWorkoutWithPersonalRecords,
+  projectCurrentWorkoutPersonalRecords,
+} from "../../../utils/personalRecords";
 import { buildWorkoutState } from "../utils/workoutUtils";
 
 const mergeConfirmedWorkoutMetadata = (localWorkout, savedWorkout) => {
@@ -112,6 +115,11 @@ export default function useCurrentWorkoutData(apiFetch, baseUrl) {
   const isDirtyRef = useRef(false);
   const editRevisionRef = useRef(0);
   const committedRevisionRef = useRef(0);
+  const confirmedPersonalRecordHistoryRef = useRef(
+    Array.isArray(initialWorkout?.personalRecordHistory)
+      ? initialWorkout.personalRecordHistory
+      : []
+  );
   const lastAppliedWorkoutRef = useRef(cachedWorkout);
 
   const setWorkoutData = useCallback(
@@ -121,6 +129,10 @@ export default function useCurrentWorkoutData(apiFetch, baseUrl) {
       }
 
       lastAppliedWorkoutRef.current = workout;
+      if (Array.isArray(workout?.personalRecordHistory)) {
+        confirmedPersonalRecordHistoryRef.current =
+          workout.personalRecordHistory;
+      }
       setCurrentMesocycle(workout);
       setCurrentDayIndex((previousDayIndex) =>
         getDayIndex(workout, preferredDayIndex, previousDayIndex)
@@ -147,12 +159,18 @@ export default function useCurrentWorkoutData(apiFetch, baseUrl) {
       }
 
       committedRevisionRef.current = revision;
+      if (Array.isArray(workout?.personalRecordHistory)) {
+        confirmedPersonalRecordHistoryRef.current =
+          workout.personalRecordHistory;
+      }
       if (revision === editRevisionRef.current) {
         isDirtyRef.current = false;
         setWorkoutData(workout, { force: true });
       } else {
         setCurrentMesocycle((localWorkout) =>
-          mergeConfirmedWorkoutMetadata(localWorkout, workout)
+          projectCurrentWorkoutPersonalRecords(
+            mergeConfirmedWorkoutMetadata(localWorkout, workout)
+          )
         );
       }
 
@@ -162,6 +180,23 @@ export default function useCurrentWorkoutData(apiFetch, baseUrl) {
     },
     [invalidateCurrentWorkout, setCurrentWorkout, setWorkoutData]
   );
+
+  const reconcilePersonalRecords = useCallback((revision) => {
+    if (revision !== editRevisionRef.current) {
+      return false;
+    }
+
+    setCurrentMesocycle((localWorkout) =>
+      localWorkout
+        ? enrichWorkoutWithPersonalRecords({
+            ...localWorkout,
+            personalRecordHistory:
+              confirmedPersonalRecordHistoryRef.current,
+          })
+        : localWorkout
+    );
+    return true;
+  }, []);
 
   const refreshWorkoutData = useCallback(
     async ({ dayIndex, force = false } = {}) => {
@@ -211,6 +246,7 @@ export default function useCurrentWorkoutData(apiFetch, baseUrl) {
           ...cachedWorkout,
           personalRecordHistory,
         });
+        confirmedPersonalRecordHistoryRef.current = personalRecordHistory;
         setCurrentWorkout(workoutWithRecords);
         setCurrentMesocycle((localWorkout) =>
           localWorkout
@@ -267,6 +303,7 @@ export default function useCurrentWorkoutData(apiFetch, baseUrl) {
     setNotes,
     markWorkoutDirty,
     commitWorkoutData,
+    reconcilePersonalRecords,
     refreshWorkoutData,
   };
 }
