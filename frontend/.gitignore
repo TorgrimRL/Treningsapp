@@ -1,11 +1,13 @@
 # Ignore node_modules
 node_modules/
+.DS_Store
 
 # Ignore build artifacts
 build/
 dist/
 playwright-report/
 test-results/
+ios/App/App/public/
 
 # Ignore environment variables
 .env
