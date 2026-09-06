@@ -121,6 +121,11 @@ Eksempler på nøkkelruter (flere finnes i filene `exerciseRoutes.js` og `mesocy
 | `PUT`   | `/api/mesocycles/:id` | Oppdaterer en gitt treningsplan (vekt, reps, fullførtstatus, m.m.)                |
 | `GET`   | `/api/current-workout` | Henter gjeldende treningsplan og håndterer progresjonsberegning i sanntid        |
 
+Native iOS-klienter autentiserer API-kall med et Auth0 access token i
+`Authorization: Bearer ...`. Backend validerer issuer og `AUTH0_AUDIENCE`, mens
+webklienten fortsatt bruker eksisterende app-cookie og CSRF. Se `.env.example`;
+`AUTH0_AUDIENCE` må være identisk med API identifier i Auth0.
+
 ## Importing training plans
 
 The frontend can import a reusable future weekly plan from pasted lines or a CSV file.

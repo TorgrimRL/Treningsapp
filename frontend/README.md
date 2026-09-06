@@ -121,8 +121,10 @@ Her ser du at **React-komponenter** ligger i `app/components`, at ruter definere
 
 ## Konfigurasjon
 
-- **Miljøvariabler**:  
-  Prosjektet bruker `import.meta.env.VITE_API_URL` for å peke til backend-serveren. Pass på at `VITE_API_URL` er riktig satt i `.env` eller i serverkonfig.  
+- **Miljøvariabler**:
+  Prosjektet bruker `import.meta.env.VITE_API_URL` for å peke til backend-serveren. Pass på at `VITE_API_URL` er riktig satt i `.env` eller i serverkonfig. Capacitor-bygget krever også `VITE_AUTH0_DOMAIN`, `VITE_AUTH0_IOS_CLIENT_ID` og `VITE_AUTH0_AUDIENCE`; se `.env.example`. Native Client ID kommer fra en separat Auth0-applikasjon av typen Native. Ingen Client Secret skal bygges inn i appen.
+- **Auth0 for iOS**:
+  For Bundle ID `com.setoptimizer.app` skal Allowed Callback URLs og Allowed Logout URLs inneholde `com.setoptimizer.app://TENANT.auth0.com/capacitor/com.setoptimizer.app/callback`. Allowed Web Origins skal inneholde `capacitor://localhost`. Aktiver Refresh Token Rotation for Native-applikasjonen.
 - **CSRF og Cookies**:  
   Frontenden sender credentials i `fetch`-kall, og henter CSRF-token fra backend. Dette sikrer at kun innloggede og autoriserte brukere kan utføre skrivende operasjoner.  
 - **Bygg og kjøring**:  

@@ -1,4 +1,5 @@
 import PageContainer from "./PageContainer";
+import { Link } from "react-router";
 
 const steps = [
   {
@@ -18,8 +19,6 @@ const steps = [
 ];
 
 function LandingPage() {
-  const baseUrl = import.meta.env.VITE_API_URL;
-
   return (
     <div className="flex min-w-0 flex-col">
       <section
@@ -42,12 +41,12 @@ function LandingPage() {
           <p className="mt-4 text-lg text-gray-300 md:text-xl">
             Eliminate the Guesswork. Achieve Results.
           </p>
-          <a
-            href={`${baseUrl}/auth0/register`}
+          <Link
+            to="/register"
             className="mt-6 rounded-full bg-red-600 px-8 py-3 text-lg font-semibold text-white transition duration-300 hover:bg-red-700"
           >
             Register here
-          </a>
+          </Link>
         </div>
       </section>
 
@@ -174,12 +173,12 @@ function LandingPage() {
                 <p className="mt-4 text-lg text-gray-300 md:text-xl">
                   Eliminate the Guesswork. Achieve Results.
                 </p>
-                <a
-                  href={`${baseUrl}/auth0/register`}
+                <Link
+                  to="/register"
                   className="mt-6 rounded-full bg-red-600 px-8 py-3 text-lg font-semibold text-white transition duration-300 hover:bg-red-700"
                 >
                   Register now
-                </a>
+                </Link>
               </div>
             </section>
           </div>

@@ -4,13 +4,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBars } from "@fortawesome/free-solid-svg-icons";
 import { useAuth } from "../utils/AuthContext";
-import { getCsrfToken, useApiFetch } from "../utils/apiFetch";
+import { useApiFetch } from "../utils/apiFetch";
 import { currentWorkoutQueryOptions } from "../utils/currentWorkoutQuery";
-import { submitCsrfLogout } from "../utils/logout";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const { authCheckInProgress, isLoggedIn } = useAuth();
+  const { authCheckInProgress, isLoggedIn, performLogout } = useAuth();
   const queryClient = useQueryClient();
   const { apiFetch } = useApiFetch();
   const menuRef = useRef(null);
@@ -20,11 +19,7 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     try {
-      const csrfToken = await getCsrfToken();
-
-      localStorage.removeItem("token");
-      sessionStorage.removeItem("token");
-      submitCsrfLogout({ baseUrl, csrfToken });
+      await performLogout();
     } catch (error) {
       console.error("Unable to log out safely", error);
     }
@@ -98,20 +93,20 @@ export default function Navbar() {
             Home
           </Link>
           {showLoggedOutNav && (
-            <a
-              href={`${baseUrl}/auth0/login`}
+            <Link
+              to="/login"
               className="text-white h-full flex items-center "
             >
               Login
-            </a>
+            </Link>
           )}
           {showLoggedOutNav && (
-            <a
-              href={`${baseUrl}/auth0/register`}
+            <Link
+              to="/register"
               className="text-white h-full flex items-center "
             >
               Register
-            </a>
+            </Link>
           )}
           {showLoggedInNav && (
             <>
@@ -175,22 +170,24 @@ export default function Navbar() {
               </li>
               {showLoggedOutNav && (
                 <li className="block px-4 py-2 hover:bg-darkGray ">
-                  <a
-                    href={`${baseUrl}/auth0/login`}
+                  <Link
+                    to="/login"
+                    onClick={closeMenu}
                     className="block w-full cursor-pointer text-left focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
                   >
                     Login
-                  </a>
+                  </Link>
                 </li>
               )}
               {showLoggedOutNav && (
                 <li className="block px-4 py-2 hover:bg-darkGray ">
-                  <a
-                    href={`${baseUrl}/auth0/register`}
+                  <Link
+                    to="/register"
+                    onClick={closeMenu}
                     className="block w-full cursor-pointer text-left focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
                   >
                     Register
-                  </a>
+                  </Link>
                 </li>
               )}
               {showLoggedInNav && (
