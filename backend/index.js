@@ -20,6 +20,10 @@ import { buildResponsePayload } from "./utils/buildResponsePayload.js";
 import { clearAuthTokenCookie } from "./utils/authCookies.js";
 import { serializeUser } from "./utils/auth0Users.js";
 import { createCorsOptions } from "./utils/corsOptions.js";
+import {
+  authenticateNativeSession,
+  hasBearerAuthorization,
+} from "./utils/nativeAuth.js";
 dotenv.config();
 
 const app = express();
@@ -101,48 +105,63 @@ function sendLoggedOut(res) {
   return res.status(401).json({ isLoggedIn: false, user: null });
 }
 
-app.get("/api/me", async (req, res) => {
-  const token = req.cookies.token;
-  if (!token) {
-    return sendLoggedOut(res);
-  }
-
-  let decodedToken;
-  try {
-    decodedToken = jwt.verify(token, secretKey);
-  } catch {
-    clearAuthTokenCookie(res);
-    clearCsrfCookie(res);
-    return sendLoggedOut(res);
-  }
-
-  try {
-    // noinspection SqlResolve
-    const { result } = await safeQuery`
-      SELECT id, username, auth_provider, auth0_sub, email, email_verified, picture,
-             onboarding_version, onboarding_status, onboarding_step,
-             onboarding_started_at, onboarding_first_set_at, onboarding_completed_at
-      FROM users
-      WHERE id = ${decodedToken.id}
-      LIMIT 1
-    `;
-    const user = result[0];
-
-    if (!user) {
-      clearAuthTokenCookie(res);
-      clearCsrfCookie(res);
-      return sendLoggedOut(res);
+app.get(
+  "/api/me",
+  (req, res, next) => {
+    if (hasBearerAuthorization(req)) {
+      return authenticateNativeSession(req, res, next);
     }
 
-    res.json({ isLoggedIn: true, user: serializeUser(user) });
-  } catch (err) {
-    console.error("Current-user lookup failed", {
-      code: err?.code,
-      name: err?.name,
-    });
-    res.status(500).json({ message: "Internal server error" });
+    return next();
+  },
+  async (req, res) => {
+    let userId = req.user?.id;
+
+    if (!userId) {
+      const token = req.cookies.token;
+      if (!token) {
+        return sendLoggedOut(res);
+      }
+
+      try {
+        userId = jwt.verify(token, secretKey).id;
+      } catch {
+        clearAuthTokenCookie(res);
+        clearCsrfCookie(res);
+        return sendLoggedOut(res);
+      }
+    }
+
+    try {
+      // noinspection SqlResolve
+      const { result } = await safeQuery`
+        SELECT id, username, auth_provider, auth0_sub, email, email_verified, picture,
+               onboarding_version, onboarding_status, onboarding_step,
+               onboarding_started_at, onboarding_first_set_at, onboarding_completed_at
+        FROM users
+        WHERE id = ${userId}
+        LIMIT 1
+      `;
+      const user = result[0];
+
+      if (!user) {
+        if (!req.user) {
+          clearAuthTokenCookie(res);
+          clearCsrfCookie(res);
+        }
+        return sendLoggedOut(res);
+      }
+
+      return res.json({ isLoggedIn: true, user: serializeUser(user) });
+    } catch (err) {
+      console.error("Current-user lookup failed", {
+        code: err?.code,
+        name: err?.name,
+      });
+      return res.status(500).json({ message: "Internal server error" });
+    }
   }
-});
+);
 app.delete(
   "/api/users/me",
   authenticateToken,
@@ -177,6 +196,10 @@ app.use((error, _req, res, _next) => {
 
   if (error.code === "ECORS") {
     return res.status(403).json({ error: "Origin is not allowed" });
+  }
+
+  if (error.statusCode === 401 || error.status === 401) {
+    return res.status(401).json({ error: "Invalid access token" });
   }
 
   if (error.type === "entity.too.large") {

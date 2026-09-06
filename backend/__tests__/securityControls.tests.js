@@ -39,6 +39,7 @@ describe("security boundary utilities", () => {
 
     expect(origins).toContain("https://setoptimizer.com");
     expect(origins).toContain("https://training.example.com");
+    expect(origins).toContain("capacitor://localhost");
     expect(origins).not.toContain("http://localhost:5173");
   });
 

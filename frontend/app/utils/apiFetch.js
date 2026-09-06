@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { useOptionalAuth } from "./AuthContext";
 
 const csrfProtectedMethods = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 let csrfTokenPromise;
@@ -32,16 +33,20 @@ export async function getCsrfToken() {
 }
 
 export function useApiFetch() {
+  const auth = useOptionalAuth();
   const apiFetch = useCallback(
     async (url, options = {}) => {
       const method = (options.method || "GET").toUpperCase();
       const requestOptions = {
-        credentials: "include",
+        credentials: auth?.usesBearerAuth ? "omit" : "include",
         ...options,
       };
+      const headers = new Headers(options.headers);
 
-      if (csrfProtectedMethods.has(method)) {
-        const headers = new Headers(options.headers);
+      if (auth?.usesBearerAuth) {
+        headers.set("Authorization", `Bearer ${await auth.getAccessToken()}`);
+        requestOptions.headers = headers;
+      } else if (csrfProtectedMethods.has(method)) {
         headers.set("X-CSRF-Token", await getCsrfToken());
         requestOptions.headers = headers;
       }
@@ -60,7 +65,7 @@ export function useApiFetch() {
 
       return { ok: response.ok, status: response.status, data };
     },
-    []
+    [auth]
   );
 
   return { apiFetch };

@@ -1,6 +1,7 @@
 const productionOrigins = [
   "https://setoptimizer.com",
   "https://www.setoptimizer.com",
+  "capacitor://localhost",
 ];
 
 const developmentOrigins = [

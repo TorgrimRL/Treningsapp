@@ -5,7 +5,10 @@
   "type": "module",
   "scripts": {
     "build": "react-router build",
+    "build:ios": "CAPACITOR_BUILD=true react-router build --mode ios",
     "dev": "react-router dev",
+    "ios:open": "open -a Xcode ios/App/App.xcodeproj",
+    "ios:sync": "npm run build:ios && cap sync ios",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
     "start": "react-router-serve build/server/nodejs_*/index.js",
     "dev:e2e": "vite --host 127.0.0.1 --port 5174 --strictPort",
@@ -15,6 +18,11 @@
     "test:unit": "vitest run"
   },
   "dependencies": {
+    "@auth0/auth0-react": "^2.24.1",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/browser": "^8.0.4",
+    "@capacitor/core": "^8.5.0",
+    "@capacitor/ios": "^8.5.0",
     "@fortawesome/fontawesome-svg-core": "^6.5.2",
     "@fortawesome/free-solid-svg-icons": "^7.3.1",
     "@fortawesome/react-fontawesome": "^3.5.0",
@@ -30,6 +38,7 @@
     "react-router": "^7.18.2"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.0",
     "@playwright/test": "^1.61.0",
     "@react-router/dev": "^7.18.2",
     "@tailwindcss/vite": "^4.3.3",
@@ -44,6 +53,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "jsdom": "^30.0.1",
     "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
     "vite": "^8.2.2",
     "vitest": "^4.1.11"
   },

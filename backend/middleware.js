@@ -3,6 +3,10 @@ import csurf from "csurf";
 import dotenv from "dotenv";
 import { clearAuthTokenCookie } from "./utils/authCookies.js";
 import { safeQuery } from "./utils/safeQuery.js";
+import {
+  authenticateNativeToken,
+  hasBearerAuthorization,
+} from "./utils/nativeAuth.js";
 
 dotenv.config();
 
@@ -16,6 +20,10 @@ const csrfCookieOptions = {
 };
 
 export const authenticateToken = async (req, res, next) => {
+  if (hasBearerAuthorization(req)) {
+    return authenticateNativeToken(req, res, next);
+  }
+
   const token = req.cookies.token;
 
   if (!token) {
@@ -57,9 +65,17 @@ export const authenticateToken = async (req, res, next) => {
   }
 };
 
-export const csrfProtection = csurf({
+const cookieCsrfProtection = csurf({
   cookie: csrfCookieOptions,
 });
+
+export const csrfProtection = (req, res, next) => {
+  if (req.authMethod === "bearer") {
+    return next();
+  }
+
+  return cookieCsrfProtection(req, res, next);
+};
 
 export function clearCsrfCookie(res) {
   res.clearCookie(csrfCookieName, csrfCookieOptions);
@@ -67,6 +83,10 @@ export function clearCsrfCookie(res) {
 
 export const csrfTokenRoute = (app) => {
   app.get("/api/csrf-token", authenticateToken, csrfProtection, (req, res) => {
+    if (req.authMethod === "bearer") {
+      return res.status(400).json({ error: "CSRF is not used for Bearer tokens" });
+    }
+
     const csrfToken = req.csrfToken();
 
     res.set("Cache-Control", "no-store");
