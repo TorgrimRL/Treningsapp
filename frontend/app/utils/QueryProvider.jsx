@@ -8,7 +8,6 @@ import { useEffect, useState } from "react";
 import { useAuth } from "./AuthContext";
 import { useApiFetch } from "./apiFetch";
 import {
-  clearCurrentWorkoutQuery,
   currentWorkoutQueryKey,
   currentWorkoutQueryOptions,
 } from "./currentWorkoutQuery";
@@ -38,7 +37,10 @@ export function CurrentWorkoutQueryLifecycle() {
 
   useEffect(() => {
     if (isLoggedIn === false) {
-      clearCurrentWorkoutQuery(queryClient);
+      // Every cached query is per-user and authenticated, so drop the whole
+      // cache however the session ended (logout, 401 from /me, token expiry).
+      void queryClient.cancelQueries();
+      queryClient.clear();
       return;
     }
 
