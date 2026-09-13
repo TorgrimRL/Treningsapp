@@ -108,7 +108,7 @@ test("@responsive landing shell and feature content stay within responsive bound
   );
 
   expect(
-    Math.abs(targetImageBox.width / targetImageBox.height - 375 / 782)
+    Math.abs(targetImageBox.width / targetImageBox.height - 1206 / 2622)
   ).toBeLessThan(0.01);
   expect(
     Math.abs(dumbbellsImageBox.width / dumbbellsImageBox.height - 1280 / 1919)
