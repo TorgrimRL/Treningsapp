@@ -10,5 +10,6 @@ export default [
   route("currentworkout", "routes/currentworkout/route.jsx"),
   route("personal-records", "routes/personal-records/route.jsx"),
   route("templates", "routes/templates.jsx"),
+  route("privacy", "routes/privacy.jsx"),
   route("onboarding", "features/onboarding/OnboardingPage.jsx"),
 ];

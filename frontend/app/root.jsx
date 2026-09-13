@@ -1,5 +1,6 @@
 import {
   isRouteErrorResponse,
+  Link,
   Links,
   Meta,
   Outlet,
@@ -65,7 +66,12 @@ export default function Root() {
                         Support with Vipps
                       </a>
                     </div>
-                    <p className="mt-4 text-xs">&copy; 2026 SETOPTIMIZER.COM</p>
+                    <p className="mt-4 text-xs">
+                      <Link to="/privacy" className="underline hover:text-white">
+                        Privacy Policy
+                      </Link>
+                    </p>
+                    <p className="mt-2 text-xs">&copy; 2026 SETOPTIMIZER.COM</p>
                   </div>
                 </footer>
                 </div>
