@@ -10,6 +10,7 @@ import {
   useMemo,
   useState,
 } from "react";
+import { useLocation, useNavigate } from "react-router";
 import { submitCsrfLogout } from "./logout";
 
 const APP_ID = "com.setoptimizer.app";
@@ -39,6 +40,7 @@ function WebAuthProvider({ children }) {
   const [isLoggedIn, setIsLoggedIn] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [authCheckInProgress, setAuthCheckInProgress] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const baseUrl = import.meta.env.VITE_API_URL.replace(/\/$/, "");
 
   const logoutLocally = useCallback(() => {
@@ -85,16 +87,24 @@ function WebAuthProvider({ children }) {
   }, [baseUrl]);
 
   const performLogout = useCallback(async () => {
-    const response = await fetch(`${baseUrl}/csrf-token`, {
-      credentials: "include",
-    });
-    if (!response.ok) {
-      throw new Error("Unable to get a CSRF token");
-    }
+    setIsLoggingOut(true);
 
-    const { csrfToken } = await response.json();
-    if (!csrfToken) {
-      throw new Error("CSRF token response was invalid");
+    let csrfToken;
+    try {
+      const response = await fetch(`${baseUrl}/csrf-token`, {
+        credentials: "include",
+      });
+      if (!response.ok) {
+        throw new Error("Unable to get a CSRF token");
+      }
+
+      ({ csrfToken } = await response.json());
+      if (!csrfToken) {
+        throw new Error("CSRF token response was invalid");
+      }
+    } catch (error) {
+      setIsLoggingOut(false);
+      throw error;
     }
 
     localStorage.removeItem("token");
@@ -117,6 +127,7 @@ function WebAuthProvider({ children }) {
         setAuthStatus,
         checkAuthStatus,
         authCheckInProgress,
+        isLoggingOut,
         usesBearerAuth: false,
         getAccessToken: null,
         startLogin,
@@ -140,6 +151,9 @@ function NativeAuthContextProvider({ children, callbackUrl }) {
   const [isLoggedIn, setIsLoggedIn] = useState(null);
   const [currentUser, setCurrentUser] = useState(null);
   const [authCheckInProgress, setAuthCheckInProgress] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
   const baseUrl = import.meta.env.VITE_API_URL.replace(/\/$/, "");
 
   const logoutLocally = useCallback(() => {
@@ -195,11 +209,13 @@ function NativeAuthContextProvider({ children, callbackUrl }) {
         } else {
           logoutLocally();
           setAuthCheckInProgress(false);
+          setIsLoggingOut(false);
         }
       } catch (error) {
         console.error("Unable to complete Auth0 callback:", error);
         logoutLocally();
         setAuthCheckInProgress(false);
+        setIsLoggingOut(false);
       } finally {
         await Browser.close().catch(() => {});
       }
@@ -212,6 +228,12 @@ function NativeAuthContextProvider({ children, callbackUrl }) {
       syncCurrentUser,
     ]
   );
+
+  useEffect(() => {
+    if (isLoggingOut && pathname === "/") {
+      setIsLoggingOut(false);
+    }
+  }, [isLoggingOut, pathname]);
 
   useEffect(() => {
     const listenerPromise = App.addListener("appUrlOpen", handleAppUrl);
@@ -256,12 +278,23 @@ function NativeAuthContextProvider({ children, callbackUrl }) {
   );
 
   const performLogout = useCallback(async () => {
+    setIsLoggingOut(true);
+    // Leave the protected route before clearing auth state. React batches both
+    // updates into one commit, so ProtectedRoute unmounts instead of bouncing
+    // the user to the blank /login shim.
+    navigate("/", { replace: true });
     logoutLocally();
-    await auth0Logout({
-      logoutParams: { returnTo: callbackUrl },
-      openUrl: (url) => Browser.open({ url }),
-    });
-  }, [auth0Logout, callbackUrl, logoutLocally]);
+
+    try {
+      await auth0Logout({
+        logoutParams: { returnTo: callbackUrl },
+        openUrl: (url) => Browser.open({ url }),
+      });
+    } catch (error) {
+      setIsLoggingOut(false);
+      throw error;
+    }
+  }, [auth0Logout, callbackUrl, logoutLocally, navigate]);
 
   const value = useMemo(
     () => ({
@@ -276,6 +309,7 @@ function NativeAuthContextProvider({ children, callbackUrl }) {
       },
       checkAuthStatus: syncCurrentUser,
       authCheckInProgress,
+      isLoggingOut,
       usesBearerAuth: true,
       getAccessToken: getAccessTokenSilently,
       startLogin,
@@ -287,6 +321,7 @@ function NativeAuthContextProvider({ children, callbackUrl }) {
       currentUser,
       getAccessTokenSilently,
       isLoggedIn,
+      isLoggingOut,
       logoutLocally,
       performLogout,
       startLogin,
@@ -316,6 +351,7 @@ function MissingNativeAuthProvider({ children }) {
         setAuthStatus: () => {},
         checkAuthStatus: unavailable,
         authCheckInProgress: false,
+        isLoggingOut: false,
         usesBearerAuth: true,
         getAccessToken: unavailable,
         startLogin: unavailable,
@@ -343,7 +379,7 @@ function NativeAuthProvider({ children }) {
         redirect_uri: config.callbackUrl,
         scope: "openid profile email offline_access",
       }}
-      cacheLocation="memory"
+      cacheLocation="localstorage"
       useRefreshTokens
       useRefreshTokensFallback={false}
     >

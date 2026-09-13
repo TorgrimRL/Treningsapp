@@ -1,6 +1,5 @@
+import { useEffect } from "react";
 import Modal from "react-modal";
-
-Modal.setAppElement("#root");
 
 const sizeClasses = {
   standard: "max-w-md",
@@ -22,6 +21,10 @@ export default function AppModal({
   title,
   ...modalProps
 }) {
+  useEffect(() => {
+    Modal.setAppElement("#root");
+  }, []);
+
   return (
     <Modal
       {...modalProps}
@@ -33,10 +36,10 @@ export default function AppModal({
       htmlOpenClassName="ReactModal__Html--open"
       preventScroll
       className={joinClasses(
-        "relative mx-auto my-0 min-w-0 w-full bg-darkGray text-white rounded focus:outline-none shadow-lg p-0 max-h-[calc(100dvh-2rem)] overflow-hidden text-2sm sm:max-h-[calc(100dvh-8rem)]",
+        "relative mx-auto my-0 min-w-0 w-full bg-darkGray text-white rounded focus:outline-none shadow-lg p-0 max-h-[calc(100dvh-4rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] overflow-hidden text-2sm sm:max-h-[calc(100dvh-8rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))]",
         sizeClasses[size] || sizeClasses.standard
       )}
-      overlayClassName="fixed inset-0 z-50 flex items-start justify-center overflow-hidden overscroll-none bg-black/50 px-4 py-4 sm:py-16"
+      overlayClassName="fixed inset-0 z-50 flex items-start justify-center overflow-hidden overscroll-none bg-black/50 px-4 pt-[calc(3rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pt-[calc(4rem+env(safe-area-inset-top))] sm:pb-[calc(4rem+env(safe-area-inset-bottom))]"
     >
       {showCloseButton && (
         <button
@@ -50,7 +53,7 @@ export default function AppModal({
       )}
       <div
         className={joinClasses(
-          "min-w-0 max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain p-4 sm:max-h-[calc(100dvh-8rem)]",
+          "min-w-0 max-h-[calc(100dvh-4rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))] overflow-y-auto overscroll-contain p-4 sm:max-h-[calc(100dvh-8rem-env(safe-area-inset-top)-env(safe-area-inset-bottom))]",
           bodyClassName
         )}
       >

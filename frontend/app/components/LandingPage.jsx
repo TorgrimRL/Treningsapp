@@ -59,10 +59,10 @@ function LandingPage() {
             <section className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
               <img
                 data-testid="target-recommendation-image"
-                src="/images/targetweightandreps.png"
+                src="/images/currentworkout.png"
                 alt="Target reps and weight recommendations"
-                width="375"
-                height="782"
+                width="1206"
+                height="2622"
                 className="mx-auto h-auto w-full max-w-[26rem] shadow-lg"
               />
               <div className="text-center lg:text-left">
@@ -98,41 +98,31 @@ function LandingPage() {
 
             <section className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
               <img
-                src="/images/lastweeksreps.png"
-                alt="Previous workout performance"
-                width="358"
-                height="403"
-                className="mx-auto h-auto w-full max-w-[34rem] shadow-lg"
+                src="/images/personalrecords.png"
+                alt="Personal records for each exercise"
+                width="1206"
+                height="2622"
+                className="mx-auto h-auto w-full max-w-[26rem] shadow-lg"
               />
               <div className="text-center lg:text-left">
                 <h2 className="text-3xl font-bold text-white">
-                  Build On Every Session
+                  Watch Your Records Climb
                 </h2>
-                <p className="mt-4 text-lg text-gray-300">
-                  No need to wait. Continue your progress with available
-                  weights.
+                <p className="mt-4 text-lg text-gray-300 md:text-xl">
+                  Every heavier set gets tracked automatically. Open any
+                  exercise to see exactly when you hit a new personal best.
                 </p>
               </div>
             </section>
 
-            <section className="grid items-center gap-8 lg:grid-cols-2 lg:gap-12">
-              <img
-                src="/images/targetreps.png"
-                alt="Adjusted target for different weights"
-                width="358"
-                height="403"
-                className="mx-auto h-auto w-full max-w-[34rem] shadow-lg lg:order-2"
-              />
-              <div className="text-center lg:order-1 lg:text-left">
-                <h2 className="text-3xl font-bold text-white">
-                  Adapt Without Guesswork
-                </h2>
-                <p className="mt-4 text-lg text-gray-300">
-                  The app calculates ideal weight and reps for you. If the 16 kg
-                  dumbbells are occupied, your target can adapt to the available
-                  14 kg pair.
-                </p>
-              </div>
+            <section className="text-center">
+              <h2 className="text-3xl font-bold text-white">
+                Add Any Exercise You Want
+              </h2>
+              <p className="mx-auto mt-4 max-w-2xl text-lg text-gray-300 md:text-xl">
+                Pick from a large built in exercise library or add your own.
+                Build the routine that fits your gym and your goals.
+              </p>
             </section>
 
             <section className="text-center">

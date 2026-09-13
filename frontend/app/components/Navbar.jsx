@@ -60,7 +60,7 @@ export default function Navbar() {
       aria-label="Primary navigation"
       ref={menuRef}
       data-testid="navbar"
-      className="fixed inset-x-0 top-0 z-30 h-12 bg-black shadow-md"
+      className="fixed inset-x-0 top-0 z-30 bg-black shadow-md pt-[env(safe-area-inset-top)]"
     >
       <div
         data-testid="navbar-content"
